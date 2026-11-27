@@ -223,7 +223,7 @@ Vakalar bilerek kesirli çıkacak şekilde seçildi: Üretim LP 185.555,56 → t
 
 ### 7.x Gerçek Excel'de örneklem (27.11.2026, kullanıcının bilgisayarı)
 
-Ortam: Windows, Excel **Office LTSC** (2021 sınıfı), menüler **İngilizce**, Windows bölge ayarı **Türkçe** (ondalık virgül, ayırıcı `;`). Dosya aktarılamadığı için veri ve model sayfaları panodan yapıştırıldı ve bir VBA makrosuyla kuruldu (`.Formula` İngilizce yazımla); Hedef Ara, Çözücü, veri doğrulama ve Power Query menülerden çalıştırıldı.
+Ortam: Windows, Excel **Office LTSC** (2021 sınıfı), menüler **İngilizce**, Windows bölge ayarı **Türkçe** (ondalık virgül, ayırıcı `;`). Önce dosya aktarılamadığı için veri ve model sayfaları panodan yapıştırıldı ve bir VBA makrosuyla kuruldu; sonra kullanıcı veri kitabını ve `.bas` dosyasını indirdi, ikisi Excel'in kendi Aç ve Import pencereleriyle açıldı (`.Formula` İngilizce yazımla); Hedef Ara, Çözücü, veri doğrulama ve Power Query menülerden çalıştırıldı.
 
 | Konu | Kesit | Excel | Sonuç |
 | --- | --- | --- | --- |
@@ -250,10 +250,14 @@ Ortam: Windows, Excel **Office LTSC** (2021 sınıfı), menüler **İngilizce**,
 | `dd.mm.yyyy` | 01.01.2024 | **00.mm.2024** (Türkçe ayarda d dakika) | ⚠ ders metnine not |
 | Dizi sabiti sütun ayırıcı | `,` | **`\`** (`{1\2\3}`) | ⚠ motor `\` yazımını da kabul ediyor |
 | TRIMRANGE, TEXTBEFORE, REGEX, PERCENTOF, LAMBDA ailesi, GRUPLAÖLÇÜT | var | #NAME? (bu sürümde yok) | sınanamadı |
+| Veri kitabı `kesit-excel-veri.xlsx` (indirilen dosya) | 29 sayfa, 16 Excel Tablosu | Korumalı görünümde açıldı, **onarım uyarısı yok**; 29 sayfa, 16 tablo; tek hata hücresi `Denetim!D11` (#BÖL/0!, dersin bilerek koyduğu hata) | ✓ |
+| Kitapta Kredi!B6 · `TOPLA(Satışlar[Adet])` · Fiyat!B10 | 106.285,35 · 371 · 47.000 | aynı | ✓ |
+| `KesitMakro.bas` (VBA > File > Import File) | 1254 kod sayfası | içeri alındı; MsgBox'ta "Satışlar sayfasındasınız" Türkçe harfleri doğru | ✓ |
+| 5 örnek makro tam veride | 240 satır, 31 iptal, Elektronik 39 / Giyim 47 / Kitap 118 / Spor 37, L toplamı 210.964,25 | aynı; Formül yazdır'daki FormulaLocal `EĞER` İngilizce menüde #NAME? (yukarıdaki satır) | ✓ |
 
 **Ders:** Kural "her şey Türkçe" değil: **ayırıcılar ve tarih harfleri Windows bölge ayarını, işlev ve renk adları ile özet tablo etiketleri Excel'in menü dilini izler.** Kesit Türkçe menülü Excel'i varsayıyordu; İngilizce menülü ama Türkçe bölgeli Excel (Türkiye'de şirket bilgisayarlarında yaygın) iki tarafı karıştırıyor.
 
-> 🧪 **Hâlâ sınanmayanlar:** Türkçe menülü Excel'de Türkçe işlev adları (ör. TRIMMEAN'ın Türkçe adı), Excel 365 işlevleri (GRUPLAÖLÇÜT "Toplam" satırı, NORMİFADE…), veri kitabı dosyasını açmak ve `.bas` dosyasını Dosya Al ile almak (dosya bilgisayara aktarılamadı). Türkçe arayüzlü web Excel bunun için yeterli.
+> 🧪 **Hâlâ sınanmayanlar:** Türkçe menülü Excel'de Türkçe işlev adları (ör. TRIMMEAN'ın Türkçe adı) ve Excel 365 işlevleri (GRUPLAÖLÇÜT "Toplam" satırı, NORMİFADE…). Türkçe arayüzlü web Excel bunun için yeterli.
 
 > 🧪 **Burada bir test daha yapalım (sizin bilgisayarda):** Kredi, Üretim ve Vardiya sayfalarını gerçek Excel'e kopyalayıp Hedef Ara ve Çözücü'yü (Simplex LP, "Kısıtlanmamış değişkenleri negatif olmayan yap" açık) çalıştırın. Beklenen: taksit 106.285,35; Üretim 185.500 (tamsayı); Vardiya 23.
 
@@ -765,4 +769,4 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 - **2026-11-27 · 0.6.0** Türkçe kurslarla üçüncü karşılaştırma (§9.x): Modül 21 Ofis pratikleri, güvenlik ve paylaşım (7 ders: gezinme ve Git > Özel, renge göre filtre, KÖPRÜ ve içindekiler, not ve birimli biçim, tanımlayıcı istatistik ve Araç Takımı, şifreleme ve Belge Denetçisi, yazdırma ve PowerPoint). Motor: HYPERLINK, FORMULATEXT, SKEW, KURT, TRIMMEAN (190 işlev). 111 ders, 250 alıştırma, 21 soruluk seviye testi, 152 test, LibreOffice 266/266. Bulunan hata: FORMÜLMETNİ rehber örneğinin boş hücrede #YOK vermesi.
 - **2026-11-27 · 0.6.1** Genel kullanıcı gözüyle üçüncü tur (§8.x): Dersler sayfasında arama, seviye süzgeci ve katlanır modüller (telefonda 16.381 → 4.392 px), Sık hatalar ve mülakatta arama, üst "Ara" düğmesi ders de buluyor, seviye testi başlık hatası, telefonda sol kenar gölgesi, masaüstü kahraman şeridi, ana sayfa seviye kartları.
 - **2026-11-27 · 0.6.2** Veri kitabı derslerle eşitlendi (§5.19): 17 model sayfası, başlıklı sayfalar Excel Tablosu, model formülleri İngilizce yazımla; LibreOffice'te 14 deneme formülü ve 35 model hücresi Kesit'le aynı. Veri sayfasında kitap indirme kartı; model sayfalarında "undefined" kaynak ve boş açıklama düzeltildi. Rehberde "Bilinen sınırlar" güncellendi.
-- **2026-11-27 · 0.6.3** Gerçek Excel'de örneklem (§7.x, İngilizce menülü, Türkçe bölgeli Office LTSC): 23 konu: 16'sı aynı, 6'sında ders metni ya da motor düzeltildi, 1'i bu Excel sürümünde sınanamadı. Düzeltilenler: dizi sabitinde `\` sütun ayırıcı ve virgüllü ondalık (motor), `#.##0.` ölçekleme ders metni, `{"Web";"Mobil"}` örneği ve ayırıcı açıklaması, FormulaLocal makro yorumu, biçim dersine "hangi dil?" notu ([Red], gg.aa), Çözücü dersine %1 tamsayı toleransı ve birden çok en iyi çözüm notu.
+- **2026-11-27 · 0.6.3** Gerçek Excel'de örneklem (§7.x, İngilizce menülü, Türkçe bölgeli Office LTSC): 27 konu: 20'si aynı, 6'sında ders metni ya da motor düzeltildi, 1'i bu Excel sürümünde sınanamadı. Düzeltilenler: dizi sabitinde `\` sütun ayırıcı ve virgüllü ondalık (motor), `#.##0.` ölçekleme ders metni, `{"Web";"Mobil"}` örneği ve ayırıcı açıklaması, FormulaLocal makro yorumu, biçim dersine "hangi dil?" notu ([Red], gg.aa), Çözücü dersine %1 tamsayı toleransı ve birden çok en iyi çözüm notu.
