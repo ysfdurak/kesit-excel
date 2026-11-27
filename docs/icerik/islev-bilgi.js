@@ -2,7 +2,7 @@
 // Türkçe adlar formul.js'deki EN_TR tablosundan gelir; söz diziminde Türkçe Excel'in ; ayırıcısı kullanılır.
 import { EN_TR } from '../motor/formul.js';
 
-export const KATEGORILER = { mat: 'Matematik', ist: 'İstatistik', mantik: 'Mantık', kosul: 'Koşullu özet', ara: 'Arama ve başvuru', metin: 'Metin', tarih: 'Tarih ve saat', dizi: 'Dinamik dizi', bilgi: 'Bilgi' };
+export const KATEGORILER = { mat: 'Matematik', ist: 'İstatistik', mantik: 'Mantık', kosul: 'Koşullu özet', ara: 'Arama ve başvuru', metin: 'Metin', tarih: 'Tarih ve saat', dizi: 'Dinamik dizi', bilgi: 'Bilgi', finans: 'Finans' };
 
 const H = [
   ['SUM', 'mat', 'TOPLA(sayı1; [sayı2]; …)', 'Sayıları toplar. Aralıktaki metin ve boş hücreleri atlar.', '=TOPLA(H2:H241)'],
@@ -136,6 +136,26 @@ const H = [
   ['HSTACK', 'dizi', 'YATAYYIĞ(dizi1; …)', 'Dizileri yan yana ekler.', '=YATAYYIĞ(C2:C241;I2:I241)'],
   ['CHOOSECOLS', 'dizi', 'SÜTUNSEÇ(dizi; sütun1; …)', 'Seçilen sütunları verir.', '=SÜTUNSEÇ(A2:K241;3;9)'],
   ['CHOOSEROWS', 'dizi', 'SATIRSEÇ(dizi; satır1; …)', 'Seçilen satırları verir; -1 son satır.', '=SATIRSEÇ(A2:K241;-1)'],
+  ['INDIRECT', 'ara', 'DOLAYLI(başvuru_metni; [a1])', 'Metni başvuruya çevirir: "B"&5 → B5, sayfa ve ad da olabilir. Uçucudur; bağımlı açılır listede kullanılır.', '=TOPLA(DOLAYLI("H2:H"&11))'],
+  ['OFFSET', 'ara', 'KAYDIR(başvuru; satır; sütun; [yükseklik]; [genişlik])', 'Başlangıçtan kaydırılmış bir alan döndürür; kayan pencere ve dinamik grafik aralığı için. Uçucudur.', '=TOPLA(KAYDIR(H1;1;0;10;1))'],
+  ['ADDRESS', 'ara', 'ADRES(satır; sütun; [başv_türü]; [a1]; [sayfa])', 'Satır ve sütun numarasından adres metni üretir: 1 $A$1, 2 A$1, 3 $A1, 4 A1.', '=ADRES(2;8)'],
+  ['GETPIVOTDATA', 'ara', 'ÖZETVERİAL(veri_alanı; pivot_tablo; [alan1; öğe1]; …)', 'Özet tablodan alan ve öğe adıyla değer çeker; tablo düzeni değişse de doğru hücreyi bulur.', '=ÖZETVERİAL("Adet";$N$3;"Kategori";"Kitap")'],
+  ['PMT', 'finans', 'DEVRESEL_ÖDEME(oran; dönem_sayısı; bd; [gd]; [tür])', 'Eşit taksitli kredinin dönem taksiti. Oran ve dönem aynı birimde olmalı (aylık: yıllık/12). Ödeme eksi döner.', '=DEVRESEL_ÖDEME(0,36/12;24;-1800000)'],
+  ['IPMT', 'finans', 'FAİZTUTARI(oran; dönem; dönem_sayısı; bd; [gd]; [tür])', 'Belirli bir taksitin faiz kısmı.', '=FAİZTUTARI(0,36/12;1;24;-1800000)'],
+  ['PPMT', 'finans', 'ANA_PARA_ÖDEMESİ(oran; dönem; dönem_sayısı; bd; [gd]; [tür])', 'Belirli bir taksitin anapara kısmı. FAİZTUTARI ile toplamı taksittir.', '=ANA_PARA_ÖDEMESİ(0,36/12;1;24;-1800000)'],
+  ['PV', 'finans', 'BD(oran; dönem_sayısı; devresel_ödeme; [gd]; [tür])', 'Bugünkü değer: belirli taksitle çekilebilecek kredi ya da gelecekteki paranın bugünkü karşılığı.', '=BD(0,03;24;-60000)'],
+  ['FV', 'finans', 'GD(oran; dönem_sayısı; devresel_ödeme; [bd]; [tür])', 'Gelecek değer: düzenli birikimin dönem sonundaki tutarı.', '=GD(0,02;12;-5000)'],
+  ['NPER', 'finans', 'TAKSİT_SAYISI(oran; devresel_ödeme; bd; [gd]; [tür])', 'Belirli taksitle borcun kaç dönemde biteceği.', '=TAKSİT_SAYISI(0,03;-120000;1800000)'],
+  ['RATE', 'finans', 'FAİZ_ORANI(dönem_sayısı; devresel_ödeme; bd; [gd]; [tür]; [tahmin])', 'Dönem faiz oranı; yinelemeyle çözülür, bulunamazsa #SAYI!.', '=FAİZ_ORANI(24;-106285;1800000)'],
+  ['NPV', 'finans', 'NBD(oran; değer1; [değer2]; …)', 'Net bugünkü değer. İlk değeri BİR DÖNEM SONRA sayar: bugünkü yatırım dışarıda eklenir (=B6+NBD(…)).', '=-2400000+NBD(0,3;-90000;-90000;-110000;-110000;520000)'],
+  ['IRR', 'finans', 'İÇ_VERİM_ORANI(değerler; [tahmin])', 'NBD\'yi sıfır yapan oran; 0. dönem dahil verilir.', '=İÇ_VERİM_ORANI({-950000;310000;340000;360000;380000;400000})'],
+  ['XNPV', 'finans', 'ANBD(oran; değerler; tarihler)', 'Düzensiz tarihli nakit akışlarının net bugünkü değeri (365 günlük yıl).', '=ANBD(0,09;{-10000;2750};{45658;45748})'],
+  ['XIRR', 'finans', 'AİÇVERİMORANI(değerler; tarihler; [tahmin])', 'Düzensiz tarihli nakit akışlarının iç verim oranı.', '=AİÇVERİMORANI({-10000;2750;4250;3250};{45658;45748;45839;45931})'],
+  ['SLN', 'finans', 'DA(maliyet; hurda; ömür)', 'Doğrusal amortisman: her dönem eşit.', '=DA(2400000;300000;5)'],
+  ['DDB', 'finans', 'ÇİFTAZALANBAKİYE(maliyet; hurda; ömür; dönem; [faktör])', 'Çift azalan bakiye amortismanı: ilk yıllarda yüksek.', '=ÇİFTAZALANBAKİYE(2400000;300000;5;1)'],
+  ['DB', 'finans', 'AZALANBAKİYE(maliyet; hurda; ömür; dönem; [ay])', 'Sabit oranlı azalan bakiye amortismanı.', '=AZALANBAKİYE(2400000;300000;5;1)'],
+  ['EFFECT', 'finans', 'ETKİN(nominal_oran; dönem_sayısı_yıl)', 'Nominal yıllık faizin bileşik etkin oranı.', '=ETKİN(0,36;12)'],
+  ['NOMINAL', 'finans', 'NOMİNAL(etkin_oran; dönem_sayısı_yıl)', 'Etkin orandan nominal yıllık oran.', '=NOMİNAL(0,426;12)'],
 ];
 
 export const ISLEV_BILGI = H.map(([en, kat, soz, aciklama, ornek]) => ({ en, tr: EN_TR[en] || en, kategori: kat, kategoriAd: KATEGORILER[kat], sozdizimi: soz, aciklama, ornek }));

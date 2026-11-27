@@ -1,8 +1,9 @@
-// Müfredat: 14 modül. Ders gövdeleri dersler-1/2/3/4.js dosyalarında.
+// Müfredat: 17 modül. Ders gövdeleri dersler-1/2/3/4/5.js dosyalarında.
 import { DERSLER_1 } from './dersler-1.js';
 import { DERSLER_2 } from './dersler-2.js';
 import { DERSLER_3 } from './dersler-3.js';
 import { DERSLER_4 } from './dersler-4.js';
+import { DERSLER_5 } from './dersler-5.js';
 export const MODULLER = [
   { id: 'm1', no: 1, baslik: "Excel'in mantığı", ozet: 'Hücre, tür, formül, $ ve Türkçe/İngilizce yazım.', seviye: 'temel' },
   { id: 'm2', no: 2, baslik: 'Temel hesaplar', ozet: 'Özet işlevleri, yuvarlama, oran ve hata değerleri.', seviye: 'temel' },
@@ -18,5 +19,8 @@ export const MODULLER = [
   { id: 'm12', no: 12, baslik: 'Rapora dönüştürmek', ozet: 'TOPLA.ÇARPIM, ALTTOPLAM, kontrol formülleri ve vaka.', seviye: 'ileri' },
   { id: 'm13', no: 13, baslik: 'Görselleştirme', ozet: 'Grafik seçimi, bütün türler, pivot grafik, dilimleyici, koşullu biçim, mini grafik ve pano.', seviye: 'ileri' },
   { id: 'm14', no: 14, baslik: 'Makro (VBA)', ozet: 'Kaydedici, Range ve son satır, If, biçim, Function ve Office Scripts.', seviye: 'ileri' },
+  { id: 'm15', no: 15, baslik: 'Kitap tasarımı ve denetim', ozet: 'Excel Tablosu, adlar, veri doğrulama, özel biçim, formül denetimi ve koruma.', seviye: 'ileri' },
+  { id: 'm16', no: 16, baslik: 'Senaryo ve finans', ozet: 'Taksit ve ödeme planı, NBD ve İVO, Hedef Ara, Veri Tablosu, Senaryo, Çözücü.', seviye: 'ileri' },
+  { id: 'm17', no: 17, baslik: 'İleri pano ve pivot', ozet: 'Hesaplanmış alan, ayrıntıya inme, ÖZETVERİAL, form denetimleri, dinamik grafik, veri modeli.', seviye: 'ileri' },
 ];
-export const DERSLER = [...DERSLER_1, ...DERSLER_2, ...DERSLER_3, ...DERSLER_4];
+export const DERSLER = [...DERSLER_1, ...DERSLER_2, ...DERSLER_3, ...DERSLER_4, ...DERSLER_5];

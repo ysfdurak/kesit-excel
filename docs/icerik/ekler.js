@@ -1,20 +1,20 @@
 // Roller, seviye testi ve genel mülakat soruları.
 export const ROLLER = [
   { id: 'analist', ad: 'Veri analisti', harf: 'VA', ozet: 'Ham veriden doğru sayıya: temizlik, koşullu özet, arama, pivot ve kontrol.', neden: 'Analist mülakatlarında Excel testi neredeyse her zaman ÇOKETOPLA, DÜŞEYARA/ÇAPRAZARA, pivot ve veri temizliği sorar.',
-    dersler: ['m1-d3', 'm2-d1', 'm3-d1', 'm4-d3', 'm4-d4', 'm5-d1', 'm5-d3', 'm5-d4', 'm6-d3', 'm7-d1', 'm8-d2', 'm8-d4', 'm9-d1', 'm9-d2', 'm10-d1', 'm10-d3', 'm11-d2', 'm12-d1', 'm12-d2', 'm13-d1', 'm13-d3', 'm13-d7'] },
+    dersler: ['m1-d3', 'm2-d1', 'm3-d1', 'm4-d3', 'm4-d4', 'm5-d1', 'm5-d3', 'm5-d4', 'm6-d3', 'm7-d1', 'm8-d2', 'm8-d4', 'm9-d1', 'm9-d2', 'm10-d1', 'm10-d3', 'm11-d2', 'm12-d1', 'm12-d2', 'm13-d1', 'm13-d3', 'm13-d7', 'm15-d1', 'm15-d3', 'm17-d2', 'm17-d4'] },
   { id: 'bi', ad: 'BI / raporlama', harf: 'BI', ozet: 'Power BI\'a geçmeden önce Excel\'de veri modeli düşüncesi: uzun biçim, Power Query, pivot.', neden: 'Power Query Excel ile Power BI\'da aynıdır; burada öğrenilen adımlar ve M kodu doğrudan Power BI\'a taşınır.',
-    dersler: ['m1-d1', 'm2-d3', 'm4-d3', 'm5-d4', 'm7-d1', 'm8-d4', 'm9-d3', 'm10-d1', 'm10-d2', 'm10-d3', 'm10-d4', 'm11-d1', 'm11-d2', 'm11-d3', 'm11-d4', 'm12-d2', 'm13-d1', 'm13-d3', 'm13-d6', 'm13-d7'] },
+    dersler: ['m1-d1', 'm2-d3', 'm4-d3', 'm5-d4', 'm7-d1', 'm8-d4', 'm9-d3', 'm10-d1', 'm10-d2', 'm10-d3', 'm10-d4', 'm11-d1', 'm11-d2', 'm11-d3', 'm11-d4', 'm12-d2', 'm13-d1', 'm13-d3', 'm13-d6', 'm13-d7', 'm15-d1', 'm15-d2', 'm17-d1', 'm17-d2', 'm17-d3', 'm17-d4', 'm17-d5', 'm17-d6'] },
   { id: 'operasyon', ad: 'Operasyon / planlama', harf: 'OP', ozet: 'Teslim süresi, iş günü, termin, kademe kuralları ve kontrol listeleri.', neden: 'Saha verisi saat damgalıdır; süre hesabı, iş günü ve tatil kuralları operasyon raporlarının temelidir.',
-    dersler: ['m1-d3', 'm2-d2', 'm3-d3', 'm4-d1', 'm4-d4', 'm5-d2', 'm7-d1', 'm7-d3', 'm7-d4', 'm8-d2', 'm9-d4', 'm10-d1', 'm10-d3', 'm12-d3', 'm13-d4', 'm14-d1', 'm14-d3'] },
+    dersler: ['m1-d3', 'm2-d2', 'm3-d3', 'm4-d1', 'm4-d4', 'm5-d2', 'm7-d1', 'm7-d3', 'm7-d4', 'm8-d2', 'm9-d4', 'm10-d1', 'm10-d3', 'm12-d3', 'm13-d4', 'm14-d1', 'm14-d3', 'm15-d3', 'm16-d4', 'm16-d6', 'm16-d7'] },
   { id: 'finans', ad: 'Finans / bütçe', harf: 'FN', ozet: 'Hedef-gerçekleşen, sapma, yuvarlama, kontrol toplamları ve yönetici özeti.', neden: 'Bütçe takibinde sorun formülden çok tutarlılıktadır: yuvarlama, kontrol toplamı ve kaynağa bağlı özet.',
-    dersler: ['m1-d3', 'm2-d2', 'm2-d3', 'm2-d4', 'm4-d2', 'm4-d4', 'm5-d2', 'm6-d4', 'm7-d2', 'm8-d4', 'm10-d4', 'm12-d1', 'm12-d2', 'm12-d3', 'm12-d4', 'm13-d4', 'm13-d5', 'm13-d6', 'm14-d2', 'm14-d5'] },
+    dersler: ['m1-d3', 'm2-d2', 'm2-d3', 'm2-d4', 'm4-d2', 'm4-d4', 'm5-d2', 'm6-d4', 'm7-d2', 'm8-d4', 'm10-d4', 'm12-d1', 'm12-d2', 'm12-d3', 'm12-d4', 'm13-d4', 'm13-d5', 'm13-d6', 'm14-d2', 'm14-d5', 'm15-d5', 'm15-d6', 'm16-d1', 'm16-d2', 'm16-d3', 'm16-d4', 'm16-d5'] },
   { id: 'bt', ad: 'BT iş analisti', harf: 'İA', ozet: 'Kullanıcı verisini anlamak: tür, temizlik, eşleştirme, kural testi ve Power Query.', neden: 'İş analisti gereksinimi veriyle doğrular; kural kontrolleri ve eşleştirme (Merge) bu işin günlük aracıdır.',
-    dersler: ['m1-d1', 'm1-d4', 'm3-d4', 'm5-d3', 'm6-d2', 'm6-d3', 'm9-d1', 'm9-d2', 'm9-d4', 'm11-d1', 'm11-d2', 'm11-d4', 'm14-d1', 'm14-d6'] },
+    dersler: ['m1-d1', 'm1-d4', 'm3-d4', 'm5-d3', 'm6-d2', 'm6-d3', 'm9-d1', 'm9-d2', 'm9-d4', 'm11-d1', 'm11-d2', 'm11-d4', 'm14-d1', 'm14-d6', 'm15-d4', 'm15-d7', 'm17-d6'] },
   { id: 'ofis', ad: 'Ofis / idari', harf: 'Oİ', ozet: 'Liste tutmak, saymak, toplamak, izin ve tarih hesapları, metin düzeltme.', neden: 'Günlük işin büyük kısmı doğru sayma, tarih hesabı ve listeleri düzgün tutmaktır; az formülle çok zaman kazanılır.',
-    dersler: ['m1-d1', 'm1-d2', 'm1-d3', 'm2-d1', 'm2-d2', 'm3-d1', 'm4-d1', 'm4-d2', 'm6-d1', 'm6-d3', 'm7-d2', 'm7-d3', 'm9-d2', 'm10-d1', 'm13-d1', 'm13-d4', 'm14-d1'] },
+    dersler: ['m1-d1', 'm1-d2', 'm1-d3', 'm2-d1', 'm2-d2', 'm3-d1', 'm4-d1', 'm4-d2', 'm6-d1', 'm6-d3', 'm7-d2', 'm7-d3', 'm9-d2', 'm10-d1', 'm13-d1', 'm13-d4', 'm14-d1', 'm15-d1', 'm15-d3', 'm15-d5', 'm15-d7'] },
 ];
 
-// Seviye testi: 14 soru, her biri bir modülü yoklar. Cevap indeksi `d`.
+// Seviye testi: 17 soru, her biri bir modülü yoklar. Cevap indeksi `d`.
 export const SEVIYE = [
   { m: 'm1', s: 'B2\'de =A2*$C$1 var. Formül B3\'e kopyalanınca ne olur?', c: ['=A3*$C$2', '=A3*$C$1', '=A2*$C$1', '=B3*$C$1'], d: 1, a: '$C$1 mutlak olduğu için kaymaz; A2 göreli, A3 olur.' },
   { m: 'm2', s: 'A1:A5\'te 10, boş, 0, 20, "yok" var. =ORTALAMA(A1:A5) kaç verir?', c: ['6', '10', '7,5', '#DEĞER!'], d: 1, a: 'Boş ve metin atlanır, 0 sayılır: (10+0+20)/3 = 10.' },
@@ -30,6 +30,9 @@ export const SEVIYE = [
   { m: 'm11', s: 'Power Query\'de aylar sütun başlığı olan bir hedef tablosunu kategori-ay satırlarına çeviren adım?', c: ['Grupla', 'Aşağı Doldur', 'Diğer Sütunların Özetlemesini Kaldır', 'Sorguları Birleştir'], d: 2, a: 'Unpivot geniş tabloyu uzun yapar.' },
   { m: 'm13', s: 'Yedi kategorinin toplam satışını karşılaştırmak için hangi grafik en okunurdur?', c: ['Yedi dilimli pasta', 'Büyükten küçüğe sıralı çubuk', '3B sütun', 'Radar'], d: 1, a: 'Uzunluk açıdan daha iyi karşılaştırılır; sıralı çubuk en büyüğü ve sırayı hemen gösterir.' },
   { m: 'm14', s: 'VBA\'da For r = 2 To 241 yazan bir makro gelecek ay 300 satırlık veride ne yapar?', c: ['Hata verir', 'Son 59 satırı sessizce atlar', 'Otomatik uzar', 'Hiç çalışmaz'], d: 1, a: 'Sabit son satır uyarı vermeden eksik çalışır; son = Cells(Rows.Count, 1).End(xlUp).Row kullanılır.' },
+  { m: 'm15', s: 'Satışlar bir Excel Tablosu. Toplam adedi her ay yeni satırlar eklense de doğru veren formül hangisi?', c: ['=TOPLA(H2:H241)', '=TOPLA(Satışlar[Adet])', '=TOPLA(H2:H300)', '=241*ORTALAMA(H2:H241)'], d: 1, a: 'Yapılandırılmış başvuru tabloyla birlikte uzar; sabit aralık yeni satırları atlar ya da boş satır taşır.' },
+  { m: 'm16', s: '1.800.000 ₺ kredi, yıllık %36, 24 ay. Aylık taksiti artı veren formül hangisi?', c: ['=DEVRESEL_ÖDEME(36%;24;1800000)', '=DEVRESEL_ÖDEME(36%/12;24;-1800000)', '=1800000/24*1,36', '=BD(3%;24;1800000)'], d: 1, a: 'Aylık taksitte oran aylık olmalı (yıllık/12); kredi tutarı eksi verilince ödeme artı görünür.' },
+  { m: 'm17', s: 'Özet tabloda =\'Birim Fiyat\'*Adet hesaplanmış alanı ciroyu neden çok büyük gösterir?', c: ['Pivot yenilenmemiştir', 'Hesaplanmış alan önce alanları toplar, sonra çarpar', 'İndirim düşülmemiştir', 'Fiyat metindir'], d: 1, a: 'Hesaplanmış alan TOPLA(Fiyat) × TOPLA(Adet) yapar; satır düzeyi çarpım için kaynakta sütun ya da Power Pivot\'ta SUMX gerekir.' },
 ];
 
 export const MULAKAT_GENEL = [

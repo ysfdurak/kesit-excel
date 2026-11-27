@@ -2,7 +2,8 @@
 // Girdi: { basliklar, satirlar, bicim? }  Yapı: { satir, sutun?, degerler:[{alan, ozet}], filtreler:[{alan, degerler}], grupla:{alan: 'yil'|'ceyrek'|'ay'}, goster }
 // Çıktı: { basliklar, satirlar (2B, son satır Genel Toplam), hucreler: [{satirDeger, sutunDeger, alan}] } — hücre kaynağı eşdeğer formül üretmek için tutulur.
 import { seriye, AYLAR } from './tarih.js';
-import { karsilastir } from './formul.js';
+import { karsilastir, ayristir, degerlendir, coz, hataMi, H, Bas } from './formul.js';
+import { ISLEVLER, pivotKancaKur } from './islevler.js';
 
 export const OZETLER = {
   toplam: { tr: 'Toplam', excel: 'TOPLA' },
@@ -38,8 +39,40 @@ function ozetle(xs, ozet) {
 }
 const sirala = xs => xs.sort((a, b) => (a == null) - (b == null) || (typeof a === typeof b ? karsilastir(a, b) : typeof a === 'number' ? -1 : 1));
 
+// Hesaplanmış alan (Özet Tablo Analizi > Alanlar, Öğeler ve Kümeler > Hesaplanmış Alan).
+// Excel'deki gibi formül, her hücrede alanların TOPLAMI üzerinden hesaplanır: ='Birim Fiyat'*Adet → TOPLA(Fiyat) × TOPLA(Adet).
+// Satır satır çarpımın toplamı değildir; bu, dersin öğrettiği tuzaktır.
+export function hesaplanmisAlanDerle(formul, basliklar) {
+  let f = String(formul).trim(); if (!f.startsWith('=')) f = '=' + f;
+  const kullanilan = [], yer = new Map();
+  const ad = i => 'ALAN' + i + 'X';
+  // 'Tırnaklı alan' ve çıplak alan adları (uzundan kısaya) yer tutucuyla değişir; dizgi sabitlerine dokunulmaz
+  const parcalar = f.split(/("(?:[^"]|"")*")/);
+  const sirali = basliklar.map((b, i) => [b, i]).sort((a, b) => b[0].length - a[0].length);
+  for (let k = 0; k < parcalar.length; k += 2) {
+    let p = parcalar[k];
+    p = p.replace(/'([^']+)'/g, (m, a) => { const i = basliklar.findIndex(b => b.toLocaleLowerCase('tr') === a.toLocaleLowerCase('tr')); if (i < 0) throw new Error('Alan bulunamadı: ' + a); yer.set(i, ad(i)); return ad(i); });
+    for (const [b, i] of sirali) {
+      if (/\s/.test(b)) continue;
+      const re = new RegExp('(^|[^\\wÇĞİÖŞÜçğıöşü])(' + b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![\\wÇĞİÖŞÜçğıöşü(])', 'giu');
+      p = p.replace(re, (m, on) => { yer.set(i, ad(i)); return on + ad(i); });
+    }
+    parcalar[k] = p;
+  }
+  for (const i of yer.keys()) kullanilan.push(i);
+  const agac = ayristir(parcalar.join(''), ISLEVLER);
+  return { agac, kullanilan };
+}
+function hesaplanmisDeger(derli, satirlar) {
+  const degisken = new Map();
+  for (const i of derli.kullanilan) degisken.set('ALAN' + i + 'X', satirlar.reduce((t, r) => t + (typeof r[i] === 'number' ? r[i] : 0), 0));
+  try { const v = coz(degerlendir(derli.agac, { kitap: { islevler: ISLEVLER }, sayfa: null, satir: 1, sutun: 1, adim: { n: 0 }, bugun: null, degisken }), {}); return v; }
+  catch { return H.DEGER; }
+}
+
 export function pivot(tablo, yapi) {
-  const B = tablo.basliklar, idx = ad => { const i = B.indexOf(ad); if (i < 0) throw new Error('Alan bulunamadı: ' + ad); return i; };
+  const hesaplanan = new Map((yapi.hesaplananlar || []).map(h => [h.ad, h]));
+  const B = tablo.basliklar, idx = ad => { const i = B.indexOf(ad); if (i < 0 && hesaplanan.has(ad)) return -1; if (i < 0) throw new Error('Alan bulunamadı: ' + ad); return i; };
   const g = yapi.grupla || {};
   const degerler = (yapi.degerler || []).filter(d => d && d.alan);
   if (!yapi.satir && !yapi.sutun && !degerler.length) throw new Error('En az bir alan seçin');
@@ -62,20 +95,19 @@ export function pivot(tablo, yapi) {
     if (!etiket.has('c' + norm(b))) { etiket.set('c' + norm(b), b); sutunAnah.push(b); }
   }
   sirala(satirAnah); sirala(sutunAnah);
-  const vi = degerler.map(d => ({ ...d, i: idx(d.alan), ozet: d.ozet || 'toplam' }));
+  const vi = degerler.map(d => ({ ...d, i: idx(d.alan), ozet: hesaplanan.has(d.alan) ? 'toplam' : (d.ozet || 'toplam'), derli: hesaplanan.has(d.alan) ? hesaplanmisAlanDerle(hesaplanan.get(d.alan).formul, B) : null }));
   const kova = new Map();
   for (const r of rows) {
     const k = norm(anahtar(r, si, yapi.satir)) + '\u0001' + norm(anahtar(r, ci, yapi.sutun));
     if (!kova.has(k)) kova.set(k, []);
     kova.get(k).push(r);
   }
-  const hesap = (filtre, d) => ozetle(rows.filter(filtre).map(r => r[d.i]), d.ozet);
+  const hesap = (filtre, d) => d.derli ? hesaplanmisDeger(d.derli, rows.filter(filtre)) : ozetle(rows.filter(filtre).map(r => r[d.i]), d.ozet);
   const hucre = (a, b, d) => {
-    const ks = [];
-    if (a === undefined && b === undefined) return ozetle(rows.map(r => r[d.i]), d.ozet);
+    if (a === undefined && b === undefined) return d.derli ? hesaplanmisDeger(d.derli, rows) : ozetle(rows.map(r => r[d.i]), d.ozet);
     return hesap(r => (a === undefined || norm(anahtar(r, si, yapi.satir)) === norm(a)) && (b === undefined || norm(anahtar(r, ci, yapi.sutun)) === norm(b)), d);
   };
-  const ad = d => OZETLER[d.ozet].tr + ' / ' + d.alan;
+  const ad = d => d.derli ? 'Toplam / ' + d.alan : OZETLER[d.ozet].tr + ' / ' + d.alan;
   const basliklar = [yapi.satir ? (g[yapi.satir] ? yapi.satir + ' (' + { yil: 'yıl', ceyrek: 'çeyrek', ay: 'ay' }[g[yapi.satir]] + ')' : yapi.satir) : ''];
   const sutunlar = []; // { b (sütun değeri | undefined), d }
   if (yapi.sutun) { for (const b of sutunAnah) sutunlar.push({ b, d: vi[0] }); sutunlar.push({ b: undefined, d: vi[0], toplam: true }); }
@@ -100,6 +132,58 @@ export function pivot(tablo, yapi) {
   satirlar.push(['Genel Toplam', ...toplam.v.map((_, j) => donustur(toplam, j))]);
   return { basliklar, satirlar, yuzde: goster !== 'deger', sutunlar, satirAnahtarlari: satirListe, yapi };
 }
+
+// Ayrıntıya inme (pivot hücresine çift tık): o sayıyı oluşturan kaynak satırlar, Excel'de yeni sayfaya dökülür
+export function ayrinti(tablo, sonuc, satirNo, sutunNo) {
+  const y = sonuc.yapi, g = y.grupla || {}, B = tablo.basliklar, s = sonuc.sutunlar[sutunNo];
+  const norm = v => typeof v === 'string' ? trK(v).trim() : v;
+  const filtreli = (yapi) => {
+    let rows = tablo.satirlar;
+    for (const f of yapi.filtreler || []) { if (!f.degerler || !f.degerler.length) continue; const i = B.indexOf(f.alan), izin = new Set(f.degerler.map(norm)); rows = rows.filter(r => izin.has(norm(grupDegeri(r[i], g[f.alan])))); }
+    return rows;
+  };
+  let rows = filtreli(y);
+  if (y.satir && satirNo < sonuc.satirAnahtarlari.length) { const i = B.indexOf(y.satir), a = norm(sonuc.satirAnahtarlari[satirNo]); rows = rows.filter(r => norm(grupDegeri(r[i], g[y.satir])) === a); }
+  if (y.sutun && s && s.b !== undefined) { const i = B.indexOf(y.sutun), b = norm(s.b); rows = rows.filter(r => norm(grupDegeri(r[i], g[y.sutun])) === b); }
+  return { basliklar: B, satirlar: rows };
+}
+
+// Özet tabloyu kitaba yerleştirir (Excel'de pivot bir sayfada durur) ve ÖZETVERİAL için kaydeder
+export function pivotYerlestir(kitap, sayfaAd, sol, kaynakSayfa, tablo, yapi) {
+  const p = pivot(tablo, yapi), [c0, r0] = [sol.replace(/\d+/g, ''), Number(sol.replace(/\D+/g, ''))];
+  let c1 = 0; for (const ch of c0.toUpperCase()) c1 = c1 * 26 + ch.charCodeAt(0) - 64;
+  const yaz = (r, c, v) => kitap.yaz(sayfaAd, { r, c }, v == null ? null : v);
+  p.basliklar.forEach((b, j) => yaz(r0, c1 + j, b || 'Satır Etiketleri'));
+  p.satirlar.forEach((row, i) => row.forEach((v, j) => yaz(r0 + 1 + i, c1 + j, hataMi(v) ? null : v)));
+  kitap.pivotlar = kitap.pivotlar || [];
+  kitap.pivotlar = kitap.pivotlar.filter(x => !(x.sayfa === sayfaAd && x.r1 === r0 && x.c1 === c1));
+  kitap.pivotlar.push({ sayfa: sayfaAd, r1: r0, c1, r2: r0 + p.satirlar.length, c2: c1 + p.basliklar.length - 1, kaynakSayfa, tablo, yapi });
+  return p;
+}
+// ÖZETVERİAL(veri_alanı; pivot_tablo; [alan1; öğe1; …])
+pivotKancaKur((kitap, veriAlani, bas, ciftler) => {
+  const pv = (kitap.pivotlar || []).find(x => x.sayfa.toLocaleLowerCase('tr') === String(bas.sayfa).toLocaleLowerCase('tr') && bas.r1 >= x.r1 && bas.r1 <= x.r2 && bas.c1 >= x.c1 && bas.c1 <= x.c2);
+  if (!pv) return H.BASV;
+  const y = pv.yapi, t = pv.tablo, B = t.basliklar, g = y.grupla || {};
+  const ad = String(veriAlani).replace(/^(toplam|say|ortalama|en büyük|en küçük)\s*\/\s*/i, '').trim().toLocaleLowerCase('tr');
+  const d = (y.degerler || []).find(x => x.alan && x.alan.toLocaleLowerCase('tr') === ad);
+  if (!d) return H.BASV;
+  let rows = t.satirlar;
+  for (const f of y.filtreler || []) { if (!f.degerler || !f.degerler.length) continue; const i = B.indexOf(f.alan), izin = new Set(f.degerler.map(v => typeof v === 'string' ? trK(v) : v)); rows = rows.filter(r => izin.has(typeof r[i] === 'string' ? trK(r[i]) : r[i])); }
+  for (let k = 0; k + 1 < ciftler.length; k += 2) {
+    const alan = String(ciftler[k]), oge = ciftler[k + 1];
+    if (![y.satir, y.sutun].filter(Boolean).some(a => a.toLocaleLowerCase('tr') === alan.toLocaleLowerCase('tr'))) return H.BASV;
+    const i = B.findIndex(b => b.toLocaleLowerCase('tr') === alan.toLocaleLowerCase('tr')), tur = g[B[i]];
+    const hedef = typeof oge === 'string' ? trK(oge) : oge;
+    const once = rows.length;
+    rows = rows.filter(r => { const v = grupDegeri(r[i], tur); return (typeof v === 'string' ? trK(v) : v) === hedef || (tur === 'ay' && typeof oge === 'string' && trK(grupEtiketi(v, tur)) === hedef); });
+    if (!rows.length && once) return H.BASV;
+  }
+  const hs = (y.hesaplananlar || []).find(h => h.ad === d.alan);
+  if (hs) return hesaplanmisDeger(hesaplanmisAlanDerle(hs.formul, B), rows);
+  const v = ozetle(rows.map(r => r[B.indexOf(d.alan)]), d.ozet || 'toplam');
+  return v == null ? H.BASV : v;
+});
 
 // Bir pivot hücresinin eşdeğer formülü: öğrenci "bu sayı nereden geldi?" sorusunu formülle görür.
 // Tarih gruplaması için ay/yıl aralık koşulu yazılır.

@@ -63,6 +63,9 @@ export const TR_EN = {
   'TAMİŞGÜNÜ': 'NETWORKDAYS', 'TAMİŞGÜNÜ.ULUSL': 'NETWORKDAYS.INTL', 'ETARİHLİ': 'DATEDIF', 'TARİHSAYISI': 'DATEVALUE', 'GÜNSAY': 'DAYS', 'YILORAN': 'YEARFRAC',
   'FİLTRE': 'FILTER', 'BENZERSİZ': 'UNIQUE', 'SIRALA': 'SORT', 'SIRALAÖLÇÜT': 'SORTBY', 'SIRALI': 'SEQUENCE', 'LET': 'LET', 'AL': 'TAKE', 'BIRAK': 'DROP',
   'DÜŞEYYIĞ': 'VSTACK', 'YATAYYIĞ': 'HSTACK', 'SÜTUNSEÇ': 'CHOOSECOLS', 'SATIRSEÇ': 'CHOOSEROWS',
+  'DOLAYLI': 'INDIRECT', 'KAYDIR': 'OFFSET', 'ADRES': 'ADDRESS', 'ÖZETVERİAL': 'GETPIVOTDATA',
+  'DEVRESEL_ÖDEME': 'PMT', 'FAİZTUTARI': 'IPMT', 'ANA_PARA_ÖDEMESİ': 'PPMT', 'TAKSİT_SAYISI': 'NPER', 'BD': 'PV', 'GD': 'FV', 'FAİZ_ORANI': 'RATE',
+  'NBD': 'NPV', 'İÇ_VERİM_ORANI': 'IRR', 'ANBD': 'XNPV', 'AİÇVERİMORANI': 'XIRR', 'DA': 'SLN', 'ÇİFTAZALANBAKİYE': 'DDB', 'AZALANBAKİYE': 'DB', 'ETKİN': 'EFFECT', 'NOMİNAL': 'NOMINAL',
 };
 export const EN_TR = {};
 for (const [tr, en] of Object.entries(TR_EN)) if (!EN_TR[en]) EN_TR[en] = tr;
@@ -164,6 +167,7 @@ export function belirtec(f, yazim = yazimBul(f)) {
       if (m) {
         const ad = m[0], j = i + ad.length;
         if (s[j] === '!') { const r2 = basvuruOku(s, j + 1); if (!r2) throw new Error('Sayfa adından sonra başvuru bekleniyor'); out.push({ ...r2.tk, sayfa: ad, bas: j + 1, son: r2.son }); i = r2.son; continue; }
+        if (s[j] === '[') { const r3 = koseliOku(s, j); out.push({ t: 'tref', tablo: ad, ...r3.tk, bas: i, son: r3.son }); i = r3.son; continue; }
         let k = j; while (/\s/.test(s[k] || '')) k++;
         if (s[k] === '(') { out.push({ t: 'fn', v: ad, bas: i, son: j }); i = j; continue; }
         const b = trBuyuk(ad);
@@ -178,10 +182,36 @@ export function belirtec(f, yazim = yazimBul(f)) {
     if (ch === '(' || ch === ')') { out.push({ t: ch, bas: i, son: i + 1 }); i++; continue; }
     if (ch === ayirici) { out.push({ t: 'sep', bas: i, son: i + 1 }); i++; continue; }
     if (ch === ',' || ch === ';') throw new Error(yazim === 'tr' ? 'Türkçe yazımda bağımsız değişkenler ; ile ayrılır' : 'Ayırıcı karışık: ; ve , birlikte');
+    if (ch === '[') { const r3 = koseliOku(s, i); out.push({ t: 'tref', tablo: null, ...r3.tk, bas: i, son: r3.son }); i = r3.son; continue; }
     if (ch === '{') { const d = diziSabiti(s, i); out.push({ t: 'dizi', v: d.v, bas: i, son: d.son }); i = d.son; continue; }
     throw new Error(`Beklenmeyen karakter: ${ch}`);
   }
   return out;
+}
+// Yapılandırılmış başvuru: Tablo[Sütun], Tablo[@Sütun], Tablo[@[Birim Fiyat]], Tablo[#Başlıklar], Tablo[[#Tümü];[Adet]], Tablo[[Adet]:[İndirim]], [@Adet]
+const OZEL_TABLO = { '#BAŞLIKLAR': 'baslik', '#HEADERS': 'baslik', '#VERİ': 'veri', '#DATA': 'veri', '#TÜMÜ': 'tumu', '#ALL': 'tumu', '#TOPLAMLAR': 'toplam', '#TOTALS': 'toplam', '#BU SATIR': 'bu', '#THIS ROW': 'bu' };
+function koseliOku(s, i) {
+  // s[i] === '[' ; eşleşen ']' bulunur (iç içe bir düzey)
+  let d = 0, j = i;
+  for (; j < s.length; j++) { if (s[j] === "'" ) { j++; continue; } if (s[j] === '[') d++; else if (s[j] === ']') { d--; if (!d) break; } }
+  if (d) throw new Error('Kapanmamış köşeli parantez');
+  const ic = s.slice(i + 1, j), out = { satirlik: false, ozel: 'veri', s1: null, s2: null };
+  const parcalar = ic.startsWith('[') || /^@\[/.test(ic) ? [...ic.matchAll(/(@?)\[([^\]]*)\]|(:)/g)] : null;
+  if (!parcalar) {
+    if (ic.startsWith('@')) { out.satirlik = true; out.s1 = ic.slice(1).trim(); }
+    else if (ic.startsWith('#')) out.ozel = OZEL_TABLO[trBuyuk(ic.trim())] || 'veri';
+    else out.s1 = ic.trim() || null;
+  } else {
+    let aralik = false;
+    for (const m of parcalar) {
+      if (m[3]) { aralik = true; continue; }
+      const x = m[2].trim();
+      if (m[1]) out.satirlik = true;
+      if (x.startsWith('#')) { const o = OZEL_TABLO[trBuyuk(x)]; if (o === 'bu') out.satirlik = true; else if (o) out.ozel = o; continue; }
+      if (aralik && out.s1 != null) out.s2 = x; else out.s1 = x;
+    }
+  }
+  return { tk: out, son: j + 1 };
 }
 function basvuruOku(s, i) {
   const rest = s.slice(i);
@@ -234,6 +264,7 @@ export function ayristir(formul, islevler) {
     if (t.t === 'ref') return { ...t };
     if (t.t === 'dizi') return { t: 'dizi', v: t.v };
     if (t.t === 'ad') return { t: 'ad', v: t.v };
+    if (t.t === 'tref') return { ...t };
     if (t.t === '(') { const e = ifade(); if (!bak() || bak().t !== ')') throw new Error('Kapanmamış parantez'); al(); return e; }
     if (t.t === 'fn') {
       if (++derinlik > SINIR.derinlik) throw new Error('İç içe işlev sınırı (64) aşıldı');
@@ -329,8 +360,11 @@ export function degerlendir(agac, bag) {
     case 'ad': {
       const ad = trBuyuk(agac.v);
       if (bag.degisken && bag.degisken.has(ad)) return bag.degisken.get(ad);
+      // Ad Yöneticisi'ndeki ad ya da tablo adı (tablo adı tek başına veri gövdesidir)
+      if (bag.kitap.adDegeri) { const v = bag.kitap.adDegeri(ad, bag); if (v !== undefined) return v; }
       return H.AD;
     }
+    case 'tref': return bag.kitap.tabloBasvuru ? bag.kitap.tabloBasvuru(agac, bag) : H.BASV;
     case 'neg': return islemTekli(degerlendir(agac.a, bag), bag, x => -x);
     case 'pct': return islemTekli(degerlendir(agac.a, bag), bag, x => x / 100);
     case 'op': return islemIkili(agac.op, degerlendir(agac.a, bag), degerlendir(agac.b, bag), bag);

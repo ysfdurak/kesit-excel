@@ -528,4 +528,118 @@ tanim('HSTACK', (a, b) => { const ds = a.map(x => diziyeCevir(x, b)), R = Math.m
 tanim('CHOOSECOLS', (a, b) => { const d = diziyeCevir(a[0], b), cs = a.slice(1).map(x => Math.trunc(N(deger(x, b)))); if (cs.some(c => hataMi(c) || c === 0 || Math.abs(c) > d.sutun)) return H.DEGER; return new Dizi(d.v.map(s => cs.map(c => s[c > 0 ? c - 1 : d.sutun + c] ?? 0))); });
 tanim('CHOOSEROWS', (a, b) => { const d = diziyeCevir(a[0], b), rs = a.slice(1).map(x => Math.trunc(N(deger(x, b)))); if (rs.some(r => hataMi(r) || r === 0 || Math.abs(r) > d.satir)) return H.DEGER; return new Dizi(rs.map(r => d.v[r > 0 ? r - 1 : d.satir + r].map(x => x ?? 0))); });
 
+/* ---------------------------------------------------------------- başvuru üreten işlevler: DOLAYLI, KAYDIR, ADRES */
+// DOLAYLI metni başvuruya çevirir: "B5", "Ürünler!B2:B41", "'Müşteri ham'!A1", ad ya da tablo başvurusu. Uçucudur: Excel her hesapta yeniden hesaplar.
+tanim('INDIRECT', (a, bag) => {
+  const m = deger(a[0], bag); if (hataMi(m)) return m;
+  if (a[1] != null && a[1] !== undefined) { const st = mantiga(deger(a[1], bag)); if (st === false) return H.BASV; }
+  const metin = String(m ?? '').trim(); if (!metin) return H.BASV;
+  let agac; try { agac = ayristirBasvuru(metin); } catch { return H.BASV; }
+  if (!agac || !['ref', 'ad', 'tref'].includes(agac.t)) return H.BASV;
+  const v = degerlendir(agac, bag);
+  return v instanceof Bas ? v : H.BASV;
+}, { ucucu: true });
+let ayristirBasvuru = () => null;
+let pivotKanca = null;
+export function pivotKancaKur(fn) { pivotKanca = fn; }
+// ÖZETVERİAL: kitaptaki özet tablodan bir değer çeker (pivot.js kancayı kurar)
+tanim('GETPIVOTDATA', (args, bag) => {
+  const v = deger(degerlendir(args[0], bag), bag), b = degerlendir(args[1], bag);
+  if (!(b instanceof Bas)) return H.BASV;
+  if (!pivotKanca) return H.BASV;
+  const ciftler = args.slice(2).map(x => deger(degerlendir(x, bag), bag));
+  return pivotKanca(bag.kitap, v, b, ciftler);
+}, { tembel: true });
+export function basvuruAyristiriciKur(fn) { ayristirBasvuru = fn; }
+// KAYDIR(başvuru; satır; sütun; [yükseklik]; [genişlik]): başvuru döndürür, grafik ve özetlerde "kayan pencere" için
+tanim('OFFSET', (args, bag) => {
+  const b = degerlendir(args[0], bag); if (!(b instanceof Bas)) return hataMi(b) ? b : H.DEGER;
+  const n = i => args[i] && args[i].t !== 'bos' ? sayiya(deger(degerlendir(args[i], bag), bag)) : null;
+  const dr = n(1), dc = n(2), y = n(3), g = n(4);
+  for (const x of [dr, dc, y, g]) if (hataMi(x)) return x;
+  const yuk = y == null ? b.satir : Math.trunc(y), gen = g == null ? b.sutun : Math.trunc(g);
+  if (!yuk || !gen) return H.BASV;
+  const r1 = b.r1 + Math.trunc(dr || 0), c1 = b.c1 + Math.trunc(dc || 0);
+  const r2 = r1 + yuk + (yuk > 0 ? -1 : 1), c2 = c1 + gen + (gen > 0 ? -1 : 1);
+  if (Math.min(r1, r2) < 1 || Math.min(c1, c2) < 1 || Math.max(r1, r2) > 1048576 || Math.max(c1, c2) > 16384) return H.BASV;
+  return new Bas(b.sayfa, r1, c1, r2, c2);
+}, { tembel: true, ucucu: true });
+tanim('ADDRESS', (a, bag) => {
+  const r = Math.trunc(N(deger(a[0], bag))), c = Math.trunc(N(deger(a[1], bag)));
+  if (hataMi(r)) return r; if (hataMi(c)) return c;
+  if (r < 1 || c < 1 || r > 1048576 || c > 16384) return H.DEGER;
+  const tur = a[2] != null ? Math.trunc(N(deger(a[2], bag))) : 1, a1 = a[3] != null ? mantiga(deger(a[3], bag)) !== false : true;
+  if (![1, 2, 3, 4].includes(tur)) return H.DEGER;
+  const ar = tur === 1 || tur === 2, ac = tur === 1 || tur === 3;
+  let sutun = ''; for (let x = c; x > 0; x = Math.floor((x - 1) / 26)) sutun = String.fromCharCode(65 + (x - 1) % 26) + sutun;
+  let s = a1 ? (ac ? '$' : '') + sutun + (ar ? '$' : '') + r : 'R' + (ar ? r : '[' + r + ']') + 'C' + (ac ? c : '[' + c + ']');
+  if (a[4] != null) { const sf = String(deger(a[4], bag) ?? ''); if (sf) s = (/^[\wÇĞİÖŞÜçğıöşü]+$/.test(sf) ? sf : "'" + sf.replace(/'/g, "''") + "'") + '!' + s; }
+  return s;
+});
+
+/* ---------------------------------------------------------------- finans: para ve zaman */
+// İşaret kuralı Excel'deki gibidir: alınan para (kredi) artı, ödenen eksi. =DEVRESEL_ÖDEME(%1;12;10000) → -888,49
+const finAl = (a, b, i, varsay) => a[i] == null ? varsay : N(deger(a[i], b));
+function finHata(...x) { return x.find(hataMi); }
+const fvF = (r, n, p, pv, t) => r === 0 ? -(pv + p * n) : -(pv * (1 + r) ** n + p * (1 + r * t) * ((1 + r) ** n - 1) / r);
+const pmtF = (r, n, pv, fv, t) => r === 0 ? -(pv + fv) / n : -(r * (pv * (1 + r) ** n + fv)) / ((1 + r * t) * ((1 + r) ** n - 1));
+const sonlu = x => Number.isFinite(x) ? x : H.SAYI;
+tanim('PMT', (a, b) => { const r = finAl(a, b, 0), n = finAl(a, b, 1), pv = finAl(a, b, 2), fv = finAl(a, b, 3, 0), t = finAl(a, b, 4, 0) ? 1 : 0; const e = finHata(r, n, pv, fv); if (e) return e; if (!n) return H.SAYI; return sonlu(pmtF(r, n, pv, fv, t)); });
+tanim('FV', (a, b) => { const r = finAl(a, b, 0), n = finAl(a, b, 1), p = finAl(a, b, 2), pv = finAl(a, b, 3, 0), t = finAl(a, b, 4, 0) ? 1 : 0; const e = finHata(r, n, p, pv); if (e) return e; return sonlu(fvF(r, n, p, pv, t)); });
+tanim('PV', (a, b) => { const r = finAl(a, b, 0), n = finAl(a, b, 1), p = finAl(a, b, 2), fv = finAl(a, b, 3, 0), t = finAl(a, b, 4, 0) ? 1 : 0; const e = finHata(r, n, p, fv); if (e) return e;
+  return sonlu(r === 0 ? -(fv + p * n) : -(fv + p * (1 + r * t) * ((1 + r) ** n - 1) / r) / (1 + r) ** n); });
+tanim('NPER', (a, b) => { const r = finAl(a, b, 0), p = finAl(a, b, 1), pv = finAl(a, b, 2), fv = finAl(a, b, 3, 0), t = finAl(a, b, 4, 0) ? 1 : 0; const e = finHata(r, p, pv, fv); if (e) return e;
+  if (r === 0) return p === 0 ? H.SAYI : sonlu(-(pv + fv) / p);
+  const pay = p * (1 + r * t) - fv * r, payda = p * (1 + r * t) + pv * r;
+  if (pay / payda <= 0) return H.SAYI; return sonlu(Math.log(pay / payda) / Math.log(1 + r)); });
+function ipmtF(r, per, n, pv, fv, t) {
+  const p = pmtF(r, n, pv, fv, t);
+  const faiz = per === 1 ? (t === 1 ? 0 : -pv) : (t === 1 ? fvF(r, per - 2, p, pv, 1) - p : fvF(r, per - 1, p, pv, 0));
+  return faiz * r;
+}
+tanim('IPMT', (a, b) => { const r = finAl(a, b, 0), per = finAl(a, b, 1), n = finAl(a, b, 2), pv = finAl(a, b, 3), fv = finAl(a, b, 4, 0), t = finAl(a, b, 5, 0) ? 1 : 0; const e = finHata(r, per, n, pv, fv); if (e) return e;
+  if (per < 1 || per > n) return H.SAYI; return sonlu(ipmtF(r, Math.trunc(per), n, pv, fv, t)); });
+tanim('PPMT', (a, b) => { const r = finAl(a, b, 0), per = finAl(a, b, 1), n = finAl(a, b, 2), pv = finAl(a, b, 3), fv = finAl(a, b, 4, 0), t = finAl(a, b, 5, 0) ? 1 : 0; const e = finHata(r, per, n, pv, fv); if (e) return e;
+  if (per < 1 || per > n) return H.SAYI; return sonlu(pmtF(r, n, pv, fv, t) - ipmtF(r, Math.trunc(per), n, pv, fv, t)); });
+// Newton yöntemi; yakınsamazsa ikiye bölme. Excel de yinelemeli çözer ve 20 denemede bulamazsa #SAYI! verir.
+function kokBul(f, tahmin) {
+  let x = tahmin;
+  for (let i = 0; i < 100; i++) {
+    const y = f(x); if (!Number.isFinite(y)) break;
+    if (Math.abs(y) < 1e-10) return x;
+    const h = 1e-7 * Math.max(1, Math.abs(x)), d = (f(x + h) - y) / h;
+    if (!d || !Number.isFinite(d)) break;
+    const yeni = x - y / d; if (!Number.isFinite(yeni) || yeni <= -1) break;
+    if (Math.abs(yeni - x) < 1e-12) return yeni; x = yeni;
+  }
+  // yedek: -0,99 ile 10 arasında işaret değişimi ara
+  let lo = -0.99, hi = 10, flo = f(lo), fhi = f(hi);
+  if (!(flo * fhi < 0)) return null;
+  for (let i = 0; i < 200; i++) { const m = (lo + hi) / 2, fm = f(m); if (Math.abs(fm) < 1e-10 || hi - lo < 1e-13) return m; if (flo * fm < 0) { hi = m; fhi = fm; } else { lo = m; flo = fm; } }
+  return (lo + hi) / 2;
+}
+tanim('RATE', (a, b) => { const n = finAl(a, b, 0), p = finAl(a, b, 1), pv = finAl(a, b, 2), fv = finAl(a, b, 3, 0), t = finAl(a, b, 4, 0) ? 1 : 0, g = finAl(a, b, 5, 0.1); const e = finHata(n, p, pv, fv, g); if (e) return e;
+  const f = r => Math.abs(r) < 1e-12 ? pv + p * n + fv : pv * (1 + r) ** n + p * (1 + r * t) * ((1 + r) ** n - 1) / r + fv;
+  const r = kokBul(f, g); return r == null ? H.SAYI : r; });
+const nakitler = (x, bag) => { const v = deger(x, bag); if (v instanceof Dizi) { const o = []; for (const y of tumHucreler(v)) { if (hataMi(y)) return y; if (typeof y === 'number') o.push(y); } return o; } if (hataMi(v)) return v; const n = sayiya(v); return hataMi(n) ? n : [n]; };
+tanim('NPV', (a, b) => { const r = N(deger(a[0], b)); if (hataMi(r)) return r; const v = []; for (const x of a.slice(1)) { const n = nakitler(x, b); if (hataMi(n)) return n; v.push(...n); }
+  return sonlu(v.reduce((t, x, i) => t + x / (1 + r) ** (i + 1), 0)); });
+tanim('IRR', (a, b) => { const v = nakitler(a[0], b); if (hataMi(v)) return v; if (!v.some(x => x > 0) || !v.some(x => x < 0)) return H.SAYI;
+  const g = a[1] != null ? N(deger(a[1], b)) : 0.1; const r = kokBul(x => v.reduce((t, c, i) => t + c / (1 + x) ** i, 0), g); return r == null ? H.SAYI : r; });
+tanim('XNPV', (a, b) => { const r = N(deger(a[0], b)), v = nakitler(a[1], b), d = nakitler(a[2], b); for (const x of [r, v, d]) if (hataMi(x)) return x; if (v.length !== d.length) return H.SAYI;
+  return sonlu(v.reduce((t, x, i) => t + x / (1 + r) ** ((d[i] - d[0]) / 365), 0)); });
+tanim('XIRR', (a, b) => { const v = nakitler(a[0], b), d = nakitler(a[1], b); for (const x of [v, d]) if (hataMi(x)) return x; if (v.length !== d.length || !v.some(x => x > 0) || !v.some(x => x < 0)) return H.SAYI;
+  const g = a[2] != null ? N(deger(a[2], b)) : 0.1; const r = kokBul(x => v.reduce((t, c, i) => t + c / (1 + x) ** ((d[i] - d[0]) / 365), 0), g); return r == null ? H.SAYI : r; });
+tanim('SLN', (a, b) => { const c = finAl(a, b, 0), s2 = finAl(a, b, 1), l = finAl(a, b, 2); const e = finHata(c, s2, l); if (e) return e; if (!l) return H.BOL0; return (c - s2) / l; });
+tanim('DDB', (a, b) => { const c = finAl(a, b, 0), sv = finAl(a, b, 1), l = finAl(a, b, 2), per = finAl(a, b, 3), fa = finAl(a, b, 4, 2); const e = finHata(c, sv, l, per, fa); if (e) return e;
+  if (per < 1 || per > l || l <= 0 || c < 0 || sv < 0 || fa <= 0) return H.SAYI;
+  let defter = c, dep = 0; for (let i = 1; i <= Math.ceil(per); i++) { dep = Math.max(0, Math.min(defter * fa / l, defter - sv)); defter -= dep; } return dep; });
+tanim('DB', (a, b) => { const c = finAl(a, b, 0), sv = finAl(a, b, 1), l = finAl(a, b, 2), per = finAl(a, b, 3), ay = finAl(a, b, 4, 12); const e = finHata(c, sv, l, per, ay); if (e) return e;
+  if (c <= 0 || l <= 0 || per < 1 || per > l + 1 || ay < 1 || ay > 12) return H.SAYI;
+  const oran = Math.round((1 - (sv / c) ** (1 / l)) * 1000) / 1000;
+  let top = c * oran * ay / 12; if (per === 1) return top;
+  for (let i = 2; i <= per; i++) { const d = i === l + 1 ? (c - top) * oran * (12 - ay) / 12 : (c - top) * oran; if (i === per) return d; top += d; } return 0; });
+tanim('EFFECT', (a, b) => { const nr = finAl(a, b, 0), n = Math.trunc(finAl(a, b, 1)); const e = finHata(nr, n); if (e) return e; if (nr <= 0 || n < 1) return H.SAYI; return (1 + nr / n) ** n - 1; });
+tanim('NOMINAL', (a, b) => { const er = finAl(a, b, 0), n = Math.trunc(finAl(a, b, 1)); const e = finHata(er, n); if (e) return e; if (er <= 0 || n < 1) return H.SAYI; return n * ((1 + er) ** (1 / n) - 1); });
+
 export const ISLEVLER = F;

@@ -3,14 +3,17 @@ import { h, temizle, bicimli, bildir, yerlestir } from './yardim.js';
 import { Izgara } from './izgara.js';
 import { PivotAlani } from './pivot-ui.js';
 import { SorguAlani } from './sorgu-ui.js';
-import { GrafikAlani } from './grafik-ui.js';
+import { GrafikAlani, svgDugum, ipucuBagla, genislikBul } from './grafik-ui.js';
 import { KosulluAlani } from './kosullu-ui.js';
 import { MakroAlani } from './makro-ui.js';
 import { PanoAlani } from './pano-ui.js';
 import { Kitap } from '../motor/kitap.js';
+import { ISLEVLER } from '../motor/islevler.js';
 import { pivot } from '../motor/pivot.js';
 import { alanCoz, adresCoz, EN_TR } from '../motor/formul.js';
-import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, kosulluDenetle, panoDenetle } from '../motor/denetci.js';
+import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, kosulluDenetle, panoDenetle, kitapKur as denetciKitap, dogrulamaDenetle, bicimDenetle, hucreBulDenetle, sayiDenetle, hedefAraDenetle, veriTablosuDenetle, cozucuDenetle, adDenetle } from '../motor/denetci.js';
+import { DogrulamaAlani, BicimAlani, HedefAraAlani, VeriTablosuAlani, SenaryoAlani, CozucuAlani } from './model-ui.js';
+import { aralikVerisi, grafikCiz as grafikCizMotor } from '../motor/grafik.js';
 import { sorguCalistir } from '../motor/sorgu.js';
 import { MODULLER, DERSLER } from '../icerik/dersler.js';
 import { SAYFALAR } from '../icerik/sayfalar.js';
@@ -21,6 +24,10 @@ import * as D from './durum.js';
 const dersBul = id => DERSLER.find(d => d.id === id);
 const alistirmaYonergesi = d => {
   const t = new Set(d.alistirmalar.map(a => a.tur || 'formul'));
+  if (t.has('dogrulama')) return 'Kuralı ekleyin, tablodaki "Geçersiz verileri işaretle" ile mevcut veriyi görün, kural alanındaki bir hücreye değer yazarak deneyin, sonra Denetle. Denetçi mevcut verideki geçersiz hücreleri ve deneme girişlerini çözümle karşılaştırır.';
+  if (t.has('hedefAra') || t.has('cozucu') || t.has('veriTablosu')) return 'Aracın kutularını doldurup çalıştırın; tablo yeniden hesaplanır. Sonra Denetle: denetçi seçtiğiniz hücreleri ve bulunan sonucu çözümle karşılaştırır.';
+  if (t.has('bicim')) return 'Biçim kodunu yazın; önizleme tablosu her değerin nasıl görüneceğini gösterir. Sonra Denetle.';
+  if (t.has('hucreBul')) return 'Formül denetimi düğmeleriyle (Etkileyenleri izle, Formülü değerlendir) hatanın kaynağını bulun ve hücre adresini yazın.';
   if (t.has('makro')) return 'Makroyu düzenleyiciye yazın, Çalıştır ile sonucu tabloda görün, sonra Denetle. Denetçi makroyu görünen tabloda ve satır sayısı farklı gizli bir kopyada çalıştırır.';
   if (t.has('grafik') || t.has('pivotGrafik') || t.has('pano')) return 'Grafiği soruya göre kurun, sonra Denetle. Denetçi türü, veri aralığını ve ayarları (eksen, yığın, başlık) kontrol eder.';
   if (t.has('kosullu')) return 'Kural yöneticisinden kuralı ekleyin, tabloda sonucu görün, sonra Denetle. Kural gizli bir kopyada da denenir.';
@@ -39,14 +46,42 @@ const link = (hash, metin, sinif = 'btn') => h('a', { href: '#' + hash, sinif },
 const seviyeKod = s => h('span', { sinif: 'level-code ' + s }, { temel: 'TEMEL', orta: 'ORTA', ileri: 'İLERİ' }[s]);
 
 /* ---------------------------------------------------------------- ortak: çalışma kitabı */
-function kitapKur(hazirlik, sayfa) {
-  const k = new Kitap({ bugun: 45900 });
-  for (const [ad, t] of Object.entries(SAYFALAR)) {
-    if (t.basliklar) k.tablo(ad, t.basliklar, t.satirlar);
-    else { const s = k.sayfa(ad); t.satirlar.forEach((row, i) => row.forEach((v, j) => { if (v != null) s.h.set((i + 1) + ',' + (j + 1), { v }); })); }
-  }
-  for (const [a, v] of Object.entries(hazirlik || {})) k.yaz(sayfa, a, v);
+// Denetçiyle aynı kitap: hazırlık hücreleri, Ad Yöneticisi adları ve sayfaya yerleşmiş özet tablolar (ÖZETVERİAL)
+function kitapKur(hazirlik, sayfa, a = {}) {
+  const k = denetciKitap({ sayfa, hazirlik, adlar: a.adlar, pivotlar: a.pivotlar }, SAYFALAR);
   k.hesapla(); return k;
+}
+// Formül alıştırması ve örneğine ek parçalar: form denetimleri (bağlı hücre), grafik önizleme, Ad Yöneticisi listesi
+function formulEkleri(a, k, iz) {
+  const parcalar = [];
+  if (a.adlar) parcalar.push(h('details.ad-yonetici', {}, h('summary', {}, `Ad Yöneticisi (${Object.keys(a.adlar).length} ad)`), h('table.veri', {}, h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, 'Ad'), h('th', { scope: 'col' }, 'Başvurur'))), h('tbody', {}, Object.entries(a.adlar).map(([ad, t]) => h('tr', {}, h('td', {}, h('code', {}, ad)), h('td', {}, h('code', {}, t)))))), h('p.small-note.muted', {}, 'Formülde adı yazmanız yeter: =TOPLA(Adet_Alanı). Excel\'de Formüller > Ad Yöneticisi.')));
+  let grafikKap = null;
+  const grafikCizim = () => {
+    if (!grafikKap) return;
+    try {
+      const al = alanCoz(a.grafik.alan), v = aralikVerisi(k.degerler(a.sayfa, al), { seriYonu: 'sutun' });
+      if (!v.kategoriler.length) { yerlestir(temizle(grafikKap), h('p.small-note.muted', {}, 'Grafik, formül sonuç verince çizilir.')); return; }
+      const kap = h('div', {}, svgDugum(grafikCizMotor(v, { tur: a.grafik.tur || 'sutun', baslik: a.grafik.baslik || '', genislik: genislikBul(grafikKap, 640), yukseklik: 280, gosterge: 'alt' })));
+      yerlestir(temizle(grafikKap), kap); ipucuBagla(kap);
+    } catch (e) { yerlestir(temizle(grafikKap), h('p.small-note.muted', {}, 'Grafik henüz çizilemiyor: ' + e.message)); }
+  };
+  const yenile = () => { k.hesapla(); iz.guncelle(); iz.hucreBilgisi(); grafikCizim(); };
+  if (a.denetimler) {
+    const el = h('div.form-denetim', { role: 'group', 'aria-label': 'Form denetimleri' }, h('span.small-note.muted', {}, 'Form denetimleri:'), a.denetimler.map(dn => {
+      const ilk = k.icerik(a.sayfa, adresCoz(dn.hucre).r, adresCoz(dn.hucre).c);
+      const yaz = v => { k.yaz(a.sayfa, dn.hucre, v); yenile(); };
+      const etiket = `${dn.etiket} → ${dn.hucre}`;
+      if (dn.tur === 'acilan') { const l = String(dn.liste).split(';'); return h('label', {}, etiket + ' ', h('select', { on: { change: e => yaz(Number(e.target.value)) } }, l.map((x, i) => h('option', { value: String(i + 1), selected: i + 1 === ilk }, x)))); }
+      if (dn.tur === 'onay') return h('label', {}, h('input', { type: 'checkbox', checked: ilk === true, on: { change: e => yaz(e.target.checked) } }), etiket);
+      if (dn.tur === 'kaydirma') { const cikti = h('output', {}, String(ilk ?? dn.min)); return h('label', {}, etiket + ' ', h('input', { type: 'range', min: dn.min, max: dn.max, step: dn.adim || 1, value: ilk ?? dn.min, on: { input: e => { cikti.textContent = e.target.value; yaz(Number(e.target.value)); } } }), cikti); }
+      if (dn.tur === 'secenek') return h('span', { role: 'radiogroup', 'aria-label': dn.etiket }, dn.etiket + ': ', dn.secenekler.map((x, i) => h('label', {}, h('input', { type: 'radio', name: 'fd' + a.id + dn.hucre, checked: ilk === i + 1, on: { change: () => yaz(i + 1) } }), x)));
+      return null;
+    }), h('span.small-note.muted', {}, 'Denetim bağlı hücreye değer yazar; formülünüz o hücreye bakarak sonucu değiştirmeli.'));
+    parcalar.push(el);
+  }
+  if (a.grafik) { grafikKap = h('div.grafik-onizleme', { 'aria-live': 'polite' }); parcalar.push(h('div', {}, h('b', {}, 'Grafik önizleme · ' + a.grafik.alan), grafikKap)); setTimeout(grafikCizim, 0); }
+  const onceki = iz.s.onDegis; iz.s.onDegis = () => { if (onceki) onceki(); grafikCizim(); };
+  return parcalar;
 }
 function boyut(sayfa, ...alanlar) {
   const t = SAYFALAR[sayfa];
@@ -67,7 +102,7 @@ export function anaSayfa(main) {
       h('div.hero-main.article', {}, h('div.stripe', { 'aria-hidden': 'true' }, h('i'), h('i'), h('i')),
         h('span.eyebrow', {}, 'KESİT EXCEL · TÜRKÇE EXCEL, GERÇEK VERİYLE'),
         h('h1', {}, 'Formülü ezberleme, ', h('em', {}, 'veride dene'), '.'),
-        h('p', {}, `Tarayıcıda çalışan bir Excel ızgarası ve Türkçe işlevler. ${DERSLER.length} ders, ${ALISTIRMA_SAYISI} alıştırma; her cevap gördüğünüz tabloda ve sayıları değiştirilmiş gizli bir kopyada denetlenir. Pivot, Power Query, grafik, pano ve VBA makro da var. Kurulum ve hesap yok.`),
+        h('p', {}, `Tarayıcıda çalışan bir Excel ızgarası ve Türkçe işlevler. ${DERSLER.length} ders, ${ALISTIRMA_SAYISI} alıştırma; her cevap gördüğünüz tabloda ve sayıları değiştirilmiş gizli bir kopyada denetlenir. Pivot, Power Query, grafik, pano, VBA makro, veri doğrulama, finans, Hedef Ara ve Çözücü de var. Kurulum ve hesap yok.`),
         h('div.btn-row', {}, link('ders/' + (devam ? devam.id : 'm1-d1'), d.son ? 'Kaldığın yerden devam et' : 'İlk derse başla', 'btn primary'), link('seviye', `Seviyeni bul (${SEVIYE.length} soru)`, 'btn'), link('atolye', 'Formül atölyesi', 'btn soft'))),
       h('div.today.article', {}, h('h3', {}, 'Bugün'),
         h('div.kpis', {}, h('div', {}, h('strong', {}, biten), h('small', {}, `/ ${DERSLER.length} ders`)), h('div', {}, h('strong', {}, alSay), h('small', {}, `/ ${ALISTIRMA_SAYISI} alıştırma`)), h('div', {}, h('strong', {}, d.seviye ? modulBul(d.seviye)?.no ?? '–' : '–'), h('small', {}, 'önerilen modül'))),
@@ -77,7 +112,7 @@ export function anaSayfa(main) {
     h('div.section-head', {}, h('h2', {}, 'Nasıl öğrenilir'), h('p.muted', {}, 'Her ders aynı dört adımı izler.')),
     h('div.learning-loop', {}, [['1', 'Anlat', 'Kısa anlatım: işlev ne yapar, hangi soruyu çözer, nerede yanıltır.'], ['2', 'Gör', 'Canlı örnek: formül hazır, hücrelere tıklayıp başvuruların rengini görün.'], ['3', 'Yap', 'Alıştırma: Satışlar, Personel, Teslimat gibi Kesit verilerinde formülü siz yazarsınız.'], ['4', 'Denetle', 'Cevap gizli bir kopyada da denenir; sonucu elle yazmak ya da $ unutmak yakalanır.']]
       .map(([n, b, t]) => h('div.article', {}, h('span.level-code', {}, n), h('h3', {}, b), h('p', {}, t)))),
-    h('div.section-head', {}, h('h2', {}, 'Seviyeler'), h('p.muted', {}, `${MODULLER.length} modül, temelden grafik, pano ve makroya.`)),
+    h('div.section-head', {}, h('h2', {}, 'Seviyeler'), h('p.muted', {}, `${MODULLER.length} modül, temelden pano, makro ve Çözücü'ye.`)),
     h('div.climb', {}, ['temel', 'orta', 'ileri'].map(s => {
       const ms = MODULLER.filter(m => m.seviye === s);
       return h('a.stop', { href: '#dersler/' + ms[0].id }, seviyeKod(s), h('h3', {}, ms.map(m => m.baslik).join(' · ')), h('p', {}, ms.map(m => m.ozet).join(' ')), h('small', {}, `${ms.reduce((n, m) => n + modulDersleri(m.id).length, 0)} ders`));
@@ -114,7 +149,7 @@ export function dersSayfasi(main, id) {
   const d = dersBul(id); if (!d) { yerlestir(main, baslikBlok('BULUNAMADI', 'Ders yok', 'Bu adreste bir ders yok.'), link('dersler', 'Derslere dön')); return; }
   D.sonDers(id);
   const m = modulBul(d.modul), ileri = sonraki(id), geri = onceki(id);
-  const bolumler = [['anlatim', 'Anlatım'], ['ornek', 'Canlı örnek'], ['alistirma', `Alıştırmalar (${d.alistirmalar.length})`], ['hata', 'Sık hata'], ['mulakat', 'Mülakat sorusu']];
+  const bolumler = [['anlatim', 'Anlatım'], ...(d.ornek ? [['ornek', 'Canlı örnek']] : []), ['alistirma', `Alıştırmalar (${d.alistirmalar.length})`], ['hata', 'Sık hata'], ['mulakat', 'Mülakat sorusu']];
   const dersLinkleri = () => modulDersleri(m.id).map(x => h('a', { href: '#ders/' + x.id, sinif: x.id === id ? 'current' : '' }, (D.dersBitti(x.id) ? '✓ ' : '') + x.baslik));
   // Masaüstünde liste açık; telefonda katlanır, ders içeriği ilk ekranda başlar
   const anahat = h('nav.lesson-outline', { 'aria-label': 'Modüldeki dersler' }, h('span.eyebrow', {}, `MODÜL ${m.no}`), h('h3', {}, m.baslik),
@@ -125,7 +160,7 @@ export function dersSayfasi(main, id) {
   govde.append(h('span.eyebrow', {}, `DERS ${m.no}.${modulDersleri(m.id).indexOf(d) + 1} · ${d.sure} DAKİKA`), h('h1', {}, d.baslik), h('p.intro', {}, d.ozet),
     h('nav.bolum-git', { 'aria-label': 'Bölüme git' }, bolumler.map(([b, ad]) => h('a.chip', { href: '#ders/' + id + '/' + b, on: { click: e => { e.preventDefault(); document.getElementById('b-' + b)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } } }, ad))),
     h('section.theory.article', { id: 'b-anlatim' }, h('h2', {}, 'Bu derste'), h('ul.objectives', {}, d.hedefler.map(x => h('li', {}, x))), d.anlatim.map(x => h('p', {}, bicimli(x)))),
-    h('section.article', { id: 'b-ornek' }, h('h2', {}, 'Canlı örnek'), ornekCiz(d)),
+    d.ornek ? h('section.article', { id: 'b-ornek' }, h('h2', {}, 'Canlı örnek'), ornekCiz(d)) : null,
     h('section', { id: 'b-alistirma' }, h('h2', {}, 'Alıştırmalar'), h('p.muted', {}, alistirmaYonergesi(d)), d.alistirmalar.map((a, i) => alistirmaCiz(d, a, i))),
     h('section.callout.warning', { id: 'b-hata' }, h('h2', {}, 'Sık hata'), h('p', {}, h('b', {}, 'Yanlış: '), h('code', {}, d.sikHata.yanlis)), h('p', {}, h('b', {}, 'Doğru: '), h('code', {}, d.sikHata.dogru)), h('p', {}, bicimli(d.sikHata.neden))),
     h('section.question', { id: 'b-mulakat' }, h('span.eyebrow', {}, 'MÜLAKAT SORUSU'), h('h3', {}, d.mulakat.soru), h('details', {}, h('summary', {}, 'Önce kendin cevapla, sonra açıp karşılaştır'), h('p', {}, bicimli(d.mulakat.cevap)))),
@@ -138,11 +173,11 @@ function ornekCiz(d) {
   if (o.tur === 'pivot') { const p = new PivotAlani({ tablo: SAYFALAR[o.sayfa], sayfaAd: o.sayfa, yapi: o.yapi }); return [h('p', {}, bicimli(o.aciklama)), p.el]; }
   if (o.tur === 'sorgu') { const q = new SorguAlani({ kaynakAd: o.sayfa, kaynak: SAYFALAR[o.sayfa], kaynaklar: SAYFALAR, adimlar: o.adimlar }); return [h('p', {}, bicimli(o.aciklama)), q.el]; }
   if (o.tur && YENI_TURLER[o.tur]) return [h('p', {}, bicimli(o.aciklama)), YENI_TURLER[o.tur](o, true).el];
-  const k = kitapKur(o.hazirlik, o.sayfa); k.yaz(o.sayfa, o.hucre, o.formul); k.hesapla();
-  const { R, C } = boyut(o.sayfa, o.hucre, ...Object.keys(o.hazirlik || {}));
+  const k = kitapKur(o.hazirlik, o.sayfa, o); if (o.hucre && o.formul) k.yaz(o.sayfa, o.hucre, o.formul); for (const [a2, f2] of Object.entries(o.formuller || {})) k.yaz(o.sayfa, a2, f2); k.hesapla();
+  const { R, C } = boyut(o.sayfa, o.hucre, o.alan, ...Object.keys(o.hazirlik || {}), ...Object.keys(o.formuller || {}));
   const hedefAd = o.hucre, p0 = adresCoz(hedefAd);
-  const iz = new Izgara({ kitap: k, sayfa: o.sayfa, satirSayisi: R, sutunSayisi: C, bicimler: bicimler(o.sayfa), hedef: hedefAd, hedefBicim: o.bicim, ilkSecim: hedefAd, duzenlenebilir: (r, c) => r === p0.r && c === p0.c });
-  return [h('p', {}, bicimli(o.aciklama)), h('p.small-note.muted', {}, `Sayfa: ${o.sayfa}. ${hedefAd} hücresindeki formülü değiştirip deneyebilirsiniz; renkli hücreler formülün baktığı yerlerdir.`), iz.el];
+  const iz = new Izgara({ kitap: k, sayfa: o.sayfa, satirSayisi: R, sutunSayisi: C, bicimler: bicimler(o.sayfa), hedef: hedefAd, hedefBicim: o.bicim, ilkSecim: hedefAd, denetim: !!o.denetimAraci, ozelBicim: o.ozelBicim, duzenlenebilir: (r, c) => r === p0.r && c === p0.c });
+  return [h('p', {}, bicimli(o.aciklama)), h('p.small-note.muted', {}, `Sayfa: ${o.sayfa}. ${hedefAd} hücresindeki formülü değiştirip deneyebilirsiniz; renkli hücreler formülün baktığı yerlerdir.`), ...formulEkleri(o, k, iz), iz.el];
 }
 
 function alistirmaCiz(d, a, i) {
@@ -175,12 +210,12 @@ function alistirmaCiz(d, a, i) {
     const q = new SorguAlani({ kaynakAd: a.sayfa, kaynak: SAYFALAR[a.sayfa], kaynaklar: SAYFALAR }); alan = q.el;
     denetle = () => sonuc(sorguDenetle(a, SAYFALAR, q.adimlar));
   } else {
-    const k = kitapKur(a.hazirlik, a.sayfa);
-    const { R, C } = boyut(a.sayfa, a.hedef, a.okunan, ...Object.keys(a.hazirlik || {}));
+    const k = kitapKur(a.hazirlik, a.sayfa, a);
+    const { R, C } = boyut(a.sayfa, a.hedef, a.okunan, a.grafik?.alan, ...Object.keys(a.hazirlik || {}));
     const hd = alanCoz(a.hedef.includes(':') ? a.hedef : a.hedef + ':' + a.hedef);
     const iz = new Izgara({ kitap: k, sayfa: a.sayfa, satirSayisi: R, sutunSayisi: C, bicimler: bicimler(a.sayfa), hedef: a.hedef, okunan: a.okunan, hedefBicim: a.bicim, ilkSecim: a.hedef.split(':')[0],
-      duzenlenebilir: (r, c) => r >= hd.r1 && r <= hd.r2 && c >= hd.c1 && c <= hd.c2 });
-    alan = iz.el;
+      duzenlenebilir: (r, c) => r >= hd.r1 && r <= hd.r2 && c >= hd.c1 && c <= hd.c2, denetim: !!a.denetimAraci, ozelBicim: a.ozelBicim });
+    alan = h('div', {}, ...formulEkleri(a, k, iz), iz.el);
     denetle = () => { const f = k.icerik(a.sayfa, hd.r1, hd.c1); sonuc(formulDenetle(a, SAYFALAR, typeof f === 'string' ? f : f == null ? '' : String(f))); };
   }
   yerlestir(kutu, h('div.al-bas', {}, h('span.eyebrow', {}, `ALIŞTIRMA ${i + 1}${TUR_ETIKET[a.tur] ? ' · ' + TUR_ETIKET[a.tur] : ''}`), durumEt), h('h3', {}, bicimli(a.soru)),
@@ -230,7 +265,7 @@ export function islevlerSayfasi(main, ara = '') {
     const q = kutu.value.trim().toLocaleLowerCase('tr'), kk = kat.value;
     const x = ISLEV_BILGI.filter(f => (!kk || f.kategori === kk) && (!q || (f.tr + ' ' + f.en + ' ' + f.aciklama).toLocaleLowerCase('tr').includes(q)));
     yerlestir(temizle(liste), h('p.small-note.muted', {}, `${x.length} işlev`), x.map(f => h('article.islev', {}, h('h3', {}, f.tr, h('small', {}, ' ' + f.en + ' · ' + f.kategoriAd)), h('code', {}, f.sozdizimi), h('p', {}, f.aciklama),
-      h('p', {}, h('span.muted', {}, 'Örnek (Satışlar): '), h('code', {}, f.ornek), ' ', h('a.text-link', { href: '#atolye/' + encodeURIComponent(f.ornek) }, 'Atölyede dene')),
+      h('p', {}, h('span.muted', {}, 'Örnek (Satışlar): '), h('code', {}, f.ornek), ' ', f.en === 'GETPIVOTDATA' ? h('a.text-link', { href: '#ders/m17-d2' }, 'Özet tabloyla dersinde dene') : h('a.text-link', { href: '#atolye/' + encodeURIComponent(f.ornek) }, 'Atölyede dene')),
       dersleri(f.en))));
   };
   const dersleri = en => { const ds = DERSLER.filter(d => d.alistirmalar.some(a => typeof a.cozum === 'string' && new RegExp('\\b' + (EN_TR[en] || en).replace('.', '\\.') + '\\(', 'i').test(a.cozum))).slice(0, 3); return ds.length ? h('p.small-note', {}, 'Derslerde: ', ds.map((d, i) => [i ? ', ' : '', h('a', { href: '#ders/' + d.id }, d.baslik)])) : null; };
@@ -299,7 +334,7 @@ export function veriSayfasi(main) {
 }
 export function hakkindaSayfasi(main) {
   yerlestir(main, baslikBlok('HAKKINDA', 'Kesit Excel nasıl çalışır?', 'Her şey tarayıcıda çalışır. Sunucu, hesap ve ölçüm yoktur; girdiğiniz formüller cihazdan çıkmaz.'),
-    h('section.article', {}, h('h2', {}, 'Formül motoru'), h('p', {}, 'Excel formüllerini okuyan ve hesaplayan motor bu proje için yazıldı (eval kullanmaz). 131 işlev, Türkçe ve İngilizce adlar, ; ve , ayırıcıları, dinamik dizi taşması ve Excel\'in tarih sistemi desteklenir.'),
+    h('section.article', {}, h('h2', {}, 'Formül motoru'), h('p', {}, `Excel formüllerini okuyan ve hesaplayan motor bu proje için yazıldı (eval kullanmaz). ${Object.keys(ISLEVLER).length} işlev, Türkçe ve İngilizce adlar, ; ve , ayırıcıları, dinamik dizi taşması ve Excel\'in tarih sistemi desteklenir.`),
       h('p', {}, 'Doğruluk LibreOffice Calc ile karşılaştırılarak test edilir: 146 formül LibreOffice\'te hesaplanıp motorun sonucuyla karşılaştırılır; LibreOffice\'te olmayan Excel 365 işlevleri (ÇAPRAZARA, FİLTRE, BENZERSİZ…) ve Türkçe Excel\'e özgü davranışlar 31 elle doğrulanmış vakayla denenir.'),
       h('p', {}, 'Bilinçli farklar: döngüsel başvuru #DÖNGÜ, okunamayan formül #FORMÜL olarak gösterilir (Excel uyarı penceresi açar). Taşan aralığa # ile başvuru, adlandırılmış aralık, Excel Tablosu başvuruları ve dolaylı başvurular (DOLAYLI, KAYDIR) desteklenmez. Dizi sabitlerinde her zaman , sütun, ; satır ayırır.')),
     h('section.article', {}, h('h2', {}, 'Denetçi ve gizli varyant'), h('p', {}, 'Cevabınız iki kez hesaplanır: gördüğünüz tabloda ve satırları karıştırılmış, sayıları ve metin dağılımı değiştirilmiş gizli bir kopyada. Doğru formül ikisinde de çözümle aynı sonucu verir. Sonucu elle yazmak, yanlış hücreye bağlanmak ya da $ işaretini unutmak gizli kopyada yakalanır.')),
@@ -308,12 +343,12 @@ export function hakkindaSayfasi(main) {
 }
 
 /* ---------------------------------------------------------------- görselleştirme ve makro: örnek + alıştırma kurucuları */
-const TUR_ETIKET = { pivot: 'ÖZET TABLO', sorgu: 'POWER QUERY', grafik: 'GRAFİK', pivotGrafik: 'PİVOT GRAFİK', kosullu: 'KOŞULLU BİÇİM', pano: 'PANO', makro: 'MAKRO (VBA)', secmeli: 'SORU' };
+const TUR_ETIKET = { pivot: 'ÖZET TABLO', sorgu: 'POWER QUERY', grafik: 'GRAFİK', pivotGrafik: 'PİVOT GRAFİK', kosullu: 'KOŞULLU BİÇİM', pano: 'PANO', makro: 'MAKRO (VBA)', secmeli: 'SORU', dogrulama: 'VERİ DOĞRULAMA', bicim: 'ÖZEL BİÇİM', hucreBul: 'FORMÜL DENETİMİ', sayi: 'SORU', ad: 'AD YÖNETİCİSİ', hedefAra: 'HEDEF ARA', veriTablosu: 'VERİ TABLOSU', cozucu: 'ÇÖZÜCÜ' };
 const hataListesi = r => r.hatalar && r.hatalar.length > 1 ? { ...r, notlar: r.hatalar.slice(1).map(x => 'Ayrıca: ' + x) } : r;
 // Her kurucu { el, denetle() } döndürür. ornek=true ise denetleme yok, yalnız gösterim.
 const YENI_TURLER = {
   grafik(a, ornek) {
-    const k = kitapKur(a.hazirlik, a.sayfa);
+    const k = kitapKur(a.hazirlik, a.sayfa, a);
     const g = new GrafikAlani({ tablolar: SAYFALAR, kitap: k, sayfa: a.sayfa, kaynak: a.kaynak || (ornek ? a.cozum?.kaynak : null) || { alan: 'A1:B5' }, secenek: a.secenek || {}, kilitKaynak: !!a.kaynakSabit });
     const el = h('div', {}, a.hazirlik && !a.kaynakSabit ? veriOnizleme(k, a) : null, g.el);
     return { el, denetle: () => hataListesi(grafikAlistirmaDenetle(a, SAYFALAR, { kaynak: g.kaynak, secenek: g.secenek })) };
@@ -328,7 +363,7 @@ const YENI_TURLER = {
     } };
   },
   kosullu(a, ornek) {
-    const k = kitapKur(a.hazirlik, a.sayfa);
+    const k = kitapKur(a.hazirlik, a.sayfa, a);
     const { R, C } = boyut(a.sayfa, a.okunan, ...Object.keys(a.hazirlik || {}));
     const iz = new Izgara({ kitap: k, sayfa: a.sayfa, satirSayisi: Math.min(R, a.satirGoster || R), sutunSayisi: C, bicimler: bicimler(a.sayfa), okunan: a.okunan, ilkSecim: 'A1', duzenlenebilir: () => false, kurallar: ornek ? a.kurallar : [], mini: a.mini });
     const ka = ornek && !a.duzenlenebilir ? null : new KosulluAlani({ izgara: iz, kurallar: ornek ? a.kurallar : [], varsayilanAlan: a.okunan });
@@ -340,7 +375,7 @@ const YENI_TURLER = {
   },
   makro(a, ornek) {
     const { R, C } = boyut(a.sayfa, a.okunan, ...Object.keys(a.hazirlik || {}));
-    const m = new MakroAlani({ kitapYap: () => kitapKur(a.hazirlik, a.sayfa), sayfa: a.sayfa, satirSayisi: R, sutunSayisi: C, bicimler: bicimler(a.sayfa), kod: ornek ? a.kod : (a.baslangicKod || `Sub Cozum()\n    \nEnd Sub\n`), girdiler: a.girdiler, kaydedici: !!a.kaydedici || ornek });
+    const m = new MakroAlani({ kitapYap: () => kitapKur(a.hazirlik, a.sayfa, a), sayfa: a.sayfa, satirSayisi: R, sutunSayisi: C, bicimler: bicimler(a.sayfa), kod: ornek ? a.kod : (a.baslangicKod || `Sub Cozum()\n    \nEnd Sub\n`), girdiler: a.girdiler, kaydedici: !!a.kaydedici || ornek });
     return { el: m.el, denetle: () => { m.kitapYenile(); m.calistir(); return makroDenetle(a, SAYFALAR, m.kod.value); } };
   },
   secmeli(a) {
@@ -349,6 +384,62 @@ const YENI_TURLER = {
     return { el, denetle: () => secim == null ? { tamam: false, mesaj: 'Bir seçenek işaretleyin.' } : secim === a.dogru ? { tamam: true, mesaj: 'Doğru. ' + (a.aciklama || '') } : { tamam: false, mesaj: (a.yanlisAciklama?.[secim] || 'Bu seçenek değil.') } };
   },
 };
+// Model sayfasının ızgarası (salt okunur; araçlar hücreleri kendisi değiştirir)
+function modelIzgara(a, k, ek = {}) {
+  const { R, C } = boyut(a.sayfa, a.okunan, ...Object.keys(a.hazirlik || {}));
+  return new Izgara({ kitap: k, sayfa: a.sayfa, satirSayisi: Math.min(R, a.satirGoster || R), sutunSayisi: C, bicimler: bicimler(a.sayfa), ilkSecim: a.ilkSecim || 'A1', duzenlenebilir: () => false, ozelBicim: a.ozelBicim, ...ek });
+}
+Object.assign(YENI_TURLER, {
+  dogrulama(a, ornek) {
+    const k = kitapKur(a.hazirlik, a.sayfa, a);
+    const iz = modelIzgara(a, k, { duzenlenebilir: () => true, dogrulama: ornek ? a.kurallar || [] : [], denetim: true });
+    const da = new DogrulamaAlani({ izgara: iz, kurallar: ornek ? a.kurallar : [], varsayilanAlan: a.varsayilanAlan || a.okunan });
+    return { el: h('div', {}, da.el, iz.el), denetle: () => dogrulamaDenetle(a, SAYFALAR, da.kurallar) };
+  },
+  bicim(a, ornek) {
+    let iz = null;
+    if (a.sayfa && a.alan) { const k = kitapKur(a.hazirlik, a.sayfa, a); iz = modelIzgara(a, k); }
+    const ba = new BicimAlani({ degerler: a.denemeDegerleri, kod: ornek ? a.kod : (a.baslangicKod || ''), izgara: iz, alan: a.alan });
+    return { el: h('div', {}, ba.el, iz ? h('div', {}, h('b', {}, `Önizleme: ${a.sayfa} ${a.alan}`), iz.el) : null), denetle: () => bicimDenetle(a, SAYFALAR, ba.kod) };
+  },
+  hucreBul(a) {
+    const k = kitapKur(a.hazirlik, a.sayfa, a), iz = modelIzgara(a, k, { denetim: true });
+    const id = 'hb' + a.id + Math.random().toString(36).slice(2, 5), giris = h('input.fx', { id, type: 'text', placeholder: 'ör. D7', autocomplete: 'off', spellcheck: 'false' });
+    return { el: h('div', {}, iz.el, h('div.filters', {}, h('label', { for: id }, 'Hatalı hücre: '), giris)), denetle: () => hucreBulDenetle(a, giris.value) };
+  },
+  sayi(a) {
+    const id = 'sy' + a.id + Math.random().toString(36).slice(2, 5), giris = h('input.fx', { id, type: 'text', inputmode: 'decimal', placeholder: 'sayı', autocomplete: 'off' });
+    const ek = a.pivot ? new PivotAlani({ tablo: SAYFALAR[a.sayfa], sayfaAd: a.sayfa, yapi: a.pivot }).el : a.okunan ? modelIzgara(a, kitapKur(a.hazirlik, a.sayfa, a), { denetim: !!a.denetimAraci }).el : null;
+    return { el: h('div', {}, ek, h('div.filters', {}, h('label', { for: id }, 'Cevabınız: '), giris)), denetle: () => sayiDenetle(a, SAYFALAR, giris.value) };
+  },
+  ad(a) {
+    const i1 = 'ad' + a.id + Math.random().toString(36).slice(2, 5), i2 = i1 + 't';
+    const ad = h('input.fx', { id: i1, type: 'text', placeholder: 'Adet_Alani', autocomplete: 'off', spellcheck: 'false', value: a.adGerekli || '' });
+    const tn = h('input.fx', { id: i2, type: 'text', placeholder: '=Satışlar!$H$2:$H$241', autocomplete: 'off', spellcheck: 'false' });
+    return { el: h('div.durum-kutu', {}, h('h4', {}, 'Yeni Ad'), h('div.pivot-alanlar', {}, h('div.alan', {}, h('label', { for: i1 }, 'Ad'), ad), h('div.alan', {}, h('label', { for: i2 }, 'Başvurur'), tn)),
+      h('p.small-note.muted', {}, 'Excel: Formüller > Ad Tanımla. Ad harfle başlar, boşluk içermez, B2 gibi bir adrese benzemez.')), denetle: () => adDenetle(a, SAYFALAR, { ad: ad.value.trim(), tanim: tn.value.trim() }) };
+  },
+  hedefAra(a, ornek) {
+    const k = kitapKur(a.hazirlik, a.sayfa, a), iz = modelIzgara(a, k);
+    const ha = new HedefAraAlani({ kitap: k, sayfa: a.sayfa, izgara: iz, varsayilan: ornek ? a.cozum : null });
+    return { el: h('div', {}, iz.el, ha.el), denetle: () => hedefAraDenetle(a, SAYFALAR, ha.ayar()) };
+  },
+  veriTablosu(a) {
+    const k = kitapKur(a.hazirlik, a.sayfa, a), iz = modelIzgara(a, k);
+    const vt = new VeriTablosuAlani({ kitap: k, sayfa: a.sayfa, ...a.tablo });
+    return { el: h('div', {}, iz.el, vt.el), denetle: () => veriTablosuDenetle(a, SAYFALAR, vt.ayar()) };
+  },
+  senaryo(a) {
+    const k = kitapKur(a.hazirlik, a.sayfa, a), iz = modelIzgara(a, k);
+    const sa = new SenaryoAlani({ kitap: k, sayfa: a.sayfa, izgara: iz, senaryolar: a.senaryolar, sonucHucreler: a.sonucHucreler, etiketler: a.etiketler });
+    return { el: h('div', {}, iz.el, sa.el), denetle: () => ({ tamam: false, mesaj: 'Örnek' }) };
+  },
+  cozucu(a, ornek) {
+    const k = kitapKur(a.hazirlik, a.sayfa, a), iz = modelIzgara(a, k);
+    const ca = new CozucuAlani({ kitap: k, sayfa: a.sayfa, izgara: iz, varsayilan: ornek ? a.cozum : a.baslangic });
+    return { el: h('div', {}, iz.el, ca.el), denetle: () => cozucuDenetle(a, SAYFALAR, ca.ayar()) };
+  },
+});
 function veriOnizleme(k, a) {
   const { R, C } = boyut(a.sayfa, ...Object.keys(a.hazirlik || {}));
   const iz = new Izgara({ kitap: k, sayfa: a.sayfa, satirSayisi: R, sutunSayisi: C, bicimler: bicimler(a.sayfa), okunan: a.okunan, ilkSecim: Object.keys(a.hazirlik)[0], duzenlenebilir: () => false });

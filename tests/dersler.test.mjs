@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DERSLER, MODULLER } from '../docs/icerik/dersler.js';
 import { SAYFALAR } from '../docs/icerik/sayfalar.js';
-import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, kosulluDenetle, panoDenetle } from '../docs/motor/denetci.js';
+import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, kosulluDenetle, panoDenetle, dogrulamaDenetle, bicimDenetle, hucreBulDenetle, sayiDenetle, hedefAraDenetle, veriTablosuDenetle, cozucuDenetle, adDenetle, kitapKur } from '../docs/motor/denetci.js';
 import { Kitap } from '../docs/motor/kitap.js';
 import { ayristir, hataMi } from '../docs/motor/formul.js';
 import { ISLEVLER } from '../docs/motor/islevler.js';
@@ -21,9 +21,9 @@ test('modül ve ders yapısı', () => {
 for (const d of DERSLER) {
   test(`${d.id} ${d.baslik}`, () => {
     if (d.ornek && d.ornek.formul) {
-      const k = new Kitap({ bugun: 45900 });
-      for (const [ad, t] of Object.entries(SAYFALAR)) if (t.basliklar) k.tablo(ad, t.basliklar, t.satirlar);
-      for (const [a, v] of Object.entries(d.ornek.hazirlik || {})) k.yaz(d.ornek.sayfa, a, v);
+      // Arayüzle aynı kitap: model sayfaları, adlar, yerleşik özet tablolar
+      const k = kitapKur({ sayfa: d.ornek.sayfa, hazirlik: d.ornek.hazirlik, adlar: d.ornek.adlar, pivotlar: d.ornek.pivotlar }, SAYFALAR);
+      for (const [a, f] of Object.entries(d.ornek.formuller || {})) k.yaz(d.ornek.sayfa, a, f);
       k.yaz(d.ornek.sayfa, d.ornek.hucre, d.ornek.formul); k.hesapla();
       const p = d.ornek.hucre.match(/^([A-Z]+)(\d+)$/); const c = [...p[1]].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0);
       const v = k.hucre(d.ornek.sayfa, Number(p[2]), c);
@@ -52,6 +52,25 @@ for (const d of DERSLER) {
         assert.ok(panoDenetle(a, SAYFALAR, a.cozum).tamam, ad + ': ' + panoDenetle(a, SAYFALAR, a.cozum).mesaj);
         assert.equal(panoDenetle(a, SAYFALAR, a.baslangic).tamam, false, ad + ': boş pano geçiyor'); continue;
       }
+      if (a.tur === 'dogrulama') {
+        assert.ok(dogrulamaDenetle(a, SAYFALAR, a.cozum).tamam, ad + ': ' + dogrulamaDenetle(a, SAYFALAR, a.cozum).mesaj);
+        assert.equal(dogrulamaDenetle(a, SAYFALAR, []).tamam, false, ad);
+        // Kural gerçekten bir şey yakalamalı: ya mevcut veride geçersiz hücre var ya da bir deneme reddediliyor
+        continue;
+      }
+      if (a.tur === 'bicim') { assert.ok(bicimDenetle(a, SAYFALAR, a.cozum).tamam, ad); assert.equal(bicimDenetle(a, SAYFALAR, 'Genel').tamam, false, ad + ': Genel biçim geçiyor'); continue; }
+      if (a.tur === 'hucreBul') { assert.ok(hucreBulDenetle(a, a.dogru.join(',')).tamam, ad); assert.equal(hucreBulDenetle(a, 'A1').tamam, false, ad); continue; }
+      if (a.tur === 'sayi') { const k = kitapKur(a, SAYFALAR); const v = k.formulDegerlendir(a.sayfa, 1, 1, a.cevapFormul); assert.ok(typeof v === 'number' && v > 0, ad + ': cevap formülü sayı vermiyor'); assert.ok(sayiDenetle(a, SAYFALAR, String(v)).tamam, ad); assert.equal(sayiDenetle(a, SAYFALAR, String(v + 1)).tamam, false, ad); continue; }
+      if (a.tur === 'ad') { assert.ok(adDenetle(a, SAYFALAR, a.cozum).tamam, ad + ': ' + adDenetle(a, SAYFALAR, a.cozum).mesaj); assert.equal(adDenetle(a, SAYFALAR, { ad: a.cozum.ad, tanim: '=A1:A2' }).tamam, false, ad); assert.equal(adDenetle(a, SAYFALAR, { ad: 'KDV 1', tanim: a.cozum.tanim }).tamam, false, ad + ': boşluklu ad geçiyor'); continue; }
+      if (a.tur === 'hedefAra') { const r = hedefAraDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj); assert.equal(hedefAraDenetle(a, SAYFALAR, { ...a.cozum, hedefHucre: a.cozum.degisenHucre, degisenHucre: a.cozum.hedefHucre }).tamam, false, ad); continue; }
+      if (a.tur === 'veriTablosu') { assert.ok(veriTablosuDenetle(a, SAYFALAR, { satirGiris: a.cozum.satirGiris, sutunGiris: a.cozum.sutunGiris }).tamam, ad); assert.equal(veriTablosuDenetle(a, SAYFALAR, { satirGiris: a.cozum.sutunGiris, sutunGiris: a.cozum.satirGiris }).tamam, false, ad + ': ters giriş geçiyor'); continue; }
+      if (a.tur === 'cozucu') {
+        const r = cozucuDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj);
+        if (a.baslangic) assert.equal(cozucuDenetle(a, SAYFALAR, a.baslangic).tamam, false, ad + ': kısıtsız model geçiyor');
+        const tamsiz = { ...a.cozum, kisitlar: a.cozum.kisitlar.filter(k => k.op !== 'tamsayi') };
+        if (tamsiz.kisitlar.length < a.cozum.kisitlar.length) assert.equal(cozucuDenetle(a, SAYFALAR, tamsiz).tamam, false, ad + ': tamsayı kısıtı olmadan geçiyor');
+        continue;
+      }
       if (a.tur === 'makro') {
         const r = makroDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj);
         if (a.yanlis) { const y = makroDenetle(a, SAYFALAR, a.yanlis); assert.equal(y.tamam, false, ad + ': sabit son satırlı makro yakalanmadı'); assert.equal(y.gizli, true, ad + ': görünen tabloda tutmalı, gizli kopyada yakalanmalı'); }
@@ -60,9 +79,7 @@ for (const d of DERSLER) {
       ayristir(a.cozum, ISLEVLER);
       // Çözüm ilk satırda boş olmayan bir kaynak hücreye bakmalı (yanlış satır numarası yazılmış alıştırmayı yakalar)
       {
-        const k0 = new Kitap({ bugun: 45900 });
-        for (const [s, t] of Object.entries(SAYFALAR)) { if (t.basliklar) k0.tablo(s, t.basliklar, t.satirlar); else t.satirlar.forEach((row, i) => row.forEach((v, j) => { if (v != null) k0.yaz(s, { r: i + 1, c: j + 1 }, v); })); }
-        for (const [x, v] of Object.entries(a.hazirlik || {})) k0.yaz(a.sayfa, x, v);
+        const k0 = kitapKur(a, SAYFALAR); k0.hesapla();
         const ilk = a.hedef.split(':')[0], m = ilk.match(/^([A-Z]+)(\d+)$/), satir = Number(m[2]);
         const refs = [...a.cozum.matchAll(/(?<![A-Za-z!$:])\$?([A-Z]{1,2})\$?(\d+)(?![\d(:])/g)].filter(x => Number(x[2]) === satir);
         const doluVar = refs.some(x => { const c = [...x[1]].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0); return k0.hucre(a.sayfa, satir, c) != null; });
@@ -72,17 +89,17 @@ for (const d of DERSLER) {
       assert.ok(r.tamam, ad + ': ' + r.mesaj);
       // Sonucu elle yazmak: tek hücreli alıştırmada görünen değerin sabiti gizli denemede yakalanmalı
       if (!a.hedef.includes(':') && !a.varyantsiz && !a.okunan) {
-        const k = new Kitap({ bugun: 45900 });
-        for (const [s, t] of Object.entries(SAYFALAR)) if (t.basliklar) k.tablo(s, t.basliklar, t.satirlar);
-        for (const [x, v] of Object.entries(a.hazirlik || {})) k.yaz(a.sayfa, x, v);
+        const k = kitapKur(a, SAYFALAR);
         k.yaz(a.sayfa, a.hedef, a.cozum); k.hesapla();
         const p = a.hedef.match(/^([A-Z]+)(\d+)$/); const c = [...p[1]].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0);
         const v = k.hucre(a.sayfa, Number(p[2]), c);
         if (typeof v === 'number') {
           // Zorunlu işlev kuralı kaldırılarak yalnız gizli deneme sınanır
-          const h = formulDenetle({ ...a, gerekli: undefined }, SAYFALAR, '=' + String(v).replace('.', ','));
+          const h = formulDenetle({ ...a, gerekli: undefined, tabloGerekli: undefined, adKullan: undefined }, SAYFALAR, '=' + String(v).replace('.', ','));
           assert.equal(h.tamam, false, ad + ': sabit sonuç (' + v + ') gizli denemede yakalanmadı');
-          assert.equal(h.gizli, true, ad + ': sabit sonuç görünür tabloda tutmalı, gizli denemede yakalanmalı (' + h.mesaj + ')');
+          // Model (ham) sayfalarda gizli kopya yok: sabit sonucu denetimin farklı girdi durumları yakalar
+          if (a.durumlar) assert.ok(/iken/.test(h.mesaj), ad + ': sabit sonuç başka bir girdi durumunda yakalanmalı (' + h.mesaj + ')');
+          else assert.equal(h.gizli, true, ad + ': sabit sonuç görünür tabloda tutmalı, gizli denemede yakalanmalı (' + h.mesaj + ')');
         }
       }
     }

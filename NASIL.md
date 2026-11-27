@@ -11,9 +11,9 @@ Ayrıntılı ve eğitim amaçlı belge: [docs/PROJE_REHBERI.md](docs/PROJE_REHBE
 ## Klasörler
 | Yol | Ne |
 |---|---|
-| `docs/motor/` | Formül motoru (`formul.js` ayrıştırıcı ve değerlendirici, `islevler.js` 131 işlev, `kitap.js` çalışma kitabı ve taşma, `tarih.js`), `pivot.js`, `sorgu.js` (Power Query adımları + M), `denetci.js` (gizli varyant), `grafik.js` (15 grafik türü, SVG, grafik denetimi), `kosullu.js` (koşullu biçim ve mini grafik), `vba.js` (VBA yorumlayıcısı, R1C1, .bas) |
-| `docs/icerik/` | `dersler-1/2/3/4.js` (61 ders; 4: görselleştirme ve makro), `ekler.js` (roller, seviye testi, mülakat), `islev-bilgi.js`, `veri.js` (**üretilir**), `sayfalar.js` |
-| `docs/js/` | Arayüz: `izgara.js` (formül çubuğu), `pivot-ui.js` (dilimleyici ve pivot grafik), `sorgu-ui.js`, `grafik-ui.js` (grafik alanı, ipucu, SVG/PNG), `kosullu-ui.js`, `pano-ui.js`, `makro-ui.js` (düzenleyici, kaydedici, .bas), `sayfalar.js` (görünümler), `app.js` (yönlendirme), `durum.js` (ilerleme) |
+| `docs/motor/` | Formül motoru (`formul.js` ayrıştırıcı ve değerlendirici, `islevler.js` 131 işlev, `kitap.js` çalışma kitabı ve taşma, `tarih.js`), `pivot.js`, `sorgu.js` (Power Query adımları + M), `denetci.js` (gizli varyant), `grafik.js` (15 grafik türü, SVG, grafik denetimi), `kosullu.js` (koşullu biçim ve mini grafik), `vba.js` (VBA yorumlayıcısı, R1C1, .bas), `bicim.js` (özel sayı biçimi), `dogrulama.js` (veri doğrulama, formül denetimi), `senaryo.js` (Hedef Ara, Veri Tablosu, Senaryo, Çözücü) |
+| `docs/icerik/` | `dersler-1/2/3/4/5.js` (81 ders; 4: görselleştirme ve makro, 5: kitap tasarımı, senaryo ve finans, ileri pano), `modeller.js` (Kredi, Üretim, Vardiya… model sayfaları, formüller Türkçe), `ekler.js` (roller, seviye testi, mülakat), `islev-bilgi.js`, `veri.js` (**üretilir**), `sayfalar.js` |
+| `docs/js/` | Arayüz: `izgara.js` (formül çubuğu), `pivot-ui.js` (dilimleyici ve pivot grafik), `sorgu-ui.js`, `grafik-ui.js` (grafik alanı, ipucu, SVG/PNG), `kosullu-ui.js`, `pano-ui.js`, `makro-ui.js` (düzenleyici, kaydedici, .bas), `model-ui.js` (Veri Doğrulama, Özel Biçim, Hedef Ara, Veri Tablosu, Senaryo, Çözücü kutuları), `sayfalar.js` (görünümler), `app.js` (yönlendirme), `durum.js` (ilerleme) |
 | `mcp/` | Yerel MCP sunucusu |
 | `tests/` | `node --test` testleri ve `vakalar.json` (LibreOffice karşılaştırma vakaları) |
 | `tools/` | `veri_hazirla.py` (Kesit verisinden sayfalar), `lo_karsilastir.py` + `motor_hesapla.mjs` (LibreOffice karşılaştırması), `kitap_olustur.py` (gerçek Excel için `docs/indir/kesit-excel-veri.xlsx`) |
@@ -25,4 +25,6 @@ Ayrıntılı ve eğitim amaçlı belge: [docs/PROJE_REHBERI.md](docs/PROJE_REHBE
 - **Önbellek sürümü:** dosya eklenince ya da çıkarılınca `docs/sw.js` içinde `CORE` listesini ve `CACHE` adını güncelle.
 - **Yeni grafik/koşullu biçim/makro alıştırması:** `tur: 'grafik' | 'pivotGrafik' | 'kosullu' | 'pano' | 'makro' | 'secmeli'`. Grafikte `cozum: { kaynak, secenek }` ve `kural` (izinli türler, yığın, sıfırdan başlama…); başlangıç ayarı (`kaynak`, `secenek`) çözüm olmamalı, test bunu yakalar. Makroda `cozum` VBA kodu, `okunan` aralık, gerekirse `stilKontrol`, `ciktiKontrol`; sabit son satırlı bir `yanlis` sürüm ekleyin, test gizli kopyada yakalandığını doğrular.
 - **Veri kitabı:** sayfalar değişince `python3 tools/kitap_olustur.py` (`.xlsx` yeniden üretilir).
+- **Durum çözümlemesi alıştırması:** `tur: 'hedefAra' | 'veriTablosu' | 'cozucu'` ve `cozum` (aynı biçimde model). Çözücü alıştırmasında çözüm modeli LP gevşetmesiyle aynı sonucu veriyorsa tamsayı kısıtı öğretilemez; test bunu yakalar, katsayıları değiştirin.
+- **Model sayfası (ham) formül alıştırması:** gizli kopya yoktur; sabit sonucu yakalamak için `durumlar: [{}, { B3: 1200000 }]` ile girdileri değiştirin. Test, sabit sonucun bir durumda yakalandığını doğrular.
 

@@ -193,3 +193,16 @@ svg.grafik path:hover,svg.grafik rect:hover,svg.grafik circle:hover{filter:brigh
 .dilim-kutu{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:8px 0;background:var(--surface)}.dilim-kutu summary{cursor:pointer;font-weight:600;min-height:28px}
 @media (max-width:600px){.vba-kod{min-height:0;height:150px;font-size:13px}}
 .kpi small{padding-right:30px}
+/* Formül denetimi, veri doğrulama */
+.denetim-cubuk{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.denetim-sonuc{font-size:13px;margin:4px 0}
+.izgara td.iz-once{outline:2px dashed var(--blue);outline-offset:-2px;background:color-mix(in srgb,var(--blue) 10%,transparent)}
+.izgara td.iz-sonra{outline:2px dashed var(--danger);outline-offset:-2px}
+.izgara td.gecersiz{box-shadow:inset 0 0 0 2px var(--danger);border-radius:40%}
+.degerlendir{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--surface-2)}.degerlendir-liste{margin:6px 0;padding-left:22px}.degerlendir-liste li{margin:3px 0}.degerlendir-liste code{white-space:pre-wrap;word-break:break-all}
+.liste-sec{min-height:34px;max-width:160px}
+.hesap-alan,.durum-kutu{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:8px 0;background:var(--surface)}.hesap-alan summary{cursor:pointer;font-weight:600}
+.durum-kutu h4{margin:0 0 6px}.ayrinti{margin:8px 0}.ayrinti-tablo{max-height:320px;overflow:auto}
+.bicim-kod{font-family:'JetBrains Mono',ui-monospace,monospace;width:100%;max-width:420px}.bicim-alani{display:flex;flex-direction:column;gap:6px}
+.form-denetim{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0;padding:8px 12px;border:1px dashed var(--line);border-radius:8px;background:var(--surface-2)}
+.form-denetim label{display:inline-flex;gap:6px;align-items:center;font-size:13.5px}
+.grafik-onizleme{margin-top:8px}

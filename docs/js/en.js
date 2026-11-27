@@ -10,7 +10,7 @@ export function enTur(main, yol) {
   const kutu = document.createElement('aside'); kutu.className = 'callout en-tur'; kutu.setAttribute('lang', 'en');
   const p = (t, b) => { const x = document.createElement(t); x.textContent = b; return x; };
   kutu.append(p('h2', 'Kesit Excel: Turkish Excel, practised on real data'),
-    p('p', 'A free, install-free Excel course in Turkish: a spreadsheet engine written for this project runs in your browser (131 functions, Turkish and English names, dynamic arrays). 61 lessons and 124 exercises on the shared Kesit datasets, including charts, slicer dashboards and VBA macros; every answer is checked on the sheet you see and on a hidden variant with shuffled numbers, so typed-in results and missing $ signs are caught.'),
+    p('p', 'A free, install-free Excel course in Turkish: a spreadsheet engine written for this project runs in your browser (151 functions, Turkish and English names, dynamic arrays). 81 lessons and 170 exercises on the shared Kesit datasets, including charts, slicer dashboards, VBA macros, data validation, financial functions, Goal Seek and Solver; every answer is checked on the sheet you see and on a hidden variant with shuffled numbers, so typed-in results and missing $ signs are caught.'),
     p('p', 'Lessons are in Turkish because they teach Turkish Excel (; separators, ETOPLA instead of SUMIF). The TR ⇄ EN button on the formula bar translates any formula. Also included: a PivotTable lab that shows the equivalent SUMIFS for every cell, and a Power Query lab that writes the M code for each step. Nothing leaves your device.'));
   if (yol === '' || yol === undefined) main.prepend(kutu); else main.append(kutu);
 }

@@ -1,4 +1,4 @@
-// MCP protokol testi: sunucuyu başlatır, yedi aracı çağırır; web ile aynı motorun aynı sonucu verdiği ve izinli klasör koruması.
+// MCP protokol testi: sunucuyu başlatır, sekiz aracı çağırır; web ile aynı motorun aynı sonucu verdiği ve izinli klasör koruması.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile } from 'node:fs/promises';
@@ -18,7 +18,7 @@ test('MCP: hesapla, çevir, işlev bilgisi, alıştırma getir/denetle; korumala
   await client.connect(new StdioClientTransport({ command: process.execPath, args: [path.join(here, '../mcp/server.mjs'), dir] }));
   const call = async (name, args) => { const r = await client.callTool({ name, arguments: args }); return { text: r.content[0].text, err: !!r.isError }; };
   try {
-    assert.deepEqual((await client.listTools()).tools.map(x => x.name).sort(), ['alistirma_denetle', 'alistirma_getir', 'formul_cevir', 'formul_hesapla', 'grafik_ciz', 'islev_bilgisi', 'makro_calistir']);
+    assert.deepEqual((await client.listTools()).tools.map(x => x.name).sort(), ['alistirma_denetle', 'alistirma_getir', 'durum_cozumle', 'formul_cevir', 'formul_hesapla', 'grafik_ciz', 'islev_bilgisi', 'makro_calistir']);
     // Türkçe ve İngilizce yazım aynı sonucu verir
     const tr = JSON.parse((await call('formul_hesapla', { formul: '=ÇOKETOPLA(H2:H241;F2:F241;"Kitap";E2:E241;"Web")' })).text);
     const en = JSON.parse((await call('formul_hesapla', { formul: '=SUMIFS(H2:H241,F2:F241,"Kitap",E2:E241,"Web")' })).text);
@@ -75,6 +75,20 @@ test('MCP: hesapla, çevir, işlev bilgisi, alıştırma getir/denetle; korumala
     assert.equal(JSON.parse((await call('alistirma_denetle', { ders: 'm13-d4', alistirma: 'a2', kurallar: [{ tur: 'formul', alan: 'A2:D43', formul: '=$D2<$C2*0,9', stil: 'kirmizi' }] })).text).tamam, true);
     assert.equal(JSON.parse((await call('alistirma_denetle', { ders: 'm13-d3', alistirma: 'a1', pivot: { satir: 'Kategori', degerler: [{ alan: 'Adet', ozet: 'toplam' }], filtreler: [{ alan: 'Kanal', degerler: ['Mağaza'] }] }, grafik: { tur: 'cubuk' } })).text).tamam, true);
     assert.equal(JSON.parse((await call('alistirma_denetle', { ders: 'm14-d1', alistirma: 'a1', secim: 1 })).text).tamam, true);
+    // kitap tasarımı ve durum çözümlemesi türleri
+    const dn = (ders, alistirma, ek) => call('alistirma_denetle', { ders, alistirma, ...ek }).then(x => JSON.parse(x.text).tamam);
+    assert.equal(await dn('m15-d3', 'a1', { dogrulama: [{ tur: 'liste', alan: 'C2:C31', kaynak: 'Web;Mobil;Mağaza' }] }), true);
+    assert.equal(await dn('m15-d5', 'a1', { bicim_kodu: '#.##0,00 "₺"' }), true);
+    assert.equal(await dn('m15-d6', 'a1', { hucre: 'E4' }), true);
+    assert.equal(await dn('m15-d2', 'a1', { yeni_ad: { ad: 'Adetler', tanim: '=Satışlar[Adet]' } }), true);
+    assert.equal(await dn('m16-d4', 'a1', { model: { hedefHucre: 'B10', hedefDeger: 150000, degisenHucre: 'B4' } }), true);
+    assert.equal(await dn('m16-d7', 'a1', { model: { amac: 'B8', yon: 'min', degiskenler: 'B4:H4', kisitlar: [{ sol: 'B5:H5', op: '>=', sag: 'B6:H6' }, { sol: 'B4:H4', op: 'tamsayi' }] } }), true);
+    assert.equal(await dn('m16-d7', 'a1', { model: { amac: 'B8', yon: 'min', degiskenler: 'B4:H4', kisitlar: [{ sol: 'B5:H5', op: '>=', sag: 'B6:H6' }] } }), false);
+    assert.equal(await dn('m16-d1', 'a1', { formul: '=DEVRESEL_ÖDEME(B4/12;B5;-B3)' }), true);
+    const ha = JSON.parse((await call('durum_cozumle', { tur: 'hedefAra', sayfa: 'Fiyat', model: { hedefHucre: 'B10', hedefDeger: 0, degisenHucre: 'B5' } })).text);
+    assert.equal(ha.tamam, true); assert.ok(Math.abs(ha.deger - 395000 / 17) < 1e-3);
+    const cz = JSON.parse((await call('durum_cozumle', { tur: 'cozucu', sayfa: 'Vardiya', model: { amac: 'B8', yon: 'min', degiskenler: 'B4:H4', kisitlar: [{ sol: 'B5:H5', op: '>=', sag: 'B6:H6' }, { sol: 'B4:H4', op: 'tamsayi' }] } })).text);
+    assert.equal(cz.amac, 23);
     // pivot ve Power Query
     assert.equal(JSON.parse((await call('alistirma_denetle', { ders: 'm10-d1', alistirma: 'a1', pivot: { satir: 'Şehir', degerler: [{ alan: 'Adet', ozet: 'toplam' }] } })).text).tamam, true);
     const pq = JSON.parse((await call('alistirma_denetle', { ders: 'm11-d1', alistirma: 'a1', adimlar: [{ tip: 'ustSatirKaldir', n: 1 }, { tip: 'basligiYukselt' }, { tip: 'bosSatirKaldir' }] })).text);

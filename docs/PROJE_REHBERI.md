@@ -9,11 +9,11 @@
 
 | | |
 |---|---|
-| **Ne** | Tarayıcıda çalışan Türkçe Excel eğitimi: kendi formül motoru, 61 ders, 124 denetlenen alıştırma; özet tablo, Power Query, görselleştirme (grafik, pivot grafik, koşullu biçim, pano) ve VBA makro atölyeleri; yerel MCP sunucusu (7 araç) |
+| **Ne** | Tarayıcıda çalışan Türkçe Excel eğitimi: kendi formül motoru (151 işlev), 81 ders, 170 denetlenen alıştırma; özet tablo, Power Query, görselleştirme (grafik, pivot grafik, koşullu biçim, pano), VBA makro, kitap tasarımı (Tablo, ad, veri doğrulama, özel biçim, formül denetimi) ve durum çözümlemesi (finans, Hedef Ara, Veri Tablosu, Senaryo, Çözücü); yerel MCP sunucusu (8 araç) |
 | **Kimin için** | Excel'i işte kullanacak herkes; özellikle veri analisti, BI, operasyon/planlama, finans, BT iş analisti ve ofis rolleri. Kesit ailesinin (SQL, Power BI, Python, İstatistik) beşinci üyesi |
 | **Canlı** | https://ysfdurak.github.io/kesit-excel/ (depo açılıp Pages etkinleşince) |
 | **Depo** | `ysfdurak/kesit-excel` |
-| **Durum** | 0.2.0 · yerelde tamam, testler yeşil (79), güvenlik taraması temiz; depo açılmayı bekliyor. Makrolar gerçek Excel'de örneklemle denenecek (§7) |
+| **Durum** | 0.3.0 · yerelde tamam, testler yeşil (108), LibreOffice 219/219, güvenlik taraması temiz; depo açılmayı bekliyor. Makrolar gerçek Excel'de örneklemle denenecek (§7) |
 | **Sunucu** | Yok (GitHub Pages). VPS gerekmiyor; gerekçe §6 |
 
 **Tek cümle:** "Excel formülünü ezberletmek yerine Kesit verisinde yazdırıyor; cevabı gördüğünüz tabloda ve sayıları değiştirilmiş gizli bir kopyada denetleyip hatanın nedenini söylüyor."
@@ -93,7 +93,7 @@
 
 > ⚠️ **Şöyle daha iyi olur:** `formul.js` 400 satırı geçti ve `TR_EN` tablosu da içinde. Tabloyu `motor/adlar.js`'e taşımak hem okunurluğu artırır hem de MCP'nin yalnız adlara ihtiyaç duyduğu yerlerde daha küçük bir içe aktarma sağlar.
 
-### 5.2 `motor/islevler.js` (131 işlev)
+### 5.2 `motor/islevler.js` (151 işlev)
 - `tanim(ad, fn, { tembel })`: `tembel` işlevler (EĞER, EĞERHATA, ÇOKEĞER, ELEMAN, LET, SATIR) bağımsız değişkenleri **değerlendirilmemiş** AST olarak alır. Böylece `=EĞER(A1=0;0;1/A1)` hiç `#BÖL/0!` üretmez ve LET ad tanımlayabilir.
 - `yay(fn)`: tek değerli bir işlevi diziye yayar: `=SOLDAN(A2:A5;2)` dört sonuç taşırır (Excel 365 davranışı).
 - **Ölçüt** (`olcut`): `">1000"`, `"<>"`, `""`, `"E*"`, `"~*"`. Sayı ölçütü yalnız sayılarla, metin ölçütü yalnız metinlerle eşleşir (Excel gibi: `"5"` metni sayı 5'e eşit sayılmaz).
@@ -179,6 +179,57 @@ kod ─► belirteçler ─► ayrıştırıcı (Sub/Function → deyim ağacı)
 - `pivot-ui.js`: dilimleyiciler (tık tek seçer, Ctrl+tık ekler; dokunmatikte her dokunuş açar/kapatır), pivot grafik düğmesi. `pano-ui.js`: ortak dilimleyiciler, KPI (dilimleyiciyle süzülür, "tümünün %…'ü"), en çok 4 grafik. `kosullu-ui.js`: Kural Yöneticisi benzeri liste + form. `makro-ui.js`: düzenleyici (Tab girinti, Esc+Tab çıkış, Ctrl+Enter çalıştır), Sub seçici, çıktı, hata satırına git, kaydedici, `.bas` ve veri kitabı.
 - Ders sayfası yeni türleri `YENI_TURLER` tablosundan kurar: her kurucu `{ el, denetle() }` döner. Yeni bir tür eklemek bu tabloya bir giriş eklemektir.
 
+### 5.11 Kitap tasarımı: Tablo, ad, biçim, doğrulama, denetim (0.3.0)
+
+**Yapılandırılmış başvuru (`formul.js` + `kitap.js`).** Belirteçleyici `[` görünce `koseliOku()` ile köşeli bloğu tek bir `tref` belirteci olarak okur: `Satışlar[Adet]`, `[@Adet]`, `[@[Birim Fiyat]]`, `Satışlar[[#Başlıklar];[Adet]]`, `[[Adet]:[Tutar]]`. Değerlendirici bunu `kitap.tabloBasvuru()`'ya verir; o da tabloyu bulur ve sıradan bir aralığa çevirir. `@` "bu satır" demek: formülün yazıldığı satırdaki tek hücre. Tablo adı sayfa adıdır (boşluk `_` olur); `kitap.tablo()` her veri sayfasını kendiliğinden tablo yapar.
+
+```
+=TOPLA(Satışlar[Adet])      → Satışlar!H2:H241 (satır eklenince kendisi uzar)
+=[@Adet]*[@[Birim Fiyat]]   → H5*I5 (formül 5. satırdaysa)
+```
+
+**Adlar.** `kitap.adTanimla('KDV', '0,2')` ya da `'=Satışlar!$H$2:$H$241'`. Ad kuralı Excel'inki: harf/`_` ile başlar, hücre adresine benzemez (`KDV1` değil `A1` reddedilir), boşluk yok. Belirteçleyici bilinmeyen bir sözcüğü önce işlev, sonra ad olarak dener.
+
+**DOLAYLI / KAYDIR.** DOLAYLI metni çalışma anında başvuruya çevirir, bu yüzden kitaba bir ayrıştırıcı kancası (`basvuruAyristiriciKur`) verilir. KAYDIR *tembel* işlevdir: ilk bağımsız değişkeni değer değil başvuru olarak alır. İkisi de "uçucu"dur; Excel'de her değişiklikte yeniden hesaplanır, büyük kitabı yavaşlatır. Derste bu yüzden önce Tablo, sonra FİLTRE önerilir.
+
+**Özel sayı biçimi (`bicim.js`).** Biçim kodu en çok 4 bölüm: `pozitif;negatif;sıfır;metin`. Ayrıca `[Kırmızı]` renk, `[>=1000000]` koşul, `"₺"` tırnaklı metin, `#.##0,` binle ölçekleme (sondaki her ayırıcı 1000'e böler), `%`, `0,00E+00`, `@`. Kod Türkçe (`.` binlik, `,` ondalık) ya da İngilizce olabilir; kodun kendisinden anlaşılır. Önemli ders: **biçim değeri değiştirmez**, yalnız görünümü. `1234567` hücresi `#.##0,0.. "M"` ile `1,2 M` görünür ama TOPLA hâlâ 1234567 toplar. Alıştırma da bunu ölçer: denetçi hem metni hem değerin değişmediğini sınar.
+
+**Veri doğrulama (`dogrulama.js`).** Kural `{tur, op, deger1, deger2, liste, formul, stil}`. Liste `Web;Mobil` gibi yazılır ya da `=$M$2:$M$4` / `=DOLAYLI($C2)` ile bir alana bağlanır (bağımlı liste). Uyarı stili Excel'deki gibi üçlü: **Durdur** girişi reddeder, **Uyarı** sorar, **Bilgi** yalnız bildirir. "Geçersiz verileri işaretle" (`gecersizler()`) kural eklemeden önce girilmiş eski veriyi bulur; çünkü doğrulama yalnız yeni girişi denetler. Kayıt sayfasına bilerek 6 hata koydum (`web`, `-3`, 31.13 gibi).
+
+**Formül denetimi.** `etkileyenler()` formülün başvurduğu hücreler (AST'deki başvuru düğümleri), `etkilenenler()` tersi (kitaptaki tüm formüller taranır). `formulAdimlari()` "Formülü Değerlendir" penceresinin karşılığıdır: en içteki alt ifadeyi hesaplayıp yerine koyar, adım adım. EĞER'de yalnız seçilen dal hesaplanır, tıpkı Excel'deki gibi. Denetim sayfasında üç kasıtlı hata var: yanlış aralık, metin olarak saklanmış sayı (`"204.600"`), `$` unutulduğu için aşağı kayan bölen.
+
+> 💡 **Şöyle daha iyi olur:** Gözcü Penceresi (Watch Window) yok. `etkilenenler()` zaten hazır; formül çubuğunun altına "izlenen hücreler" şeridi eklemek küçük bir iş.
+
+### 5.12 Senaryo ve finans (`senaryo.js`, finans işlevleri)
+
+**Finans işlevleri** tek bir denklem etrafında döner (para birimi zaman değeri):
+
+```
+BD·(1+r)^n + ödeme·((1+r)^n − 1)/r + GD = 0
+```
+
+DEVRESEL_ÖDEME, BD, GD bu denklemi doğrudan çözer; TAKSİT_SAYISI logaritmayla; FAİZ_ORANI ve İÇ_VERİM_ORANI ise kapalı çözümü olmadığı için `kokBul()` ile (önce Newton, ıraksarsa ikiye bölme). **İşaret kuralı** öğrencinin en sık hatası: kasaya giren para artı, çıkan eksi. Kredi tutarı artı verilirse taksit eksi çıkar; Excel de böyle. NBD'nin tuzağı da derste: NBD ilk nakit akışını bir dönem iskonto eder, bu yüzden 0. yıl yatırımı içine değil dışına yazılır: `=NBD(r;C6:G6)+B6`.
+
+**Hedef Ara.** Tek değişkenli kök bulma: `f(x) = hedefHücre(x) − hedefDeğer`. Önce sekant (iki deneme noktasından doğru çizip sıfırı tahmin), olmazsa aralığı genişletip işaret değiştiren iki nokta bulunca ikiye bölme. Her denemede kitap kopyasında değişen hücre yazılır ve bağımlı formüller yeniden hesaplanır. Sonuç çözüm formülüyle değil **sonucun kendisiyle** denetlenir: bulunan değeri koyunca hedef hücre hedef değere ±0,01 yakın mı?
+
+**Veri Tablosu ve Senaryo.** Veri Tablosu bir ya da iki girdi hücresini sırayla değiştirip her birleşimde çıktı hücresini okur (Excel'deki `{=TABLO()}`'nun yaptığı). Senaryo özeti, adlandırılmış girdi kümelerini sırayla uygular ve sonuç hücrelerini yan yana yazar. İkisi de kitabı değiştirmez; kopyada çalışır.
+
+**Çözücü.** Doğrusal programlama: amaç ve kısıtlar değişkenlerin doğrusal fonksiyonları ise **Simplex** yeter.
+1. Doğrusallık denetimi: kitabı her değişkeni 0, 1, 2 yaparak hesaplıyorum; katsayılar tutmuyorsa (ör. `B4*C4`) "doğrusal değil" diyorum. Excel burada GRG Doğrusal Olmayan'a geçer; ben açıkça reddediyorum.
+2. Katsayıları sayısal türevle çıkarıyorum (formülü okumak yerine çalıştırarak), sonra iki aşamalı Simplex: Aşama 1 yapay değişkenlerle olurlu bir başlangıç bulur, Aşama 2 amacı iyileştirir. Döngüyü Bland kuralı önler.
+3. Tamsayı kısıtı varsa **dal-sınır**: LP çözümünde kesirli bir değişken (ör. 3,4) varsa iki alt problem açılır (≤3 ve ≥4), en iyisi tutulur.
+
+Vakalar bilerek kesirli çıkacak şekilde seçildi: Üretim LP 185.555,56 → tamsayı 185.500; Vardiya (5 gün çalış, 2 gün izin) LP 22,33 → tamsayı 23 operatör. İlk denemede katsayılar "tamamen birimsel" (TU) bir matris verdi; LP zaten tamsayı çıktı ve "tamsayı kısıtını unutan öğrenci" yakalanamadı. Test bunu yakaladı, modeli değiştirdim.
+
+> 🧪 **Burada bir test daha yapalım (sizin bilgisayarda):** Kredi, Üretim ve Vardiya sayfalarını gerçek Excel'e kopyalayıp Hedef Ara ve Çözücü'yü (Simplex LP, "Kısıtlanmamış değişkenleri negatif olmayan yap" açık) çalıştırın. Beklenen: taksit 106.285,35; Üretim 185.500 (tamsayı); Vardiya 23.
+
+### 5.13 İleri pivot ve pano (0.3.0)
+
+- **Hesaplanmış alan tuzağı:** `='Birim Fiyat'*Adet` alanı pivotta her satırda değil, **toplamlar** üzerinde hesaplanır: TOPLA(Fiyat) × TOPLA(Adet). Ciro anlamsız büyür. Motor da bilerek böyle hesaplıyor; ders bu farkı gösterip doğru yolu (kaynakta Tutar sütunu ya da Power Pivot'ta SUMX) öğretiyor.
+- **Ayrıntıya inme:** pivot hücresine çift tık, o hücreyi oluşturan kaynak satırları (`ayrinti()`) gösterir; en çok 60 satır.
+- **ÖZETVERİAL:** `pivotYerlestir()` pivotu bir sayfaya yazar ve `kitap.pivotlar`'a kaydeder; `=ÖZETVERİAL("Adet";$A$3;"Şehir";"İzmir")` bu kayıttan okur. Pivot düzeni değişse de doğru hücreyi bulur; pivota tıklayınca Excel'in bu formülü kendiliğinden yazmasının nedeni bu.
+- **Form denetimleri:** açılan kutu, onay kutusu, kaydırma çubuğu, seçenek düğmesi bir hücreye bağlanır ve o hücreye *değer* yazar (açılan kutu metin değil **sıra numarası** yazar; İNDİS ile metne çevrilir: sık hata). Denetçi her durumu sırayla dener (`durumlar`): formül her denetim değerinde doğru mu?
+
 ---
 
 ## 6. Sunucu ve yayın
@@ -196,10 +247,11 @@ kod ─► belirteçler ─► ayrıştırıcı (Sub/Function → deyim ağacı)
 | Katman | Ne | Sayı |
 |---|---|---|
 | Motor birim | TR/EN eşdeğerliği (tüm vakalar + geri çeviri), kaydırma, çeviri biçimi, taşma ve engel, döngü, bozuk formüller, sınırlar, Türkçe harf, Türkçe giriş | 9 test |
-| LibreOffice | 146 formül LibreOffice 24.2'de hesaplanır ve karşılaştırılır; 31 vaka elle (LO'da olmayan Excel 365 işlevleri, Türkçe BÜYÜKHARF, Türkçe METNEÇEVİR, örtük kesişimsiz dizi) | 177/177 |
-| Dersler | Her örnek hatasız; her çözüm denetçiden geçer; tek hücreli sayısal alıştırmada sabit cevap **gizli denemede** yakalanır; hedefin ilk satırı boş bir kaynağa bakmaz. Grafikte başlangıç ayarı geçmez; koşullu biçimde boş kural, panoda boş pano, makroda boş Sub geçmez; sabit son satırlı makro (`yanlis`) gizli kopyada yakalanır | 62 test, 124 alıştırma |
+| LibreOffice | 187 formül LibreOffice 24.2'de hesaplanır ve karşılaştırılır (0.3.0'da 41 finans/DOLAYLI/KAYDIR/ADRES eklendi); 32 vaka elle (FAİZ_ORANI'nın çözümsüz vakasında Excel #SAYI!, LO #YOK verir: Excel'e uyduk) (LO'da olmayan Excel 365 işlevleri, Türkçe BÜYÜKHARF, Türkçe METNEÇEVİR, örtük kesişimsiz dizi) | 219/219 |
+| Dersler | Her örnek hatasız; her çözüm denetçiden geçer; tek hücreli sayısal alıştırmada sabit cevap **gizli denemede** yakalanır; hedefin ilk satırı boş bir kaynağa bakmaz. Grafikte başlangıç ayarı geçmez; koşullu biçimde boş kural, panoda boş pano, makroda boş Sub geçmez; sabit son satırlı makro (`yanlis`) gizli kopyada yakalanır | 62 test, 170 alıştırma |
 | Görselleştirme ve makro | 15 grafik türü geçerli XML, tarih sütunu kategori, histogram ve çeyrekler, `$` kaydırmalı koşullu kural, pano KPI süzmesi, ders örneği makrolar, R1C1, `.bas` 1254 | 7 test |
-| MCP | 7 araç (grafik SVG gömülü renk, makro yalıtılmış kopya ve hata satırı, yeni alıştırma türleri), TR/EN aynı sonuç, taşma, CSV izinli klasör, dış yol reddi, sabit cevabın gizli denemede yakalanması | 1 test, 30+ doğrulama |
+| Model (0.3.0) | Tablo/ad başvurusu, DOLAYLI/KAYDIR/ADRES, özel biçim (30 vaka), doğrulama ve bağımlı liste, formül adımları, Hedef Ara, Veri Tablosu, Çözücü (LP ve tamsayı ayrı sonuç vermeli), hesaplanmış alan, ayrıntı, ÖZETVERİAL, işlev rehberi örnekleri | 9 test |
+| MCP | 8 araç (`durum_cozumle` dahil) (grafik SVG gömülü renk, makro yalıtılmış kopya ve hata satırı, yeni alıştırma türleri), TR/EN aynı sonuç, taşma, CSV izinli klasör, dış yol reddi, sabit cevabın gizli denemede yakalanması | 1 test, 30+ doğrulama |
 | Arayüz (Playwright, elle) | 19 sayfa × 390/1350 px: konsol hatası 0, yatay taşma 0; uçtan uca: öneri → tıkla-başvuru → F4 → aşağı doldur → Denetle → pivot → Power Query | örneklem |
 
 **Örneklem testi (bu oturum)**
@@ -226,6 +278,19 @@ kod ─► belirteçler ─► ayrıştırıcı (Sub/Function → deyim ağacı)
 | Kaydedici: L1'e başlık, L2'ye formül, aşağı doldur, A1:L1 kalın | R1C1 kod, `Range("L2:L241")`, kalın başlık; sıfırla + çalıştır aynı sonucu verir | aynı | ✓ |
 | SVG, PNG ve `.bas` indirme | Dosyalar iner; `.bas` `Attribute VB_Name` ile başlar | aynı | ✓ |
 | Koyu tema: pano ve renk ölçeği | Okunur kontrast | aynı | ✓ |
+
+**Örneklem testi (0.3.0, Playwright, 1350 ve 390 px)**
+
+| Adım | Beklenen | Gözlenen | Durum |
+|---|---|---|---|
+| 20 yeni ders sayfası, 1350 px | Konsol hatası 0 | aynı | ✓ |
+| 15.3 a1: Liste kuralı `Web;Mobil;Mağaza`, Geçersiz verileri işaretle | `web` ve boşluklu kayıt halkalı, "Doğru" | aynı | ✓ |
+| 15.6: Denetim sayfası, D11'de Etkileyenleri izle + Formülü değerlendir | D3 ve D8 vurgulu; adım adım `#BÖL/0!` | aynı | ✓ |
+| 16.4: Hedef Ara, B10=0, B4 değişsin | Başa baş ücret, "Doğru" | aynı | ✓ |
+| 16.6: Çözücü, tamsayı kısıtı olmadan | LP sonucu, "tamsayı kısıtı eksik" | aynı | ✓ |
+| 17.1: hesaplanmış alan, çift tık ayrıntı | Şişkin ciro, ayrıntı tablosu | aynı | ✓ |
+| 17.3: onay kutusu H2, H5 formülü | Her iki durumda doğru | aynı | ✓ |
+| 6 yeni ders, 390 px | Yatay taşma 0, form kutuları tek sütun | aynı | ✓ |
 
 > 🧪 **Burada bir test daha yapalım (sizin bilgisayarda):** `docs/indir/kesit-excel-veri.xlsx`'i açıp `.xlsm` kaydedin; Makro atölyesinden beş örnek makroyu (Merhaba, Tutar sütunu, İptalleri boya, Kategori özeti, Formül yazdır) `.bas` olarak alıp Alt+F11 > Dosya Al ile içeri alın ve çalıştırın. Bakılacaklar: Türkçe harfler düzgün mü (1254), `FormulaLocal` Türkçe Excel'de çalışıyor mu, sonuçlar Kesit'teki tabloyla aynı mı. Fark çıkarsa motor değil Excel haklıdır; vakayı `tests/` altına ekleyelim.
 > 🧪 **Burada bir test daha yapalım:** Gerçek Türkçe Excel'de (Windows, Türkiye bölge ayarı) 10 dersin çözüm formülünü yapıştırıp sonuçları karşılaştırmak. LibreOffice bağımsız bir hakem ama Türkçe yerelleştirmeyi (METNEÇEVİR kodları, dizi sabiti ayırıcıları) sınayamıyor. Özellikle `METNEÇEVİR(B2;"aaaa yyyy")` ve `{…}` dizi sabitleri.
@@ -272,7 +337,9 @@ kod ─► belirteçler ─► ayrıştırıcı (Sub/Function → deyim ağacı)
 
 ## 9. Bilinen sınırlar ve sonraki adımlar
 
-- **Yok:** `M2#` taşma başvurusu, adlandırılmış aralık, Tablo başvurusu, DOLAYLI/KAYDIR, finans/mühendislik işlevleri, Power Pivot/DAX.
+- **Yok:** `M2#` taşma başvurusu, mühendislik işlevleri, Power Pivot/DAX (veri modeli dersi kavramsal; DAX Kesit Power BI'da), Gözcü Penceresi, sayfa koruması (anlatılıyor, uygulanmıyor), kitaplar arası başvuru.
+- **Çözücü:** yalnız doğrusal model (Simplex LP + dal-sınır). Doğrusal olmayan modeli reddeder (Excel'de GRG); evrimsel yöntem yok. Dal-sınırda değişken sayısı küçük tutulmalı (ders modelleri ≤ 7 değişken).
+- **Veri Tablosu ve Senaryo:** sonuç panelde gösterilir; kitaba `{=TABLO()}` dizi formülü yazılmaz.
 - **VBA alt kümesi:** Chart/PivotTable nesneleri, UserForm, olay yordamları (Worksheet_Change), sınıf modülleri, dosya/Outlook/`CreateObject` yok; açık hata verir. `MsgBox(…, vbYesNo)` tarayıcıda hep "Evet" döner.
 - **Grafik:** Excel'in görünümü birebir değil; tür, veri ve kararlar aynı. Dilimleyici tarih alanında yok (Excel'de Zaman Çizelgesi). Pivot grafikte sıralama alfabetik; "büyükten küçüğe" için sıralama seçeneği sonraki adım.
 - **Bilinçli fark:** `#DÖNGÜ` ve `#FORMÜL` gösterimi; dizi sabitinde her zaman `,`/`;`.
@@ -298,7 +365,9 @@ Kaynaklar: Microsoft MO-211 (Excel Expert) beceri listesi, Macquarie/Coursera "E
 | Orta | Veri modeli ve Power Pivot: ilişki, ölçü, basit DAX | Maven, Macquarie, Yenibiriş | Kesit Power BI'a köprü ders; tam DAX orada |
 | Düşük | Hızlı Doldurma, seri doldurma, S_SAYI_ÜRET (RANDARRAY), Birleştir (Consolidate), gruplama/anahat, güneş patlaması grafiği, LAMBDA, gelişmiş filtre | MO-211, çeşitli | Tek tek küçük |
 
-> 💡 **Şöyle daha iyi olur:** Bu tablo öneridir, karar değil. Kullanıcı seçince modül olarak eklenecek; her biri önce motoru, sonra dersi, sonra gizli kopya kuralını ("bu türde hile ne olur?") gerektirir.
+**Uygulandı (0.3.0):** Yüksek ve Orta satırların tamamı Modül 15, 16 ve 17 olarak eklendi (Gözcü Penceresi hariç; koruma ve veri modeli kavramsal ders). **Düşük** satır sonraki adım.
+
+> 💡 **Şöyle daha iyi olur:** Sıradaki en değerli ikisi: gelişmiş filtre ve Birleştir (Consolidate); ikisi de var olan motorla yapılabilir.
 
 ## 10. Mülakat soruları
 
@@ -337,6 +406,18 @@ C: Görüntüyü değil kararları denetliyorum: tür sorunun ailesine uygun mu,
 **S: Koşullu biçimde formül neden sol üst hücreye göre yazılır, sen bunu nasıl uyguladın?**
 C: Excel formülü her hücre için göreli başvuru kurallarıyla kaydırır. Ben de formülü alanın sol üst hücresine göre alıp her hücre için formül motorundaki `kaydir()` ile kaydırıyor, hücreye yazmadan hesaplıyorum. Böylece `$` unutulunca Excel'deki yanlış boyamanın aynısı oluyor ve öğrenci hatayı görüyor.
 
+**S: Çözücü'yü nasıl yazdın, Excel'in Çözücüsü ile aynı mı?**
+C: Excel'in Simplex LP yöntemine karşılık gelen kısmı: iki aşamalı Simplex ve tamsayı için dal-sınır. Katsayıları formülü okuyarak değil, kitabı farklı değerlerle çalıştırıp farklarını alarak çıkarıyorum; aynı yolla modelin doğrusal olup olmadığını da sınıyorum. Doğrusal değilse açıkça reddediyorum, çünkü yanlış bir "en iyi" göstermek reddetmekten kötü. Vardiya vakasında LP 22,33 operatör derken tamsayı 23; öğrencinin tamsayı kısıtını unutup unutmadığını bu fark yakalıyor.
+
+**S: Hedef Ara alıştırmasını neye göre denetliyorsun? Herkes farklı başlangıçla farklı ondalık bulabilir.**
+C: Çözüm değerine değil sonucun kendisine bakıyorum: öğrencinin bulduğu değeri kitaba yazıp hedef hücreyi yeniden hesaplıyorum; hedefe tolerans içinde yakınsa doğru. Ayrıca doğru hücreleri seçmiş mi (hedef ve değişen hücre) ayrıca söylüyorum.
+
+**S: Model sayfalarında gizli kopya yok; sabit cevabı nasıl yakalıyorsun?**
+C: Model sayfaları (Kredi, Üretim) veri değil, girdileri olan bir hesap. Orada kopya yerine **durumlar** kullanıyorum: girdileri değiştirip (`B3: 1.200.000`) formülü yeniden hesaplıyorum. Elle yazılmış taksit girdiyle değişmediği için ikinci durumda tutmuyor.
+
+**S: `=TOPLA(Satışlar[Adet])` ile `=TOPLA(H2:H241)` arasındaki fark ne, motor bunu nasıl çözüyor?**
+C: Birincisi tablo büyüdükçe kendisi uzar ve sütunun adını taşıdığı için okunur. Motor köşeli bloğu tek belirteç okuyup tabloyu buluyor ve o anki aralığa çeviriyor; yani hesap aynı, fark tanımın canlı olması.
+
 ---
 
 ## 11. Kendini test et
@@ -350,6 +431,12 @@ C: Excel formülü her hücre için göreli başvuru kurallarıyla kaydırır. B
 <details><summary>8. `RGB(255, 255, 0)` hangi tamsayı?</summary>65535: kırmızı + yeşil×256 + mavi×65536 = 255 + 65280.</details>
 <details><summary>9. Grafik neden telefonda minicik yazıyla çıkıyordu?</summary>Öğe sayfaya eklenmeden önce genişliği 0 okunuyordu; 700 px'e çizilip ölçeklendi. Genişlik ana alandan tahmin edildi.</details>
 <details><summary>10. SVG'de çift `class` özniteliği neden bütün grafiği bozar?</summary>SVG XML olarak ayrıştırılıyor; XML'de çift öznitelik ayrıştırma hatasıdır, tarayıcı grafik yerine hata belgesi döndürür.</details>
+<details><summary>11. `[@Adet]` hangi hücreyi gösterir?</summary>Formülün yazıldığı satırdaki Adet hücresini (aynı satır, tek hücre).</details>
+<details><summary>12. `#.##0,` biçim kodu 2.500.000'u nasıl gösterir, TOPLA ne toplar?</summary>`2.500` gösterir (sondaki ayırıcı 1000'e böler); TOPLA yine 2.500.000 toplar: biçim değeri değiştirmez.</details>
+<details><summary>13. 1.800.000 kredi taksiti `=DEVRESEL_ÖDEME(36%/12;24;1800000)` neden eksi çıkar?</summary>İşaret kuralı: kredi kasaya giren para (artı), taksit çıkan para (eksi). Artı görmek için tutar eksi verilir.</details>
+<details><summary>14. `=NBD(r;B6:G6)` yatırım analizinde neden yanlış?</summary>NBD ilk değeri de bir dönem iskonto eder; 0. yıl yatırımı NBD'nin dışında eklenmeli: `=NBD(r;C6:G6)+B6`.</details>
+<details><summary>15. Çözücü LP 22,33 verdi; tamsayı kısıtıyla neden 22 değil 23?</summary>22 kişiyle bazı günlerin talebi karşılanmaz (olurlu değil); yuvarlama aşağı değil, dal-sınırla en iyi olurlu tamsayıdır.</details>
+<details><summary>16. Açılan kutu (form denetimi) bağlı hücreye ne yazar?</summary>Seçilen öğenin sıra numarasını; metne `=İNDİS(liste;H1)` ile çevrilir.</details>
 <details><summary>6. CSP `style-src 'self'` iken kenar çizgisi nasıl renkleniyor?</summary>CSSOM ile (`td.style.boxShadow = …`); CSP satır içi `style` özniteliğini engeller, CSSOM'u engellemez.</details>
 
 ---
@@ -367,6 +454,8 @@ C: Excel formülü her hücre için göreli başvuru kurallarıyla kaydırır. B
 
 **Alıştırma 3 (15 dk, grafik):** `docs/icerik/dersler-4.js`'teki Ders 13.6'ya dördüncü bir "kötü grafik" ekle: 180 noktalı çizgi grafik ve her noktada veri etiketi (`veriEtiketi: true`, kural `veriEtiketiYok`). `npm test` başlangıç ayarının geçmediğini doğrulamalı.
 
+**Alıştırma 4 (20 dk, finans):** `islevler.js`'e `ÇİFTAZALANBAKİYE`'nin kardeşi `VDB`'yi değil, daha kolayı `SYD`'yi (YILLIK_TOPLAM, yıl sayısı toplamı amortismanı: (maliyet−hurda)·(ömür−dönem+1)·2/(ömür·(ömür+1))) ekle; `TR_EN`'e `'YAT': 'SYD'`, `tests/vakalar.json`'a `"=SYD(30000;7500;10;1)"` (4090,91). LibreOffice karşılaştırması 220/220 olmalı.
+
 **5 dakikalık demo akışı**
 1. Ana sayfa (20 sn): "Türkçe Excel, Kesit verisi, cevap gizli bir kopyada da denetleniyor."
 2. Ders 4.3 (90 sn): `=ÇOKET` yaz, öneri; hücreye tıklayarak aralık; söz dizimi vurgusu; Denetle.
@@ -377,6 +466,7 @@ C: Excel formülü her hücre için göreli başvuru kurallarıyla kaydırır. B
 7. MCP (30 sn): Claude'a "bu formülü İngilizceye çevir" ve "şu formülüm doğru mu".
 8. Görselleştirme (40 sn): Ders 13.6'da kesik eksenli sütun grafik, kutuyu boşalt; panoda Kanal dilimleyicisi, KPI'lar birlikte değişir.
 9. Makro (40 sn): kaydediciyi başlat, formül yaz, aşağı doldur; koddaki `L2:L241`'i göster, Ders 14.2'de sabit 241'in gizli kopyada yakalandığını göster.
+10. Çözücü (40 sn): Ders 16.7 vardiya; tamsayısız çöz (22,33), tamsayı ekle (23); "Excel'in Simplex LP'si, dal-sınırla".
 
 ---
 
@@ -385,3 +475,4 @@ C: Excel formülü her hücre için göreli başvuru kurallarıyla kaydırır. B
 - **2026-11-27 · 0.1.0** İlk sürüm. Motor (131 işlev, LibreOffice 177/177), 48 ders, 99 alıştırma, pivot ve Power Query atölyeleri, MCP (5 araç). Güvenlik taraması temiz, ölçüm yok (`soz`). Kullanıcı gözüyle inceleme: hedef hücreye kaydırma, mobil ders listesi, formül çubuğu, klavye erişimi, kenar çizgileri, arife metni, iki alıştırma. Bulunan ve düzeltilen hatalar: üs birleşmesi (sağdan → soldan), `0,9` yazım tespiti, `ifade` gölgelenmesi, `append` dizileri, `[hidden]` ezilmesi, varyantın sayma sorularındaki açığı, boş şehir.
 - **2026-11-27 · 0.2.0** Görselleştirme ve makro: Modül 13 (7 ders: grafik seçimi, 15 tür, pivot grafik ve dilimleyici, koşullu biçim, veri çubuğu/renk ölçeği/simge/mini grafik, kötü grafiği düzeltme, pano vakası) ve Modül 14 (6 ders: kaydedici, Range ve son satır, If/Select Case, biçim, Function ve WorksheetFunction, Office Scripts ve güvenlik). Yeni motorlar `grafik.js`, `kosullu.js`, `vba.js`; atölyeler Görselleştirme (4 sekme) ve Makro; MCP `grafik_ciz`, `makro_calistir`. Makro varyantı uzayan kopya. Veri kitabı `docs/indir/kesit-excel-veri.xlsx`. 61 ders, 124 alıştırma, 79 test, LibreOffice 177/177, tarama temiz.
 - **2026-11-27 · 0.2.0 (inceleme)** Muadil müfredatlarla karşılaştırma (§9) ve kullanıcı gözüyle ikinci tur (§8): telefonda pano KPI'ları ve makro Çalıştır düğmesi ilk ekranda, atölyeler arası geçiş satırı, menü iki gruba ayrıldı, dilimleyici davranışı tekleştirildi, sekmelerde ok tuşları.
+- **2026-11-27 · 0.3.0** Kitap tasarımı, senaryo ve finans, ileri pano: Modül 15 (7 ders), 16 (7), 17 (6). Motor: yapılandırılmış başvuru, adlar, DOLAYLI/KAYDIR/ADRES/ÖZETVERİAL, 16 finans işlevi (151 işlev), `bicim.js`, `dogrulama.js`, `senaryo.js` (Hedef Ara, Veri Tablosu, Senaryo, Çözücü), hesaplanmış alan, ayrıntıya inme. Model sayfaları (`modeller.js`). MCP `durum_cozumle`. 81 ders, 170 alıştırma, 17 soruluk seviye testi, 108 test, LibreOffice 219/219, tarama temiz. Bulunan hatalar: TU matrisli Çözücü vakası (LP zaten tamsayı), Fiyat sayfasında satır kayması, FAİZ_ORANI çözümsüzde Excel–LO farkı, rehberde `%36` yazımı.

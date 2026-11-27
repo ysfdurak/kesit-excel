@@ -4,7 +4,10 @@
 import { Kitap, goster } from './kitap.js';
 import { ayristir, belirtec, adresCoz, alanCoz, adres, kaydir, hataMi, HATA_TR, yazimBul, islevAdi, EN_TR } from './formul.js';
 import { ISLEVLER } from './islevler.js';
-import { pivot } from './pivot.js';
+import { pivot, pivotYerlestir } from './pivot.js';
+import { gecersizler, dogrula } from './dogrulama.js';
+import { ozelBicim } from './bicim.js';
+import { hedefAra, veriTablosu, cozucu } from './senaryo.js';
 import { sorguCalistir, hucreHatali } from './sorgu.js';
 import { makroCalistir } from './vba.js';
 import { grafikDenetle, aralikVerisi, pivotVerisi } from './grafik.js';
@@ -61,12 +64,17 @@ export function varyant(tablo, tohum = 7, { sabit = [], uzat = false } = {}) {
 function kitapKur(alistirma, tablolar) {
   const k = new Kitap({ bugun: alistirma.bugun ?? 45900 });
   for (const [ad, t] of Object.entries(tablolar)) {
-    if (t.basliklar) k.tablo(ad, t.basliklar, t.satirlar); else { const s = k.sayfa(ad); t.satirlar.forEach((row, i) => row.forEach((v, j) => { if (v != null) s.h.set((i + 1) + ',' + (j + 1), { v }); })); k.sifirla(); }
+    if (t.basliklar) k.tablo(ad, t.basliklar, t.satirlar);
+    else { const s = k.sayfa(ad); t.satirlar.forEach((row, i) => row.forEach((v, j) => { if (v == null) return; if (typeof v === 'string' && v.startsWith('=')) k.yaz(ad, { r: i + 1, c: j + 1 }, v); else s.h.set((i + 1) + ',' + (j + 1), { v }); })); k.sifirla(); }
   }
+  // Ad Yöneticisi'ndeki adlar ve sayfaya yerleşmiş özet tablolar (ÖZETVERİAL için) — gizli denemede de kendi verisinden kurulur
+  for (const [ad, tanim] of Object.entries(alistirma.adlar || {})) k.adTanimla(ad, tanim);
+  for (const pv of alistirma.pivotlar || []) pivotYerlestir(k, pv.sayfa, pv.sol, pv.kaynak, tablolar[pv.kaynak], pv.yapi);
   // Alıştırmanın hazırladığı hücreler (oran, eşik, kategori listesi): hem görünen hem gizli denemede aynı
   for (const [adr, v] of Object.entries(alistirma.hazirlik || {})) k.yaz(alistirma.sayfa, adr, v);
   return k;
 }
+export { kitapKur };
 // Hedef: tek hücre "L2" ya da doldurulacak alan "L2:L241" (ilk hücreye yazılan formül aşağı kaydırılır)
 function yerlestir(k, sayfa, hedef, formul) {
   if (hedef.includes(':')) { const a = alanCoz(hedef); const n = a.r2 - a.r1 + 1; for (let i = 0; i < n; i++) k.yaz(sayfa, { r: a.r1 + i, c: a.c1 }, kaydir(formul, i, 0)); }
@@ -106,7 +114,18 @@ export const HATA_ACIKLAMA = {
   '#FORMÜL': 'Formül yazımı bozuk (parantez, ayırıcı ya da tırnak eksik).',
 };
 
+// Form denetimi (açılan kutu, onay kutusu, kaydırma çubuğu) bağlı hücreye değer yazar. Formül her denetim
+// durumunda ayrı denetlenir: =İNDİS(liste; $H$1) yalnız H1 = 1 iken doğru olmamalı.
 export function formulDenetle(alistirma, tablolar, ogrenciFormul) {
+  if (!alistirma.durumlar || !alistirma.durumlar.length) return formulDenetleTek(alistirma, tablolar, ogrenciFormul);
+  let son;
+  for (const d of alistirma.durumlar) {
+    son = formulDenetleTek({ ...alistirma, hazirlik: { ...(alistirma.hazirlik || {}), ...d } }, tablolar, ogrenciFormul);
+    if (!son.tamam) { const ne = Object.entries(d).map(([a, v]) => `${a} = ${goster(v)}`).join(', '); return { ...son, mesaj: `Denetim ${ne} iken: ` + son.mesaj }; }
+  }
+  return { ...son, mesaj: `Doğru. Formül denetimin ${alistirma.durumlar.length} farklı seçiminde ve gizli denemede doğru sonuç verdi.` };
+}
+function formulDenetleTek(alistirma, tablolar, ogrenciFormul) {
   const sayfa = alistirma.sayfa, hedef = alistirma.hedef;
   const f = String(ogrenciFormul || '').trim();
   if (!f) return { tamam: false, mesaj: 'Hedef hücreye bir formül yazın.' };
@@ -114,6 +133,8 @@ export function formulDenetle(alistirma, tablolar, ogrenciFormul) {
   try { ayristir(f, ISLEVLER); } catch (e) { return { tamam: false, mesaj: 'Formül okunamadı: ' + e.message }; }
   const bilgi = formulBilgisi(f);
   for (const g of alistirma.gerekli || []) if (!bilgi.islevler.includes(g)) return { tamam: false, mesaj: `Bu alıştırmada ${trAd(g)} işlevini kullanın.`, ipucu: alistirma.ipuclari?.[0] };
+  if (alistirma.tabloGerekli && !/\[/.test(f)) return { tamam: false, mesaj: 'Bu alıştırmada yapılandırılmış başvuru kullanın: H2:H241 yerine Satışlar[Adet] ya da aynı satır için [@Adet]. Tablo uzayınca formül de uzar.', ipucu: alistirma.ipuclari?.[0] };
+  for (const ad of alistirma.adKullan || []) if (!new RegExp('(^|[^\\wÇĞİÖŞÜçğıöşü])' + ad + '(?![\\wÇĞİÖŞÜçğıöşü(])', 'iu').test(f)) return { tamam: false, mesaj: `Formülde ${ad} adını kullanın: alan adresi yerine ad yazmak formülü okunur yapar.`, ipucu: alistirma.ipuclari?.[0] };
   for (const y of alistirma.yasak || []) if (bilgi.islevler.includes(y)) return { tamam: false, mesaj: `Bu alıştırmada ${trAd(y)} kullanmadan çözün; amaç başka bir yolu denemek.` };
   const deneme = tabs => {
     const ko = kitapKur(alistirma, tabs), kc = kitapKur(alistirma, tabs);
@@ -273,4 +294,123 @@ export function panoDenetle(alistirma, tablolar, pano) {
   }
   if ((k.enCokGrafik ?? 4) < gr.length) return { tamam: false, mesaj: `Panoda ${gr.length} grafik var; tek bakışta okunması için en çok ${k.enCokGrafik ?? 4}.` };
   return { tamam: true, mesaj: 'Doğru. Pano soruyu cevaplıyor: dilimleyiciler bütün kartları birlikte süzüyor.' };
+}
+
+/* ---------------------------------------------------------------- kitap tasarımı: veri doğrulama, özel biçim, denetim */
+// Veri doğrulama: (1) mevcut verideki geçersiz hücreler (Geçersiz Verileri Daire İçine Al) çözümle aynı mı,
+// (2) deneme girişleri aynı kabul/ret kararını alıyor mu, (3) gizli kopyada da aynı mı.
+export function dogrulamaDenetle(alistirma, tablolar, kurallar) {
+  if (!kurallar || !kurallar.length) return { tamam: false, mesaj: 'Önce bir doğrulama kuralı ekleyin.' };
+  const dene = tabs => {
+    const k1 = kitapKur(alistirma, tabs), k2 = kitapKur(alistirma, tabs);
+    let a; try { a = gecersizler(k1, alistirma.sayfa, kurallar); } catch (e) { return { hata: e.message }; }
+    const b = gecersizler(k2, alistirma.sayfa, alistirma.cozum);
+    for (const x of b) if (!a.has(x)) return { fark: `${x} hücresindeki "${goster(k2.hucre(alistirma.sayfa, adresCoz(x).r, adresCoz(x).c))}" geçersiz sayılmalıydı` };
+    for (const x of a) if (!b.has(x)) return { fark: `${x} hücresindeki "${goster(k1.hucre(alistirma.sayfa, adresCoz(x).r, adresCoz(x).c))}" geçerli olmalıydı` };
+    for (const d of alistirma.denemeler || []) {
+      const p = adresCoz(d.hucre), k = kurallar.find(r => { const al = alanCoz(r.alan); return al && p.r >= al.r1 && p.r <= al.r2 && p.c >= al.c1 && p.c <= al.c2; });
+      const kc = alistirma.cozum.find(r => { const al = alanCoz(r.alan); return al && p.r >= al.r1 && p.r <= al.r2 && p.c >= al.c1 && p.c <= al.c2; });
+      const o = k ? dogrula(k1, alistirma.sayfa, p.r, p.c, d.deger, k) : true, c = kc ? dogrula(k2, alistirma.sayfa, p.r, p.c, d.deger, kc) : true;
+      if (o !== c) return { fark: `${d.hucre} hücresine "${goster(d.deger)}" yazılınca ${c ? 'kabul edilmeliydi' : 'reddedilmeliydi'}` };
+    }
+    return {};
+  };
+  const g = dene(tablolar);
+  if (g.hata) return { tamam: false, mesaj: g.hata };
+  if (g.fark) return { tamam: false, mesaj: 'Kural beklenenden farklı karar veriyor: ' + g.fark + '.', ipucu: alistirma.ipuclari?.[0] };
+  if (alistirma.hataStili && !kurallar.some(k => k.hataStili === alistirma.hataStili)) return { tamam: false, mesaj: `Kural doğru; hata uyarısının stilini "${alistirma.hataStili === 'durdur' ? 'Durdur' : alistirma.hataStili === 'uyari' ? 'Uyarı' : 'Bilgi'}" yapın: ${alistirma.hataStiliNeden || ''}`.trim() };
+  if (!alistirma.varyantsiz) {
+    const tv = Object.fromEntries(Object.entries(tablolar).map(([ad, t]) => [ad, t.basliklar && !t.ham && ad === alistirma.sayfa ? varyant(t, alistirma.tohum ?? 11) : t]));
+    const v = dene(tv);
+    if (v.fark) return { tamam: false, gizli: true, mesaj: 'Görünen veride doğru ama gizli kopyada farklı karar verdi: listeyi ya da sınırı elle yazmak yerine kaynağa (hücre, ad) bağlayın, özel formülde $ işaretlerine bakın.' };
+  }
+  return { tamam: true, mesaj: 'Doğru. Kural mevcut veride aynı hücreleri geçersiz buluyor ve deneme girişlerinde doğru karar veriyor.' };
+}
+// Özel sayı biçimi: aynı değerler aynı metin ve renkle görünmeli
+export function bicimDenetle(alistirma, tablolar, kod) {
+  if (!String(kod || '').trim()) return { tamam: false, mesaj: 'Biçim kodunu yazın.' };
+  for (const v of alistirma.denemeDegerleri) {
+    const o = ozelBicim(v, kod), c = ozelBicim(v, alistirma.cozum);
+    if (o.metin !== c.metin) return { tamam: false, mesaj: `${goster(v)} değeri "${o.metin}" görünüyor, beklenen "${c.metin}".`, ipucu: alistirma.ipuclari?.[0] };
+    if ((o.renk || null) !== (c.renk || null)) return { tamam: false, mesaj: `${goster(v)} değerinin rengi farklı: ${c.renk ? 'renkli görünmeli ([Kırmızı] gibi bir renk kodu)' : 'renk kodu olmamalı'}.` };
+  }
+  return { tamam: true, mesaj: `Doğru. ${alistirma.denemeDegerleri.length} deneme değerinin hepsi beklenen biçimde görünüyor. Değerin kendisi değişmedi; biçim yalnız görünüşü değiştirir.` };
+}
+// Formül denetimi: "hatayı yapan hücreyi bulun" — cevap bir ya da birkaç adres
+export function hucreBulDenetle(alistirma, cevap) {
+  const v = String(cevap || '').toUpperCase().replace(/\$/g, '').split(/[;,\s]+/).filter(Boolean).sort();
+  const d = alistirma.dogru.map(x => x.toUpperCase()).sort();
+  if (!v.length) return { tamam: false, mesaj: 'Hücre adresini yazın (ör. D7).' };
+  if (v.join() === d.join()) return { tamam: true, mesaj: 'Doğru. ' + (alistirma.aciklama || '') };
+  const kismi = v.filter(x => d.includes(x));
+  return { tamam: false, mesaj: kismi.length ? `${kismi.join(', ')} doğru, ama ${d.length > v.length ? 'eksik hücre var' : 'fazladan hücre yazdınız'}.` : 'Bu hücre değil. Etkileyenleri izleyerek hatanın geldiği yere geri gidin.', ipucu: alistirma.ipuclari?.[0] };
+}
+// Sayı cevabı (ayrıntıya inme, Hedef Ara sonucu okuma): doğru cevap veriden formülle hesaplanır, elle yazılmaz
+export function sayiDenetle(alistirma, tablolar, cevap) {
+  const k = kitapKur(alistirma, tablolar);
+  const beklenen = k.formulDegerlendir(alistirma.sayfa, 1, 1, alistirma.cevapFormul);
+  const n = Number(String(cevap ?? '').trim().replace(/\./g, '').replace(',', '.'));
+  if (!Number.isFinite(n)) return { tamam: false, mesaj: 'Bir sayı yazın.' };
+  const tol = alistirma.tolerans ?? 0.005;
+  return Math.abs(n - beklenen) <= Math.max(tol, Math.abs(beklenen) * 1e-9) ? { tamam: true, mesaj: 'Doğru. ' + (alistirma.aciklama || '') } : { tamam: false, mesaj: 'Bu sayı değil.', ipucu: alistirma.ipuclari?.[0] };
+}
+
+/* ---------------------------------------------------------------- durum çözümlemesi */
+const yakinMi = (a, b, tol = 1e-6) => typeof a === 'number' && typeof b === 'number' && Math.abs(a - b) <= tol * Math.max(1, Math.abs(a), Math.abs(b));
+export function hedefAraDenetle(alistirma, tablolar, ayar) {
+  const c = alistirma.cozum, h = (ayar?.hedefHucre || '').toUpperCase().replace(/\$/g, ''), d = (ayar?.degisenHucre || '').toUpperCase().replace(/\$/g, '');
+  if (!h || !d || ayar.hedefDeger == null || ayar.hedefDeger === '') return { tamam: false, mesaj: 'Hedef hücre, hedef değer ve değişecek hücrenin üçü de dolu olmalı.' };
+  if (h !== c.hedefHucre) return { tamam: false, mesaj: `"Hedef hücre" sonucu veren formül hücresi olmalı (${c.hedefHucre}); ${h} değil.`, ipucu: alistirma.ipuclari?.[0] };
+  if (d !== c.degisenHucre) return { tamam: false, mesaj: `"Değişecek hücre" sorunun aradığı girdi olmalı; ${d} değil.`, ipucu: alistirma.ipuclari?.[0] };
+  if (!yakinMi(Number(ayar.hedefDeger), c.hedefDeger)) return { tamam: false, mesaj: `Hedef değer soruda istenen ${goster(c.hedefDeger)} olmalı.` };
+  const k = kitapKur(alistirma, tablolar), r = hedefAra(k, alistirma.sayfa, { hedefHucre: h, hedefDeger: Number(ayar.hedefDeger), degisenHucre: d });
+  if (!r.tamam) return { tamam: false, mesaj: r.mesaj };
+  return { tamam: true, mesaj: `Doğru. Hedef Ara ${d} hücresini ${goster(+r.deger.toPrecision(10))} yaptı; ${h} = ${goster(+Number(r.sonuc).toPrecision(10))}.`, deger: r.deger };
+}
+export function veriTablosuDenetle(alistirma, tablolar, ayar) {
+  const k1 = kitapKur(alistirma, tablolar), k2 = kitapKur(alistirma, tablolar);
+  let a; try { a = veriTablosu(k1, alistirma.sayfa, { ...alistirma.cozum, ...ayar }); } catch (e) { return { tamam: false, mesaj: 'Giriş hücresi geçersiz: ' + e.message }; }
+  const b = veriTablosu(k2, alistirma.sayfa, alistirma.cozum);
+  const esitMi = JSON.stringify(a.flat().map(x => +Number(x).toPrecision(10))) === JSON.stringify(b.flat().map(x => +Number(x).toPrecision(10)));
+  if (!esitMi) return { tamam: false, mesaj: 'Tablodaki sonuçlar beklenenden farklı: satır girişi ile sütun girişi yer değiştirmiş ya da yanlış hücreye bağlanmış olabilir. Satır girişi, tablonun üst satırındaki değerlerin yazılacağı hücredir.', ipucu: alistirma.ipuclari?.[0] };
+  return { tamam: true, mesaj: 'Doğru. Veri tablosu her değer çifti için modeli yeniden hesapladı.', tablo: a };
+}
+export function cozucuDenetle(alistirma, tablolar, model) {
+  if (!model || !model.amac || !model.degiskenler) return { tamam: false, mesaj: 'Amaç hücresi ve değişken hücreler gerekli.' };
+  const k1 = kitapKur(alistirma, tablolar), k2 = kitapKur(alistirma, tablolar);
+  const o = cozucu(k1, alistirma.sayfa, model), c = cozucu(k2, alistirma.sayfa, alistirma.cozum);
+  if (!o.tamam) return { tamam: false, mesaj: o.mesaj, ipucu: alistirma.ipuclari?.[0] };
+  if (String(model.amac).toUpperCase().replace(/\$/g, '') !== alistirma.cozum.amac) return { tamam: false, mesaj: `Amaç hücresi en iyilenecek sonucu veren hücre olmalı (${alistirma.cozum.amac}).` };
+  if ((model.yon || 'maks') !== (alistirma.cozum.yon || 'maks')) return { tamam: false, mesaj: `Amaç ${alistirma.cozum.yon === 'min' ? 'en küçük' : 'en büyük'} yapılmalı.` };
+  // Kullanıcının çözümünü çözümün kısıtlarıyla dene: çözüm modelinin kısıtlarını sağlıyor ve aynı amaç değerine ulaşıyor mu?
+  const k3 = kitapKur(alistirma, tablolar);
+  for (const [a, v] of Object.entries(o.degerler)) k3.yaz(alistirma.sayfa, a, v);
+  k3.hesapla();
+  for (const kis of alistirma.cozum.kisitlar) {
+    if (kis.op === 'tamsayi' || kis.op === 'ikili') { const al = alanCoz(kis.sol.includes(':') ? kis.sol : kis.sol + ':' + kis.sol); for (let r = al.r1; r <= al.r2; r++) for (let cc = al.c1; cc <= al.c2; cc++) { const x = k3.hucre(alistirma.sayfa, r, cc); if (!Number.isInteger(Math.round(x * 1e9) / 1e9)) return { tamam: false, mesaj: `Çözümde ${adres(r, cc)} = ${goster(x)}: tamsayı olmalıydı (yarım masa ya da yarım operatör olmaz). Tamsayı kısıtı ekleyin.` }; } continue; }
+    const duz = a => { const x = alanCoz(a.includes(':') ? a : a + ':' + a), o = []; for (let r = x.r1; r <= x.r2; r++) for (let cc = x.c1; cc <= x.c2; cc++) o.push([r, cc]); return o; };
+    const solH = duz(kis.sol), sagH = typeof kis.sag === 'string' && /^[A-Za-z]/.test(kis.sag) ? duz(kis.sag) : null;
+    for (let i = 0; i < solH.length; i++) {
+      const [r, cc] = solH[i], sol = k3.hucre(alistirma.sayfa, r, cc), sag = sagH ? k3.hucre(alistirma.sayfa, ...sagH[sagH.length === 1 ? 0 : i]) : Number(String(kis.sag).replace(',', '.'));
+      const ok = { '<=': sol <= sag + 1e-7, '>=': sol >= sag - 1e-7, '=': Math.abs(sol - sag) <= 1e-7 }[kis.op];
+      if (!ok) return { tamam: false, mesaj: `Bulduğunuz çözüm bir kısıtı çiğniyor: ${adres(r, cc)} = ${goster(+Number(sol).toPrecision(10))}, ${kis.op} ${goster(+Number(sag).toPrecision(10))} olmalı. Bu kısıtı Çözücü'ye ekleyin.` };
+    }
+  }
+  if (!yakinMi(o.amac, c.amac)) return { tamam: false, mesaj: `Çözüm olurlu ama en iyi değil: amaç ${goster(+o.amac.toPrecision(10))}, daha iyisi ${goster(+c.amac.toPrecision(10))}. Fazladan bir kısıt mı eklediniz?` };
+  return { tamam: true, mesaj: `Doğru. Çözücü en iyi çözümü buldu: amaç ${goster(+o.amac.toPrecision(10))}.`, degerler: o.degerler };
+}
+
+// Ad tanımlama: adın kuralları (harfle başlar, boşluk yok, adrese benzemez) ve başvurduğu alan çözümle aynı mı
+export function adDenetle(alistirma, tablolar, { ad, tanim }) {
+  const k = kitapKur(alistirma, tablolar);
+  try { k.adTanimla(ad, tanim); } catch (e) { return { tamam: false, mesaj: e.message }; }
+  if (alistirma.adGerekli && String(ad).toLocaleUpperCase('tr') !== alistirma.adGerekli.toLocaleUpperCase('tr')) return { tamam: false, mesaj: `Soruda istenen ad "${alistirma.adGerekli}".` };
+  const kc = kitapKur(alistirma, tablolar); kc.adTanimla(alistirma.cozum.ad, alistirma.cozum.tanim);
+  const bag = kk => ({ kitap: kk, sayfa: kk.sayfaBul(alistirma.sayfa), satir: 2, sutun: 1, adim: kk.adim, bugun: kk.bugun, degisken: null });
+  const o = k.adDegeri(String(ad).toLocaleUpperCase('tr'), bag(k)), c = kc.adDegeri(alistirma.cozum.ad.toLocaleUpperCase('tr'), bag(kc));
+  const ayni = (a, b) => a && b && a.sayfa === b.sayfa && a.r1 === b.r1 && a.r2 === b.r2 && a.c1 === b.c1 && a.c2 === b.c2;
+  if (c && c.r1 != null) { if (!ayni(o, c)) return { tamam: false, mesaj: o && o.r1 != null ? `Ad ${o.sayfa}!${adres(o.r1, o.c1)}:${adres(o.r2, o.c2)} alanına bakıyor; beklenen ${c.sayfa}!${adres(c.r1, c.c1)}:${adres(c.r2, c.c2)}.` : 'Ad bir hücre alanına başvurmalı (ör. =Satışlar!$H$2:$H$241 ya da =Satışlar[Adet]).', ipucu: alistirma.ipuclari?.[0] }; }
+  else if (!(typeof o === 'number' && Math.abs(o - c) < 1e-12)) return { tamam: false, mesaj: 'Adın değeri beklenenden farklı.' };
+  if (/\$/.test(alistirma.cozum.tanim) && /![A-Z]+\d/.test(tanim) && !/\$/.test(tanim)) return { tamam: false, mesaj: 'Ad göreli başvuruyla tanımlanmış ($ yok): Excel adı kullanıldığı hücreye göre kaydırır. Mutlak başvuru yazın: $H$2:$H$241.' };
+  return { tamam: true, mesaj: 'Doğru. Ad tanımlandı; artık formüllerde alan yerine adı yazabilirsiniz.' + (/\[/.test(tanim) ? ' Tablo sütununa bağladığınız için veri uzayınca ad da uzar.' : '') };
 }

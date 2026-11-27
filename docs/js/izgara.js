@@ -9,6 +9,9 @@ import { ISLEV_BILGI, islevBul } from '../icerik/islev-bilgi.js';
 import { HATA_ACIKLAMA } from '../motor/denetci.js';
 import { kosulluUygula, miniGrafik } from '../motor/kosullu.js';
 import { svgDugum } from './grafik-ui.js';
+import { dogrula, kuralBul, listeDegerleri, gecersizler, etkileyenler, etkilenenler, formulAdimlari } from '../motor/dogrulama.js';
+import { ozelBicim } from '../motor/bicim.js';
+import { sayiMetin } from '../motor/formul.js';
 
 const REF_RENK = 6;
 const EKLENEBILIR_ONCE = /[=(;,+\-*/^&<>:]\s*$/;
@@ -79,7 +82,18 @@ export class Izgara {
       if (d) { e.preventDefault(); const r = Math.min(this.s.satirSayisi, Math.max(1, this.secili.r + d[0])), c = Math.min(this.s.sutunSayisi, Math.max(1, this.secili.c + d[1])); this.sec(r, c, false); }
       else if (e.key === 'Enter' || e.key === 'F2') { e.preventDefault(); this.sec(this.secili.r, this.secili.c, true); if (this.giris.readOnly) this.giris.focus(); }
     });
-    const kap = h('div.izgara-kap', {}, cubuk, this.oneriler, this.ipucu, kaydirma, h('div.izgara-alt', {}, this.turEtiket, this.aciklama));
+    // Veri doğrulamada liste kuralı: seçili hücrede açılır liste (Excel'deki hücre içi ok)
+    this.listeSec = h('select.liste-sec', { hidden: true, 'aria-label': 'Listeden seç', on: { change: e => { if (!e.target.value) return; this.giris.value = e.target.value; this.uygula(); } } });
+    cubuk.append(this.listeSec);
+    // Formül denetimi araç çubuğu (Formüller > Formül Denetleme)
+    this.denetimKutu = h('div.denetim-sonuc', { 'aria-live': 'polite' });
+    const denetimCubuk = s.denetim ? h('div.denetim-cubuk', { role: 'group', 'aria-label': 'Formül denetleme' },
+      h('button.btn.tiny', { type: 'button', on: { click: () => this.izle('once') } }, '⇠ Etkileyenleri izle'),
+      h('button.btn.tiny', { type: 'button', on: { click: () => this.izle('sonra') } }, 'Etkilenenleri izle ⇢'),
+      h('button.btn.tiny', { type: 'button', on: { click: () => this.degerlendirAc() } }, 'Formülü değerlendir'),
+      h('button.btn.tiny', { type: 'button', on: { click: () => this.izTemizle() } }, 'Okları kaldır'),
+      s.dogrulama ? h('button.btn.tiny', { type: 'button', on: { click: () => this.gecersizGoster() } }, '◯ Geçersiz verileri işaretle') : null) : null;
+    const kap = h('div.izgara-kap', {}, cubuk, this.oneriler, this.ipucu, denetimCubuk, this.denetimKutu, kaydirma, h('div.izgara-alt', {}, this.turEtiket, this.aciklama));
     this.guncelle();
     // Sayfaya eklenince seçili (hedef) hücreyi görünür alana kaydır
     let deneme = 0; const bekle = () => { if (kap.isConnected) this.gorunurYap(true); else if (deneme++ < 30) requestAnimationFrame(bekle); };
@@ -135,7 +149,7 @@ export class Izgara {
     this.giris.value = ic == null ? '' : typeof ic === 'number' && this.k.icerik ? String(ic).replace('.', ',') : typeof ic === 'boolean' ? (ic ? 'DOĞRU' : 'YANLIŞ') : String(ic);
     this.giris.readOnly = !this.yazilabilir(r, c);
     this.giris.classList.toggle('kilitli', this.giris.readOnly);
-    this.oneriler.hidden = true; this.ipucuGoster(); this.refBoya(); this.hucreBilgisi();
+    this.oneriler.hidden = true; this.ipucuGoster(); this.refBoya(); this.hucreBilgisi(); this.listeGoster();
     if (odak && !this.giris.readOnly) { this.giris.focus(); const n = this.giris.value.length; this.giris.setSelectionRange(n, n); this.duzenle = true; }
   }
   hucreBilgisi() {
@@ -151,6 +165,18 @@ export class Izgara {
   uygula() {
     if (!this.yazilabilir()) return;
     const { r, c } = this.secili;
+    // Veri doğrulama: yazılan değer kurala uymuyorsa hata uyarısının stiline göre davran
+    const kural = kuralBul(this.s.dogrulama, r, c), ham = this.giris.value;
+    if (kural && !ham.startsWith('=')) {
+      const t = ham.trim(), n = sayiMetin(t), deger = t === '' ? null : n == null ? t : n;
+      if (!dogrula(this.k, this.sayfa, r, c, deger, kural)) {
+        const ileti = kural.hataIletisi || 'Bu değer, bu hücre için tanımlanan veri doğrulama kısıtlamalarıyla eşleşmiyor.';
+        if ((kural.hataStili || 'durdur') === 'durdur') { yerlestir(temizle(this.aciklama), h('span.uyari', {}, '⛔ ' + (kural.hataBaslik || 'Geçersiz giriş') + ': ' + ileti)); this.giris.select(); return; }
+        yerlestir(temizle(this.aciklama), h('span.uyari', {}, (kural.hataStili === 'uyari' ? '⚠ ' : 'ℹ ') + ileti + ' (Değer yazıldı: ' + (kural.hataStili === 'uyari' ? 'Uyarı stilinde kullanıcı Evet diyebilir' : 'Bilgi stili yalnız bildirir') + '.)'));
+        this.s.onYaz ? this.s.onYaz(r, c, ham) : this.k.yazGiris(this.sayfa, { r, c }, ham);
+        this.k.hesapla(); this.guncelle(); this.duzenle = false; if (this.s.onDegis) this.s.onDegis(); return;
+      }
+    }
     this.s.onYaz ? this.s.onYaz(r, c, this.giris.value) : this.k.yazGiris(this.sayfa, { r, c }, this.giris.value);
     this.k.hesapla(); this.guncelle(); this.duzenle = false; this.sonRef = null; this.oneriler.hidden = true;
     this.hucreBilgisi(); this.refBoya();
@@ -169,6 +195,49 @@ export class Izgara {
   // Koşullu biçim kuralları ve mini grafikler dışarıdan değiştirilebilir (Koşullu biçim / Mini grafik alıştırmaları)
   kurallariAyarla(kurallar) { this.s.kurallar = kurallar; this.guncelle(); }
   miniAyarla(mini) { this.s.mini = mini; this.guncelle(); }
+  dogrulamaAyarla(kurallar) { this.s.dogrulama = kurallar; this.gecersizIsaret = false; this.guncelle(); this.listeGoster(); }
+  bicimAyarla(harita) { this.s.ozelBicim = harita; this.guncelle(); }
+  listeGoster() {
+    const { r, c } = this.secili, k = kuralBul(this.s.dogrulama, r, c);
+    if (!this.listeSec) return;
+    if (!k || k.tur !== 'liste' || k.listeOku === false || !this.yazilabilir(r, c)) { this.listeSec.hidden = true; return; }
+    const l = listeDegerleri(this.k, this.sayfa, r, c, k.kaynak, r - (alanCoz(k.alan)?.r1 ?? r), c - (alanCoz(k.alan)?.c1 ?? c));
+    yerlestir(temizle(this.listeSec), h('option', { value: '' }, '▾ liste'), l.map(x => h('option', { value: String(x) }, String(x))));
+    this.listeSec.hidden = false;
+  }
+  gecersizGoster() {
+    this.gecersizIsaret = !this.gecersizIsaret;
+    const g = this.gecersizIsaret ? gecersizler(this.k, this.sayfa, this.s.dogrulama) : new Set();
+    for (const [k, td] of this.hucreler) { const [r, c] = k.split(',').map(Number); td.classList.toggle('gecersiz', g.has(adres(r, c))); }
+    this.denetimKutu.textContent = this.gecersizIsaret ? (g.size ? `${g.size} hücre kurala uymuyor (kırmızı halka).` : 'Kurala uymayan hücre yok.') : '';
+  }
+  izTemizle() { for (const td of this.tablo.querySelectorAll('td.iz-once, td.iz-sonra')) td.classList.remove('iz-once', 'iz-sonra'); temizle(this.denetimKutu); }
+  izle(yon) {
+    const { r, c } = this.secili; this.izTemizle();
+    if (yon === 'once') {
+      const l = etkileyenler(this.k, this.sayfa, r, c);
+      if (!l.length) { this.denetimKutu.textContent = `${adres(r, c)} formül değil ya da başka hücreye bakmıyor.`; return; }
+      for (const x of l) if (x.sayfa.toLocaleLowerCase('tr') === this.sayfa.toLocaleLowerCase('tr')) for (let a = x.r1; a <= Math.min(x.r2, this.s.satirSayisi); a++) for (let b = x.c1; b <= x.c2; b++) this.hucreler.get(a + ',' + b)?.classList.add('iz-once');
+      this.denetimKutu.textContent = `${adres(r, c)} şunlara bakıyor: ` + l.map(x => x.metin + (x.sayfa.toLocaleLowerCase('tr') !== this.sayfa.toLocaleLowerCase('tr') ? ' (başka sayfa)' : '')).join(', ');
+    } else {
+      const l = etkilenenler(this.k, this.sayfa, r, c);
+      if (!l.length) { this.denetimKutu.textContent = `${adres(r, c)} hücresini okuyan formül yok.`; return; }
+      for (const x of l) if (x.sayfa.toLocaleLowerCase('tr') === this.sayfa.toLocaleLowerCase('tr')) this.hucreler.get(x.r + ',' + x.c)?.classList.add('iz-sonra');
+      this.denetimKutu.textContent = `${adres(r, c)} hücresini ${l.length} formül okuyor: ` + l.slice(0, 12).map(x => (x.sayfa !== this.sayfa ? x.sayfa + '!' : '') + adres(x.r, x.c)).join(', ') + (l.length > 12 ? ' …' : '');
+    }
+  }
+  degerlendirAc() {
+    const { r, c } = this.secili, adimlar = formulAdimlari(this.k, this.sayfa, r, c);
+    temizle(this.denetimKutu);
+    if (!adimlar.length) { this.denetimKutu.textContent = `${adres(r, c)} formül değil.`; return; }
+    let i = 0;
+    const liste = h('ol.degerlendir-liste');
+    const ileri = h('button.btn.tiny.primary', { type: 'button' }, 'Değerlendir');
+    const goster = () => { liste.append(h('li', {}, h('code', {}, adimlar[i].metin), i ? h('span.muted', {}, '  ← ' + adimlar[i].ne) : null)); i++; if (i >= adimlar.length) { ileri.disabled = true; ileri.textContent = 'Bitti'; } };
+    ileri.addEventListener('click', goster);
+    yerlestir(this.denetimKutu, h('div.degerlendir', {}, h('b', {}, `Formülü değerlendir · ${adres(r, c)}`), liste, h('div.btn-row', {}, ileri, h('button.btn.tiny', { type: 'button', on: { click: () => { while (i < adimlar.length) goster(); } } }, 'Hepsini göster'))));
+    goster();
+  }
   guncelle() {
     const bic = this.s.bicimler || [], hb = this.s.hucreBicim || {};
     let gor = null; try { gor = this.s.kurallar && this.s.kurallar.length ? kosulluUygula(this.k, this.sayfa, this.s.kurallar) : null; this.kuralHatasi = null; } catch (e) { this.kuralHatasi = e.message; }
@@ -189,6 +258,10 @@ export class Izgara {
       td.style.backgroundColor = st && st.dolgu != null && st.dolgu !== 16777215 ? vbaRenk(st.dolgu) : '';
       td.style.color = st && st.yaziRenk ? vbaRenk(st.yaziRenk) : '';
       if (st && st.sayiBicimi && typeof v === 'number' && !st.sayiBicimi.match(/^general$/i)) td.textContent = goster(v, vbaBicim(st.sayiBicimi));
+      // Özel sayı biçimi (Hücreleri Biçimlendir > Özel): değer aynı kalır, yalnız görünüş değişir
+      const ob = this.s.ozelBicim && Object.entries(this.s.ozelBicim).find(([al]) => this.icinde(alanCoz(al.includes(':') ? al : al + ':' + al), r, c));
+      if (ob && v != null && !hataMi(v)) { try { const o = ozelBicim(v, ob[1]); td.textContent = o.metin; if (o.renk) td.style.color = o.renk; } catch { /* bozuk kod: olduğu gibi */ } }
+      if (this.gecersizIsaret === false) td.classList.remove('gecersiz');
       // Koşullu biçim görünümü
       const g = gor && gor.get(r + ',' + c);
       for (const k of ['kb-kirmizi', 'kb-sari', 'kb-yesil', 'kb-kalin']) td.classList.remove(k);

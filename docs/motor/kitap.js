@@ -1,6 +1,8 @@
 // Kesit Excel · çalışma kitabı: sayfalar, hücreler, hesaplama, dinamik dizi taşması, döngü koruması.
-import { ayristir, degerlendir, coz, Dizi, Hata, H, hataMi, sayiMetin, adresCoz, alanCoz, kaydir, HATA_TR, SINIR, adres } from './formul.js';
-import { ISLEVLER } from './islevler.js';
+import { ayristir, degerlendir, coz, Dizi, Hata, H, hataMi, sayiMetin, adresCoz, alanCoz, kaydir, HATA_TR, SINIR, adres, Bas } from './formul.js';
+import { ISLEVLER, basvuruAyristiriciKur } from './islevler.js';
+// DOLAYLI'nın metni başvuruya çevirmesi için ayrıştırıcı (döngüsel içe aktarmayı önlemek için buradan bağlanır)
+basvuruAyristiriciKur(m => ayristir('=' + m, ISLEVLER));
 import { bicimle, trSayi } from './tarih.js';
 
 const anahtar = (r, c) => r + ',' + c;
@@ -19,6 +21,7 @@ export class Sayfa {
 export class Kitap {
   constructor({ bugun = null } = {}) {
     this.sayfalar = new Map(); this.islevler = ISLEVLER; this.bugun = bugun;
+    this.adlar = new Map(); this.tablolar = new Map(); this.adDerinlik = 0;
     this.sifirla();
   }
   sifirla() { this.sonuc = new Map(); this.tasma = new Map(); this.tasmaSahibi = new Map(); this.hesapta = new Set(); this.adim = { n: 0 }; }
@@ -47,12 +50,49 @@ export class Kitap {
     const n = sayiMetin(t);
     return this.yaz(sayfaAd, adr, n == null ? metin : n);
   }
-  // Tablo yükle: başlıklar ilk satırda; tarihler seri sayı olarak verilmeli
-  tablo(sayfaAd, basliklar, satirlar, bas = 'A1') {
+  // Tablo yükle: başlıklar ilk satırda; tarihler seri sayı olarak verilmeli.
+  // Excel Tablosu olarak da kaydedilir (ad: sayfa adı, boşluklar _): =TOPLA(Satışlar[Adet]). Veri uzayınca tablo da uzar.
+  tablo(sayfaAd, basliklar, satirlar, bas = 'A1', tabloAdi = String(sayfaAd).replace(/\s+/g, '_')) {
     const p = adresCoz(bas), s = this.sayfa(sayfaAd);
     basliklar.forEach((h, j) => s.h.set(anahtar(p.r, p.c + j), { v: h }));
     satirlar.forEach((row, i) => row.forEach((v, j) => { if (v != null && v !== '') s.h.set(anahtar(p.r + 1 + i, p.c + j), { v }); }));
+    if (tabloAdi) this.tablolar.set(trB(tabloAdi), { ad: tabloAdi, sayfa: s.ad, r1: p.r, c1: p.c, r2: p.r + Math.max(1, satirlar.length), c2: p.c + basliklar.length - 1 });
     this.sifirla();
+  }
+  // Ad Yöneticisi: ad → formül ("=Satışlar!$H$2:$H$241", "=0,18", "=Ürünler[Fiyat]")
+  adTanimla(ad, tanim) {
+    const a = String(ad).trim();
+    if (!/^[A-Za-zÇĞİÖŞÜçğıöşü_\\][\wÇĞİÖŞÜçğıöşü.]*$/.test(a)) throw new Error('Ad harf ya da _ ile başlamalı, boşluk içermemeli');
+    if (adresCoz(a) || /^[RrCc]\d*$/.test(a)) throw new Error('Ad bir hücre adresine benzememeli (ör. KDV1 değil, KDV_Oranı)');
+    const f = String(tanim).startsWith('=') ? String(tanim) : '=' + tanim;
+    this.adlar.set(trB(a), { ad: a, f, agac: ayristir(f, ISLEVLER) });
+    this.sifirla();
+  }
+  adDegeri(adB, bag) {
+    const n = this.adlar.get(adB);
+    if (n) {
+      if (++this.adDerinlik > 32) { this.adDerinlik = 0; return H.DONGU; }
+      try { return degerlendir(n.agac, bag); } finally { this.adDerinlik--; }
+    }
+    const t = this.tablolar.get(adB);
+    if (t) return new Bas(t.sayfa, t.r1 + 1, t.c1, t.r2, t.c2);
+    return undefined;
+  }
+  // Yapılandırılmış başvuruyu (Tablo[Sütun], [@Sütun]) hücre başvurusuna çevirir
+  tabloBul(sayfaAd, r, c) {
+    const ayni = [...this.tablolar.values()].filter(t => trB(t.sayfa) === trB(sayfaAd) && r >= t.r1 && r <= t.r2);
+    // Önce hücreyi kapsayan (ya da hemen sağındaki hesaplanan sütun) tablo; yoksa o satırlardaki tek tablo (yanına yazılan yardımcı sütun)
+    return ayni.find(t => c >= t.c1 && c <= t.c2 + 1) || (ayni.length === 1 ? ayni[0] : null);
+  }
+  tabloBasvuru(n, bag) {
+    const t = n.tablo ? this.tablolar.get(trB(n.tablo)) : this.tabloBul(bag.sayfa.ad, bag.satir, bag.sutun);
+    if (!t) return H.BASV;
+    const sutunNo = ad => { if (ad == null) return null; for (let c = t.c1; c <= t.c2; c++) if (trB(String(this.hucre(t.sayfa, t.r1, c) ?? '')) === trB(ad)) return c; return -1; };
+    let c1 = t.c1, c2 = t.c2;
+    if (n.s1 != null) { c1 = sutunNo(n.s1); c2 = n.s2 != null ? sutunNo(n.s2) : c1; if (c1 < 0 || c2 < 0) return H.BASV; }
+    if (n.satirlik) { if (bag.satir <= t.r1 || bag.satir > t.r2 || trB(bag.sayfa.ad) !== trB(t.sayfa)) return H.DEGER; return new Bas(t.sayfa, bag.satir, c1, bag.satir, c2); }
+    const [r1, r2] = n.ozel === 'baslik' ? [t.r1, t.r1] : n.ozel === 'tumu' ? [t.r1, t.r2] : n.ozel === 'toplam' ? [t.r2 + 1, t.r2 + 1] : [t.r1 + 1, t.r2];
+    return new Bas(t.sayfa, r1, c1, r2, c2);
   }
   // İlk hücreye formülü yazar, altına göreli başvuruları kaydırarak doldurur (Excel'de çift tıklayıp aşağı doldurma)
   doldur(sayfaAd, ilk, formul, n) { const p = adresCoz(ilk); for (let i = 0; i < n; i++) this.yaz(sayfaAd, { r: p.r + i, c: p.c }, kaydir(formul, i, 0)); }
