@@ -68,7 +68,7 @@ const H = [
   ['DMAX', 'vt', 'VSEÇMAK(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda alanın en büyük değeri.', '=VSEÇMAK(A1:K241;"Birim Fiyat";N1:N2)'],
   ['DMIN', 'vt', 'VSEÇMİN(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda alanın en küçük değeri.', '=VSEÇMİN(A1:K241;"Birim Fiyat";N1:N2)'],
   ['DPRODUCT', 'vt', 'VSEÇÇARP(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda alanın değerlerini çarpar.', '=VSEÇÇARP(A1:K241;"Adet";N1:N2)'],
-  ['DGET', 'vt', 'VAL(veritabanı; alan; ölçüt)', 'Ölçüte uyan TEK kaydın alan değerini getirir. Hiç kayıt yoksa #DEĞER!, birden çoksa #SAYI!.', '=VAL(A1:K241;"Müşteri";N1:N2)'],
+  ['DGET', 'vt', 'VAL(veritabanı; alan; ölçüt)', 'Ölçüte uyan TEK kaydın alan değerini getirir (örnekte Q1:Q2: Sipariş No = 176). Hiç kayıt yoksa #DEĞER!, birden çoksa #SAYI!.', '=VAL(A1:K241;"Müşteri";Q1:Q2)'],
   ['DSTDEV', 'vt', 'VSEÇSTDSAPMA(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda örnek standart sapma.', '=VSEÇSTDSAPMA(A1:K241;"Birim Fiyat";N1:N2)'],
   ['DSTDEVP', 'vt', 'VSEÇSTDSAPMAS(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda popülasyon standart sapması.', '=VSEÇSTDSAPMAS(A1:K241;"Birim Fiyat";N1:N2)'],
   ['DVAR', 'vt', 'VSEÇVAR(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda örnek varyans.', '=VSEÇVAR(A1:K241;"Birim Fiyat";N1:N2)'],
