@@ -13,7 +13,7 @@
 | **Kimin için** | Excel'i işte kullanacak herkes; özellikle veri analisti, BI, operasyon/planlama, finans, BT iş analisti ve ofis rolleri. Kesit ailesinin (SQL, Power BI, Python, İstatistik) beşinci üyesi |
 | **Canlı** | https://ysfdurak.github.io/kesit-excel/ (27.11.2026'dan beri; kök adres `docs/`'a yönlendirir) |
 | **Depo** | `ysfdurak/kesit-excel` |
-| **Durum** | 0.8.0 · depo açık, CI yeşil; testler 213, LibreOffice 291/291, güvenlik taraması temiz; gerçek Excel'de (LTSC İngilizce/Türkçe menü ve Türkçe web Excel 365) örneklem yapıldı (§7.x–7.z); 0.7.0 ve 0.8.0 içeriği gerçek Excel'de henüz denenmedi (§5.20, §5.21) |
+| **Durum** | 0.9.0 · depo açık, CI yeşil; testler 221, LibreOffice 291/291, güvenlik taraması temiz; gerçek Excel'de (LTSC İngilizce/Türkçe menü ve Türkçe web Excel 365) örneklem yapıldı (§7.x–7.z); 0.7.0–0.9.0 içeriği gerçek Excel'de henüz denenmedi (§5.20–5.22) |
 | **Sunucu** | Yok (GitHub Pages). VPS gerekmiyor; gerekçe §6 |
 
 **Tek cümle:** "Excel formülünü ezberletmek yerine Kesit verisinde yazdırıyor; cevabı gördüğünüz tabloda ve sayıları değiştirilmiş gizli bir kopyada denetleyip hatanın nedenini söylüyor."
@@ -482,6 +482,29 @@ Kullanıcı Mustafa Bolat, Ömer Bağcı, Faruk Çubukçu ve Udemy'deki Türkçe
 
 > **Şöyle daha iyi olur:** Harita grafiği ve VBA olayları (Worksheet_Change) eğitmen müfredatlarında var ama motorda karşılığı yok; şimdilik eklenmedi. Olaylar için makro atölyesine "hücre değişince çalış" tetikleyicisi eklenebilir.
 
+### 5.22 Özet tablo gösterimleri, değer filtresi ve koşullu grafikler (0.9.0)
+
+Kullanıcı Bilengo ve Momentum Plus kurslarına ve eğitmenlerin kendi sitelerine de bakılmasını istedi. İki sitenin pivot kursları (21 ve 34 ders) bizim 4 derslik özet tablo modülümüzü açıkça geride bırakıyordu. Grafik kursunda da Excel'in yardımcı seriyle yapılan grafikleri (waffle, eşiğe göre renk, zirve–dip) vardı. Karşılaştırma tablosu §9.z'de.
+
+**Pivot motorunda ne değişti?** (`docs/motor/pivot.js`)
+- `goster` için beş yeni değer: `fark`, `farkYuzde`, `birikimli`, `birikimliYuzde`, `sira`. Hepsi satır alanı boyunca, **görünen sıraya göre** hesaplanır. Excel'deki "temel alan = satır alanı, temel öğe = (önceki)" ayarının karşılığıdır. Genel Toplam satırı bu gösterimlerde `null` (boş) döner. Satır alanı yoksa motor hata verir; çünkü "önceki öğe" tanımsızdır.
+- `sirala: { gore: 'deger', yon }`: satırlar son sütuna (sütun alanı varsa Genel Toplam sütununa) göre sıralanır. Sıralama gösterimden **önce** yapılır, yoksa değişen toplam yanlış sırada birikir.
+- `ilk: { n, yon }`: değer filtresi. Önce filtresiz pivot hesaplanır, en büyük/küçük N öğe seçilir. Sonra satır alanına bu öğeleri süzen bir filtre eklenip pivot yeniden hesaplanır. Böylece **Genel Toplam yalnız görünenleri** toplar (Excel'in varsayılanı). Sınırda eşitlik varsa eşit öğelerin hepsi alınır, Excel de öyle yapar.
+- `satirAnahtarlari` artık sıralanmış sırayı döndürür. Böylece ayrıntıya inme ve eşdeğer formül, tıklanan satırla eşleşir.
+
+**Grafik motorunda ne değişti?** (`docs/motor/grafik.js`)
+- `vurgu: 'ikiUc'`: tek serili sütun, çubuk ve çizgide en büyük değer yeşil, en küçük değer kırmızı olur, ötekiler solar. Çizgide yalnız bu iki noktaya değer yazılır. `vurgu` artık çizgi grafikte de çalışıyor.
+- `esik`: tek seride eşik ve üstü yeşil, altı kırmızı. Excel'de bunun karşılığı iki yardımcı seri ve %100 seri çakışmasıdır (Ders 20.9'da formülüyle öğretiliyor).
+- `waffle` türü: 10×10 kare; en çok 4 kategori. Seri 1 gerçekleşen (ya da 0–1 oran), varsa seri 2 hedef.
+
+**Yeni dersler** (`docs/icerik/dersler-12.js`): 10.5 Değerleri farklı göster · 10.6 Sıralama ve İlk 10 · 10.7 Rapor düzeni, boş hücreler, yenileme, Rapor Filtresi Sayfaları · 10.8 Hesaplanmış öğe ve İK vakası · 20.9 Koşullu renkli grafik, zirve–dip, waffle · 21.10 Excel 365 pratikleri (resimden veri, kurtarma, Hızlı Analiz, bağlantılı veri türleri).
+
+**Yolda bulunan hata:** Ders kitaplarını üreten `alistirma-kitabi.js`, Excel 2010–2013'te gelen dört işlevi (`NUMBERVALUE`, `WORKDAY.INTL`, `NETWORKDAYS.INTL`, `FORMULATEXT`) `_xlfn.` öneki olmadan yazıyordu. Bugün yalnız Ders 9.1'in (ve yeni 21.10'un) alıştırma kitabı SAYIDEĞERİ kullanıyor; o kitapta Excel #AD? gösterebilirdi. Öteki üç işlev şimdilik bir alıştırmada yok, önek ileride eklenecekler için. Önek eklendi. Not: bu ortamdaki LibreOffice `_xlfn.NUMBERVALUE` yazımını okumuyor, bu yüzden karşılaştırma aracı (`lo_karsilastir.py`) öneksiz bırakıldı. Gerçek Excel önekli yazımı bekler **[doğrulanacak]**.
+
+> **Burada bir test daha yapalım:** Türkçe Excel'de gösterim adları: "Farkı", "% Farkı", "Değişen Toplam", "% Değişen Toplam", "En Büyükten En Küçüğe Sırala" **[doğrulanacak]**. Ders 9.1 ya da 21.10'un kitabını gerçek Excel'de açıp SAYIDEĞERİ sonucunun #AD? olmadığına bakın.
+
+> **Şöyle daha iyi olur:** Hesaplanmış öğe motorda yok, yalnız seçmeli sorularla anlatılıyor. Mustafa Bolat'ın VBA UserForm + Access kursundaki form tasarımı da makro atölyesinde yok (VBA yorumlayıcısı form çizmiyor). İkisi ileride ayrı bir iş olarak eklenebilir.
+
 ## 6. Sunucu ve yayın
 
 - **GitHub Pages**, kökten. `index.html` + `yonlendir.js` → `docs/`. Satır içi betik yok (diğer Kesit depolarındaki satır içi yönlendirmeden farklı; CSP gereği).
@@ -750,6 +773,30 @@ Bakılanlar: Mustafa Bolat (Excel eğitimleri ve Udemy kursları: pano, form den
 
 Ders: eğitmenlerin kursları "iş yerinde ilk hafta"ya (kasa, biçim, Özel Yapıştır, İK listesi) Kesit'ten daha çok yer ayırıyor. Uluslararası kurslarla yapılan önceki karşılaştırmalar bunu göstermemişti; çünkü onlar bu konuları ön bilgi sayıyor.
 
+### 9.z Bilengo, Momentum Plus ve eğitmen siteleriyle beşinci karşılaştırma (0.9.0)
+
+Bakılanlar: Bilengo (bilengo.com: Herkes için Excel 29 ders, Özet Tablo 21 ders, İleri Grafikler 29 ders), Momentum Plus (momentumplus.com.tr: Excel Pivot Tablolarıyla Veri Analizi, 34 ders), Mustafa Bolat'ın Udemy kurs listesi (VBA, Özet Tablo, Grafikler, Access, VBA UserForm + Access), Faruk Çubukçu'nun excelskill.com'u (genel, veri analizi, finans, istatistik, makro). Ömer Bağcı'nın ayrı bir kişisel sitesi bulunamadı. "Momentum Labs" araması spor psikolojisi şirketi çıkardı; Excel kursu olan Momentum Plus kullanıldı.
+
+| Kurslarda olan | 0.8.0 | 0.9.0 |
+|---|---|---|
+| Değerleri Farklı Göster: Fark, % Farkı | yok | Ders 10.5 (motor `fark`, `farkYuzde`) |
+| Değişen toplam (kümülatif), % değişen toplam | yalnız formülle | Ders 10.5 (`birikimli`, `birikimliYuzde`) |
+| Otomatik/elle sıralama, değere göre sıralama | yok | Ders 10.6 (`sirala`) |
+| İlk 10 değer filtresi | yok | Ders 10.6 (`ilk`) |
+| Sıralama gösterimi (rank) | yok | Ders 10.6 (`sira`) |
+| Rapor düzeni, boş hücre görünümü, aralığı otomatik genişletme | yok | Ders 10.7 |
+| Rapor Filtresi Sayfalarını Göster (filtreye göre sekmeler) | yok | Ders 10.7 |
+| Hesaplanmış öğe, çözüm sırası, formülleri listele | yalnız hesaplanmış alan | Ders 10.8 |
+| Vaka ve ödev veri setleri | Satışlar | Ders 10.8 (Personel ile İK vakası) |
+| Waffle chart | yok | Ders 20.9 (`waffle`) |
+| Grafikte max–min gösterme | yalnız biri | Ders 20.9 (`vurgu: ikiUc`, çizgi dahil) |
+| Koşullu biçimlendirmeli çizgi/yatay grafik | yok | Ders 20.9 (`esik` + yardımcı seri formülü) |
+| Gauge, halka ilerleme, speedometer | var (20.2–20.3) | aynı |
+| Veri tipi dönüştürme, resimden veri, kurtarma | kısmen | Ders 21.10 |
+| VBA UserForm + Access | yok | eklenmedi (form çizimi yok, §5.22) |
+
+Ders: Pivot konusunda "özet tablo kurmak" ile "özet tablodan rapor üretmek" farklı beceriler. Kesit birinciyi iyi öğretiyordu, ikincisini (gösterim, sıralama, düzen, filtre sayfaları) eksik bırakmıştı. Video kursları bu ikinci kısma ders sayısının yarısını ayırıyor.
+
 ## 10. Mülakat soruları
 
 **S: Neden kendi formül motorunu yazdın, hazır kütüphane yok mu?**
@@ -838,6 +885,12 @@ C: İş yerinde ilk hafta konularını eksik bulduk: Özel Yapıştır, kasa def
 **S: ARA(2;1/(koşul);sonuç) neden "son eşleşmeyi" verir?**
 C: 1/(koşul) dizisi koşul doğruysa 1, yanlışsa #SAYI/0! olur. ARA hataları atlar. 2'yi bulamayınca 2'den küçük olan son değeri seçer, yani son 1'i. Sonuç da o satırdan gelir. Excel 365'te aynı iş ÇAPRAZARA(…;…;…;;;-1) ile daha okunur yapılır.
 
+**S: Özet tabloda "% Değişen Toplam" Pareto tablosu verir mi?**
+C: Verir, ama yalnız öğeler değere göre büyükten küçüğe sıralıysa. Birikim görünen sıraya göre yapılır. Motor da bu yüzden sıralamayı gösterimden önce uygular. Alfabetik sırada aynı sütun anlamsız bir birikim verir.
+
+**S: İlk 10 filtresinden sonra Genel Toplam neyi gösterir, motor bunu nasıl yapıyor?**
+C: Yalnız görünen öğelerin toplamını gösterir. Motor önce filtresiz tabloyu hesaplar, N öğeyi seçer (sınırda eşitlik varsa hepsini alır), sonra bu öğelerle süzülmüş tabloyu yeniden hesaplar. Toplamı ayrıca düzeltmeye gerek kalmaz.
+
 ## 11. Kendini test et
 
 <details><summary>1. `kaydir('=C2*$D$1', 3, 0)` ne döner?</summary>`=C5*$D$1`: göreli C2 üç satır kayar, mutlak $D$1 kalmaz.</details>
@@ -922,3 +975,4 @@ C: 1/(koşul) dizisi koşul doğruysa 1, yanlışsa #SAYI/0! olur. ARA hataları
 - **2026-11-27 · 0.6.5** Türkçe web Excel'de 365 işlevleri (§7.z): NORMİFADESINA (REGEXTEST), DİZİOLUŞTUR (MAKEARRAY), KIRPARALIĞI (TRIMRANGE) düzeltildi; 27 ad doğrulandı; dizi sabiti ayırıcılarının masaüstü ile web Excel'de tersine olduğu ders metnine yazıldı. Aynı gün: ATLANMIŞ (ISOMITTED) bulundu, GRUPLAÖLÇÜT Toplam satırı doğrulandı, NORMİFADEAYIKLA mod 1 yan yana taşıyacak şekilde düzeltildi (0.6.6; elle vaka ROWS → COLUMNS, LibreOffice 266/266).
 - **2026-11-27 · 0.7.0** İçerik güçlendirme (§5.20): 41 yeni ders (Modül 1–9'a 4'er, yeni Modül 22 Veritabanı işlevleri 5 ders), var olan derslere 78 alıştırma; toplam 152 ders, 492 alıştırma. Motor: VSEÇTOPLA ailesi (12 işlev), METNEÇEVİR sıfır doldurma ve Türkçe binlik düzeltmesi, denetçide iki yönlü doldurma (`ikiYon`). Her dersin altında Excel kitabı ve tek alıştırma kitabı (tarayıcıda üretilir). Veri kitabında başlıklı ham sayfaların kayması düzeltildi. Testler 203, LibreOffice 284/284.
 - **2026-11-27 · 0.8.0** Eğitmen müfredatlarıyla dördüncü karşılaştırma (§9.y, §5.21): 9 yeni ders (1.9, 1.10, 2.9, 8.9, 8.10, 12.5, 16.8, 21.8, 21.9), Kasa ve Gelir Tablosu model sayfaları, 39 derse ek alıştırma (`ek-alistirmalar-2.js`); her derste en az 3 alıştırma; toplam 161 ders, 577 alıştırma. Motor: TRANSPOSE, LOOKUP, BÜYÜK/KÜÇÜK dizi k, metinli özel biçim (telefon), denetçide `ikiYon` (204 işlev). Testler 213, LibreOffice 291/291, güvenlik taraması temiz. Bulunan hatalar: Kasa bakiyesinin devirsiz eksiye düşmesi, 2B doldurmada yalnız ilk sütunun denetlenmesi, ÇAPRAZEŞLEŞTİR alıştırmasında elle yazılan sabitin yakalanmaması (varyantsız yapıldı).
+- **2026-11-27 · 0.9.0** Bilengo, Momentum Plus ve eğitmen siteleriyle beşinci karşılaştırma (§9.z, §5.22): 6 yeni ders (10.5–10.8, 20.9, 21.10); pivot motoruna fark, % fark, değişen toplam, % değişen toplam, sıra, değere göre sıralama ve İlk N; grafik motoruna waffle, iki uç vurgu (çizgi dahil) ve renk eşiği. Toplam 167 ders, 607 alıştırma. Bulunan hata: ders kitaplarında NUMBERVALUE, WORKDAY.INTL, NETWORKDAYS.INTL, FORMULATEXT `_xlfn.` öneksiz yazılıyordu. Testler 221, LibreOffice 291/291, güvenlik taraması temiz.

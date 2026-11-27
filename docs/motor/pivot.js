@@ -12,7 +12,11 @@ export const OZETLER = {
   en_buyuk: { tr: 'En Büyük', baslik: 'Mak', excel: 'MAK' },
   en_kucuk: { tr: 'En Küçük', baslik: 'Min', excel: 'MİN' },
 };
-export const GOSTER = { deger: 'Değer', genelYuzde: 'Genel toplamın %', satirYuzde: 'Satır toplamının %', sutunYuzde: 'Sütun toplamının %' };
+export const GOSTER = { deger: 'Değer', genelYuzde: 'Genel toplamın %', satirYuzde: 'Satır toplamının %', sutunYuzde: 'Sütun toplamının %',
+  fark: 'Fark (önceki öğeden)', farkYuzde: '% Farkı (önceki öğeden)', birikimli: 'Değişen Toplam (satır alanında)', birikimliYuzde: '% Değişen Toplam (satır alanında)', sira: 'En Büyükten En Küçüğe Sırala' };
+// Satır alanı boyunca hesaplanan gösterimler: Excel'de "Temel alan" satır alanıdır; Genel Toplam satırı boş kalır.
+const SATIR_BOYU = new Set(['fark', 'farkYuzde', 'birikimli', 'birikimliYuzde', 'sira']);
+const YUZDE_GOSTER = new Set(['genelYuzde', 'satirYuzde', 'sutunYuzde', 'farkYuzde', 'birikimliYuzde']);
 
 const trK = s => String(s).toLocaleLowerCase('tr');
 function grupDegeri(v, tur) {
@@ -71,6 +75,17 @@ function hesaplanmisDeger(derli, satirlar) {
 }
 
 export function pivot(tablo, yapi) {
+  // Değer filtresi (İlk 10): satır öğeleri değere göre seçilir; Genel Toplam yalnız görünen öğeleri toplar (Excel varsayılanı)
+  if (yapi.ilk && yapi.ilk.n > 0) {
+    if (!yapi.satir) throw new Error('İlk N filtresi satır alanı ister');
+    const { ilk, sirala: _s, goster: _g, ...temel } = yapi;
+    const tam = pivot(tablo, { ...temel, goster: 'deger' }), j = tam.basliklar.length - 2;
+    const sirali = tam.satirAnahtarlari.map((a, i) => ({ a, v: tam.satirlar[i][j + 1] ?? -Infinity })).sort((x, y) => ilk.yon === 'alt' ? x.v - y.v : y.v - x.v);
+    // Excel'deki gibi eşitlik varsa sınırdaki bütün öğeler görünür (İlk 5'te 6 satır çıkabilir)
+    const sinir = sirali[Math.min(ilk.n, sirali.length) - 1]?.v;
+    const sec = sirali.filter((x, i) => i < ilk.n || x.v === sinir).map(x => x.a);
+    return pivot(tablo, { ...temel, sirala: yapi.sirala, goster: yapi.goster, filtreler: [...(temel.filtreler || []), { alan: yapi.satir, degerler: sec, _ilk: true }] });
+  }
   const hesaplanan = new Map((yapi.hesaplananlar || []).map(h => [h.ad, h]));
   const B = tablo.basliklar, idx = ad => { const i = B.indexOf(ad); if (i < 0 && hesaplanan.has(ad)) return -1; if (i < 0) throw new Error('Alan bulunamadı: ' + ad); return i; };
   const g = yapi.grupla || {};
@@ -119,10 +134,26 @@ export function pivot(tablo, yapi) {
   for (const a of satirListe) ham.push({ a, v: sutunlar.map(s => hucre(a, s.b, s.d)) });
   const toplam = { a: undefined, v: sutunlar.map(s => hucre(undefined, s.b, s.d)) };
   // Gösterim: yüzde dönüşümleri (yalnız toplam/say için anlamlıdır)
+  // Sıralama: satır öğeleri değere göre (Excel: Diğer Sıralama Seçenekleri > Azalan, ölçüt değer alanı)
+  if (yapi.sirala && yapi.sirala.gore === 'deger' && yapi.satir) {
+    const j = sutunlar.length - 1, yon = yapi.sirala.yon === 'artan' ? 1 : -1;
+    ham.sort((x, y) => ((x.v[j] ?? -Infinity) - (y.v[j] ?? -Infinity)) * yon);
+  }
   const goster = yapi.goster || 'deger';
+  if (SATIR_BOYU.has(goster) && !yapi.satir) throw new Error('Bu gösterim satır alanı ister: hesap satır öğeleri boyunca yapılır');
   const genel = sutunlar.map((s, j) => yapi.sutun ? toplam.v[toplam.v.length - 1] : toplam.v[j]);
+  const sira = ham.indexOf.bind(ham);
   const donustur = (satir, j) => {
-    const v = satir.v[j]; if (v == null || goster === 'deger') return v;
+    const v = satir.v[j]; if (goster === 'deger') return v;
+    if (SATIR_BOYU.has(goster)) {
+      if (satir === toplam) return null;
+      const i = sira(satir), onceki = i > 0 ? ham[i - 1].v[j] : null;
+      if (goster === 'fark') return i === 0 || v == null ? null : v - (onceki ?? 0);
+      if (goster === 'farkYuzde') return i === 0 || v == null ? null : onceki ? (v - onceki) / onceki : H.BOL0;
+      if (goster === 'birikimli' || goster === 'birikimliYuzde') { let t = 0; for (let k = 0; k <= i; k++) t += ham[k].v[j] ?? 0; return goster === 'birikimli' ? t : toplam.v[j] ? t / toplam.v[j] : null; }
+      if (goster === 'sira') { if (v == null) return null; return 1 + ham.filter(x => (x.v[j] ?? -Infinity) > v).length; }
+    }
+    if (v == null) return v;
     if (goster === 'genelYuzde') return genel[j] ? v / genel[j] : null;
     if (goster === 'sutunYuzde') return toplam.v[j] ? v / toplam.v[j] : null;
     if (goster === 'satirYuzde') { const t = yapi.sutun ? satir.v[satir.v.length - 1] : v; return t ? v / t : null; }
@@ -131,7 +162,7 @@ export function pivot(tablo, yapi) {
   const etiketle = (v, alan) => v == null || v === '' ? '(boş)' : grupEtiketi(v, g[alan]);
   const satirlar = ham.map(s => [etiketle(s.a, yapi.satir), ...s.v.map((_, j) => donustur(s, j))]);
   satirlar.push(['Genel Toplam', ...toplam.v.map((_, j) => donustur(toplam, j))]);
-  return { basliklar, satirlar, yuzde: goster !== 'deger', sutunlar, satirAnahtarlari: satirListe, yapi };
+  return { basliklar, satirlar, yuzde: YUZDE_GOSTER.has(goster), sutunlar, satirAnahtarlari: ham.map(s => s.a), yapi };
 }
 
 // Ayrıntıya inme (pivot hücresine çift tık): o sayıyı oluşturan kaynak satırlar, Excel'de yeni sayfaya dökülür
