@@ -8,6 +8,7 @@ import { DERSLER_6 } from './dersler-6.js';
 import { DERSLER_7 } from './dersler-7.js';
 import { DERSLER_8 } from './dersler-8.js';
 import { DERSLER_9 } from './dersler-9.js';
+import { DERSLER_10 } from './dersler-10.js';
 export const MODULLER = [
   { id: 'm1', no: 1, baslik: "Excel'in mantığı", ozet: 'Hücre, tür, formül, $ ve Türkçe/İngilizce yazım.', seviye: 'temel' },
   { id: 'm2', no: 2, baslik: 'Temel hesaplar', ozet: 'Özet işlevleri, yuvarlama, oran ve hata değerleri.', seviye: 'temel' },
@@ -28,10 +29,11 @@ export const MODULLER = [
   { id: 'm17', no: 17, baslik: 'İleri pano ve pivot', ozet: 'Hesaplanmış alan, ayrıntıya inme, ÖZETVERİAL, form denetimleri, dinamik grafik, veri modeli.', seviye: 'ileri' },
   { id: 'm18', no: 18, baslik: 'Modern formüller: LAMBDA, dizi ve tahmin', ozet: 'Kendi işlevini yazmak, satır satır hesap, birikim, formülle özet tablo, diziyi biçimlendirmek, eğim ve tahmin.', seviye: 'ileri' },
   { id: 'm19', no: 19, baslik: 'Veri araçları', ozet: 'Gelişmiş Filtre, benzersiz kayıtlar, 3B başvuru ve Birleştir, Hızlı Doldurma, özel sıralama ve Alt Toplam.', seviye: 'orta' },
+  { id: 'm22', no: 22, baslik: 'Veritabanı işlevleri', ozet: 'VSEÇTOPLA, VSEÇSAY, VSEÇORT, VSEÇMAK, VAL: ölçüt alanıyla VE/YA DA, metin ölçütleri ve araç seçimi.', seviye: 'orta' },
   { id: 'm20', no: 20, baslik: 'Pano tasarımı ve özel grafikler', ozet: 'Pano süreci, madde, ibre ve ilerleme halkası, Pareto, Gantt, kelebek, halter, vurgu ve hedef çizgisi.', seviye: 'ileri' },
   { id: 'm21', no: 21, baslik: 'Ofis pratikleri, güvenlik ve paylaşım', ozet: 'Kısayol ve Git > Özel, renge göre filtre, köprü, birimli biçim, tanımlayıcı istatistik, şifreleme, yazdırma ve PowerPoint.', seviye: 'orta' },
 ];
 const _sira = d => { const m = /^m(\d+)-d(\d+)$/.exec(d.id); return m ? [MODULLER.findIndex(x => x.id === d.modul), Number(m[2])] : [999, 0]; };
 // Dersler modül sırasına, modül içinde ders numarasına göre (sonradan eklenen dosyalar araya girer)
-export const DERSLER = [...DERSLER_1, ...DERSLER_2, ...DERSLER_3, ...DERSLER_4, ...DERSLER_5, ...DERSLER_6, ...DERSLER_7, ...DERSLER_8, ...DERSLER_9]
+export const DERSLER = [...DERSLER_1, ...DERSLER_2, ...DERSLER_3, ...DERSLER_4, ...DERSLER_5, ...DERSLER_6, ...DERSLER_7, ...DERSLER_8, ...DERSLER_9, ...DERSLER_10]
   .sort((a, b) => { const x = _sira(a), y = _sira(b); return x[0] - y[0] || x[1] - y[1]; });
