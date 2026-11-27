@@ -117,7 +117,7 @@ export function anaSayfa(main) {
     h('div.section-head', {}, h('h2', {}, 'Seviyeler'), h('p.muted', {}, `${MODULLER.length} modül, temelden pano, makro ve Çözücü'ye.`)),
     h('div.climb', {}, ['temel', 'orta', 'ileri'].map(s => {
       const ms = MODULLER.filter(m => m.seviye === s);
-      return h('a.stop', { href: '#dersler/' + ms[0].id }, seviyeKod(s), h('h3', {}, ms.map(m => m.baslik).join(' · ')), h('p', {}, ms.map(m => m.ozet).join(' ')), h('small', {}, `${ms.reduce((n, m) => n + modulDersleri(m.id).length, 0)} ders`));
+      return h('a.stop', { href: '#dersler/' + ms[0].id }, seviyeKod(s), h('h3', {}, `${ms.length} modül · ${ms.reduce((n, m) => n + modulDersleri(m.id).length, 0)} ders`), h('ul.stop-liste', {}, ms.map(m => h('li', {}, `${m.no}. ${m.baslik}`))));
     })),
     h('div.section-head', {}, h('h2', {}, 'Rolüne göre başla'), h('p.muted', {}, 'Her rol için mülakatta ve işte en çok sorulan derslerin sırası.')),
     h('div.role-grid', {}, ROLLER.map(r => h('a.role-card', { href: '#yol/' + r.id, sinif: d.rol === r.id ? 'selected' : '' }, h('span.role-initial', {}, r.harf), h('h3', {}, r.ad), h('p', {}, r.ozet), h('small', {}, r.dersler.length + ' ders →')))),
@@ -137,13 +137,48 @@ export function yolSayfasi(main, rolId) {
 
 /* ---------------------------------------------------------------- ders listesi */
 export function derslerSayfasi(main, odak) {
-  yerlestir(main, baslikBlok('MÜFREDAT', 'Dersler', `${MODULLER.length} modül, ${DERSLER.length} ders. Sırayla gitmen önerilir ama her ders kendi başına çalışır.`));
-  yerlestir(main, h('div.curriculum-table', {}, MODULLER.map(m => {
+  const kucuk = t => t.toLocaleLowerCase('tr');
+  // İlk bitmemiş modül açık gelir; diğerleri başlık ve ilerlemeyle katlı durur (telefonda 111 ders tek sayfada 16.000 px'ti)
+  const acik = odak || (MODULLER.find(m => modulDersleri(m.id).some(x => !D.dersBitti(x.id))) || MODULLER[0]).id;
+  const kutu = h('input', { type: 'search', placeholder: 'Ders ara: düşeyara, pivot, tarih…', 'aria-label': 'Ders ara' });
+  let seviye = '';
+  const sev = h('div.seviye-cip', { role: 'group', 'aria-label': 'Seviye' }, [['', 'Tümü'], ['temel', 'Temel'], ['orta', 'Orta'], ['ileri', 'İleri']].map(([k, a]) => h('button.chip', { type: 'button', 'aria-pressed': String(!k), veri: { k }, on: { click: e => { seviye = k; sev.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === e.currentTarget))); suz(); } } }, a)));
+  const sayac = h('p.small-note.muted', { 'aria-live': 'polite' });
+  const moduller = MODULLER.map(m => {
     const ds = modulDersleri(m.id), biten = ds.filter(x => D.dersBitti(x.id)).length;
-    return h('section.module-row', { id: 'modul-' + m.id }, h('div.module-row-head', {}, seviyeKod(m.seviye), h('div', {}, h('h3', {}, `${m.no}. ${m.baslik}`), h('p', {}, m.ozet)), h('span.muted', {}, `${biten}/${ds.length}`)),
-      ds.map(x => h('a.lesson-row', { href: '#ders/' + x.id }, h('span.check', { sinif: D.dersBitti(x.id) ? 'done' : '' }, D.dersBitti(x.id) ? '✓' : ''), h('span', {}, h('b', {}, x.baslik), h('small', {}, x.ozet)), h('span.tag', {}, x.sure + ' dk'))));
-  })));
+    const satirlar = ds.map(x => h('a.lesson-row', { href: '#ders/' + x.id, veri: { ara: kucuk(x.baslik + ' ' + x.ozet) } }, h('span.check', { sinif: D.dersBitti(x.id) ? 'done' : '' }, D.dersBitti(x.id) ? '✓' : ''), h('span', {}, h('b', {}, x.baslik), h('small', {}, x.ozet)), h('span.tag', {}, x.sure + ' dk')));
+    const det = h('details.module-row', { id: 'modul-' + m.id, open: m.id === acik, veri: { seviye: m.seviye, ara: kucuk(m.baslik + ' ' + m.ozet) } },
+      h('summary.module-row-head', {}, seviyeKod(m.seviye), h('div', {}, h('h3', {}, `${m.no}. ${m.baslik}`), h('p', {}, m.ozet)), h('span.muted', {}, `${biten}/${ds.length}`)), satirlar);
+    return det;
+  });
+  const suz = () => {
+    const q = kucuk(kutu.value.trim()); let n = 0;
+    moduller.forEach(det => {
+      const uygun = !seviye || det.dataset.seviye === seviye, modulEs = q && det.dataset.ara.includes(q);
+      let es = 0;
+      det.querySelectorAll('.lesson-row').forEach(a => { const g = uygun && (!q || modulEs || a.dataset.ara.includes(q)); a.hidden = !g; if (g) es++; });
+      det.hidden = !es; n += es;
+      if (q) det.open = es > 0;
+    });
+    sayac.textContent = q || seviye ? `${n} ders` : '';
+  };
+  kutu.addEventListener('input', suz);
+  const hepsi = h('button.chip', { type: 'button', on: { click: () => { const ac = moduller.some(d => !d.open); moduller.forEach(d => { d.open = ac; }); hepsi.textContent = ac ? 'Hepsini kapat' : 'Hepsini aç'; } } }, 'Hepsini aç');
+  yerlestir(main, baslikBlok('MÜFREDAT', 'Dersler', `${MODULLER.length} modül, ${DERSLER.length} ders. Sırayla gitmen önerilir ama her ders kendi başına çalışır. Modül başlığına dokununca dersleri açılır.`),
+    h('div.filters', {}, kutu, sev, hepsi), sayac, h('div.curriculum-table', {}, moduller));
   if (odak) setTimeout(() => document.getElementById('modul-' + odak)?.scrollIntoView({ block: 'start' }), 0);
+}
+
+/* Uzun başvuru sayfalarında (sık hatalar, mülakat) ortak arama kutusu: data-ara metninde arar */
+function aramaKutusu(yer, ogeler, ornek) {
+  const kutu = h('input', { type: 'search', placeholder: ornek, 'aria-label': 'Ara' }), sayac = h('span.small-note.muted', { 'aria-live': 'polite' });
+  kutu.addEventListener('input', () => {
+    const q = kutu.value.trim().toLocaleLowerCase('tr'); let n = 0;
+    ogeler().forEach(o => { const g = !q || o.dataset.ara.includes(q); o.hidden = !g; if (g) n++; });
+    yer().forEach(b => { b.hidden = ![...b.querySelectorAll('[data-ara]')].some(o => !o.hidden); });
+    sayac.textContent = q ? `${n} sonuç` : '';
+  });
+  return h('div.filters', {}, kutu, sayac);
 }
 
 /* ---------------------------------------------------------------- ders */
@@ -260,13 +295,14 @@ export function sorguSayfasi(main) {
 
 /* ---------------------------------------------------------------- işlev rehberi */
 export function islevlerSayfasi(main, ara = '') {
-  const kutu = h('input', { type: 'search', id: 'is-ara', placeholder: 'Ara: düşeyara, sumif, tarih…', value: ara, 'aria-label': 'İşlev ara' });
+  const kutu = h('input', { type: 'search', id: 'is-ara', placeholder: 'Ara: düşeyara, sumif, tarih…', value: ara, 'aria-label': 'İşlev ve ders ara' });
   const kat = h('select', { id: 'is-kat', 'aria-label': 'Kategori' }, h('option', { value: '' }, 'Tüm kategoriler'), Object.entries(KATEGORILER).map(([k, a]) => h('option', { value: k }, a)));
   const liste = h('div.islev-liste');
   const ciz = () => {
     const q = kutu.value.trim().toLocaleLowerCase('tr'), kk = kat.value;
     const x = ISLEV_BILGI.filter(f => (!kk || f.kategori === kk) && (!q || (f.tr + ' ' + f.en + ' ' + f.aciklama).toLocaleLowerCase('tr').includes(q)));
-    yerlestir(temizle(liste), h('p.small-note.muted', {}, `${x.length} işlev`), x.map(f => h('article.islev', {}, h('h3', {}, f.tr, h('small', {}, ' ' + f.en + ' · ' + f.kategoriAd)), h('code', {}, f.sozdizimi), h('p', {}, f.aciklama),
+    const dersEs = q.length > 2 ? DERSLER.filter(d => (d.baslik + ' ' + d.ozet).toLocaleLowerCase('tr').includes(q)).slice(0, 5) : [];
+    yerlestir(temizle(liste), dersEs.length ? h('div.ders-eslesme', {}, h('b', {}, 'Bu konudaki dersler: '), dersEs.map(d => h('a.chip', { href: '#ders/' + d.id }, d.baslik))) : null, h('p.small-note.muted', {}, `${x.length} işlev`), x.map(f => h('article.islev', {}, h('h3', {}, f.tr, h('small', {}, ' ' + f.en + ' · ' + f.kategoriAd)), h('code', {}, f.sozdizimi), h('p', {}, f.aciklama),
       h('p', {}, h('span.muted', {}, 'Örnek (Satışlar): '), h('code', {}, f.ornek), ' ', f.en === 'GETPIVOTDATA' ? h('a.text-link', { href: '#ders/m17-d2' }, 'Özet tabloyla dersinde dene') : h('a.text-link', { href: '#atolye/' + encodeURIComponent(f.ornek) }, 'Atölyede dene')),
       dersleri(f.en))));
   };
@@ -300,12 +336,14 @@ export function seviyeSayfasi(main) {
 /* ---------------------------------------------------------------- sık hatalar, mülakat */
 export function hatalarSayfasi(main) {
   yerlestir(main, baslikBlok('SIK HATALAR', `Excel'de en çok yapılan ${DERSLER.length} hata`, 'Her dersin en yaygın hatası: yanlış yazım, doğrusu ve nedeni.'),
-    MODULLER.map(m => h('section.module-row', {}, h('div.module-row-head', {}, h('h3', {}, `${m.no}. ${m.baslik}`)), modulDersleri(m.id).map(d => h('div.hata-satir', {},
+    aramaKutusu(() => [...main.querySelectorAll('section.module-row')], () => [...main.querySelectorAll('.hata-satir')], 'Ara: $, düşeyara, tarih, metin…'),
+    MODULLER.map(m => h('section.module-row', {}, h('div.module-row-head', {}, h('h3', {}, `${m.no}. ${m.baslik}`)), modulDersleri(m.id).map(d => h('div.hata-satir', { veri: { ara: (m.baslik + ' ' + d.baslik + ' ' + d.sikHata.yanlis + ' ' + d.sikHata.dogru + ' ' + d.sikHata.neden).toLocaleLowerCase('tr') } },
       h('p', {}, h('a', { href: '#ders/' + d.id }, d.baslik)), h('p', {}, '✗ ', h('code', {}, d.sikHata.yanlis)), h('p', {}, '✓ ', h('code', {}, d.sikHata.dogru)), h('p.muted', {}, bicimli(d.sikHata.neden)))))));
 }
 export function mulakatSayfasi(main) {
-  const s = (soru, cevap, kaynak) => h('section.question', {}, kaynak ? h('span.eyebrow', {}, kaynak) : null, h('h3', {}, soru), h('details', {}, h('summary', {}, 'Cevabı aç'), h('p', {}, bicimli(cevap))));
-  yerlestir(main, baslikBlok('MÜLAKAT HAZIRLIĞI', 'Excel mülakat soruları', 'Önce kendi cevabını sesli söyle, sonra aç. Cevaplar ezber için değil; bir yaklaşımın gerekçesini anlatmak için.'),
+  const s = (soru, cevap, kaynak) => h('section.question', { veri: { ara: (soru + ' ' + (kaynak || '') + ' ' + cevap).toLocaleLowerCase('tr') } }, kaynak ? h('span.eyebrow', {}, kaynak) : null, h('h3', {}, soru), h('details', {}, h('summary', {}, 'Cevabı aç'), h('p', {}, bicimli(cevap))));
+  yerlestir(main, baslikBlok('MÜLAKAT HAZIRLIĞI', 'Excel mülakat soruları', `${MULAKAT_GENEL.length + DERSLER.length} soru. Önce kendi cevabını sesli söyle, sonra aç. Cevaplar ezber için değil; bir yaklaşımın gerekçesini anlatmak için.`),
+    aramaKutusu(() => [], () => [...main.querySelectorAll('section.question')], 'Ara: pivot, düşeyara, makro, pano…'),
     h('h2', {}, 'Genel'), MULAKAT_GENEL.map(q => s(q.s, q.c)),
     h('h2', {}, 'Konu konu'), DERSLER.map(d => s(d.mulakat.soru, d.mulakat.cevap, `MODÜL ${modulBul(d.modul).no} · ${d.baslik.toLocaleUpperCase('tr')}`)));
 }

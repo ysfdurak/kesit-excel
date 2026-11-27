@@ -1,5 +1,11 @@
 # Sürüm notları
 
+## 0.6.1 (Kasım 2026): bulmayı kolaylaştırma
+
+- **Dersler:** arama kutusu, Temel/Orta/İleri süzgeci, katlanır modüller (ilk bitmemiş modül açık); telefonda sayfa 16.381 px'ten 4.392 px'e indi.
+- **Sık hatalar ve mülakat:** arama kutusu ve sonuç sayısı. Üstteki **Ara** düğmesi işlevlerle birlikte ilgili dersleri de gösteriyor.
+- **Düzeltmeler:** seviye testinde soru başlığının kart kenarına binmesi, telefonda kapalı menünün gölgesinin sol kenara sızması, masaüstünde süs şeridinin başlığa binmesi, ana sayfadaki seviye kartlarının paragraf yığınına dönmesi.
+
 ## 0.6.0 (Kasım 2026): Türkçe kurslardan ofis pratikleri
 
 Türkçe kurumsal Excel eğitimleri (ULUSEM, ODTÜ, Yenibiriş, Boğaziçi Enstitüsü, IIENSTITU) ile karşılaştırmada eksik kalan konular.

@@ -462,6 +462,27 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 
 ---
 
+
+### 8.x Genel kullanıcı gözüyle üçüncü tur (0.6.1)
+
+111 derse çıkınca sorun tek tek ekranlardan çok **büyüklükteydi**: içerik arttı, onu bulma yolları aynı kaldı.
+
+| Bulgu (390 px) | Önce | Sonra | Karar |
+|---|---|---|---|
+| Dersler sayfası, 21 modül hep açık | 16.381 px, arama yok | 4.392 px; arama, Temel/Orta/İleri, katlanır modül | İlk bitmemiş modül açık gelir; aramada eşleşen modüller açılır |
+| Üstteki "İşlev ara" düğmesi | yalnız işlev arıyor, telefonda yalnız "/" görünüyor | "Ara"; işlev rehberinde eşleşen 5 ders de çıkıyor | Telefonda klavye kısayolu gösterilmez |
+| Sık hatalar (111) ve mülakat (128 soru) | 22.567 ve 20.571 px, arama yok | arama kutusu, sonuç sayısı | Sayfalar bölünmedi, süzüldü |
+| Seviye testi | soru başlığı kartın kenarına biniyordu | kartın içinde | `legend` fieldset kenarında çizilir; `float:left` ile içeri alındı |
+| Telefonda sol kenarda gri gölge | her sayfada | yok | Kapalı kenar çubuğunun gölgesi ekrana sızıyordu; gölge yalnız açıkken |
+| Masaüstü ana sayfa | şerit "veride" kelimesinin üstünde | başlık şeritten uzak | |
+| Ana sayfa "İleri" kartı | 10 modül adı ve özeti tek paragraf | "10 modül · 63 ders" + modül listesi | |
+
+> 💡 **Ders:** Bunları teknik test bulmadı (152 test geçiyordu). Ölçüm (sayfa yüksekliği) ve görev ("DÜŞEYARA dersini bul") buldu.
+
+> 💡 **Şöyle daha iyi olur (öneri, yapılmadı):** Eğitmen ya da yönetici rolü için ekibe ders yolu atama ve ilerlemeyi görme. Bu, hesap ve sunucu gerektirir; Kesit'in "kurulum ve hesap yok, veri cihazdan çıkmaz" sözüyle çelişir. Ara çözüm: rol yolu bağlantısı (`#yol/operasyon`) paylaşılır, kişi ilerleme yedeğini (JSON) eğitmene gönderir. Gerçek takip istenirse VPS'te ayrı bir sınıf modu gerekir.
+
+> 🧪 **Burada bir test daha yapalım:** Android telefonda Dersler sayfasında modül başlığına dokunup açıp kapatmak ve arama kutusunda Türkçe klavyeyle "ı/İ" içeren bir kelime ("işgünü") aramak.
+
 ## 9. Bilinen sınırlar ve sonraki adımlar
 
 - **0.5.0 sınırları:** Harita grafiği yok (§5.17); TAHMİN.ETS çalışmaz, Tahmin Sayfası mevsim endeksiyle anlatılır; `A1:.A1000` kırpılmış başvuru işleci yok (TRIMRANGE var); REGEX işlevlerinde PCRE2'ye özgü yapılar yok; NORMİFADEAYIKLA mod 1 sonuçlarını alt alta, mod 2 gruplarını yan yana taşırır **[doğrulanacak]**; REGEXTEST, TRIMRANGE, PERCENTOF ve ISOMITTED'in Türkçe adları bulunamadı, İngilizce adla yazılır **[doğrulanacak]**; ÖZETÖLÇÜT tek değer sütunu alır; GRUPLAÖLÇÜT toplam satırını "Toplam" diye yazar **[doğrulanacak: Türkçe Excel'deki etiket]**; LAMBDA yardımcılarının (MAP, BYROW, SCAN…) Türkçe Excel'de İngilizce kaldığı ikinci el kaynaktan **[doğrulanacak]**; Birleştir (Consolidate) iletişim kutusu yok, eşdeğeri ETOPLA ile öğretiliyor; Hızlı Doldurma desen tahmini yok, ders formül karşılığını öğretiyor.
@@ -695,3 +716,4 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 - **2026-11-27 · 0.4.0** İleri Excel ve pano kurslarıyla ikinci karşılaştırma (§9): Modül 18 (modern formüller, 7 ders), 19 (veri araçları, 5), 20 (pano tasarımı ve özel grafikler, 7). Motor: LAMBDA (çağrı, ad, eta, kapanış), MAP/BYROW/BYCOL/SCAN/REDUCE/MAKEARRAY, GRUPLAÖLÇÜT/ÖZETÖLÇÜT, SÜTUNA/SATIRA/SATIRSAR/SÜTUNSAR/GENİŞLET, rastgele işlevler, regresyon ve tahmin, SIKLIK, TOPLAMA, YOKSAY (179 işlev), 3B başvuru, Gelişmiş Filtre (`veriaraclari.js`), 8 grafik türü + vurgu + hedef çizgisi, iki düzeyli kategori. Model sayfaları: İadeler, Ocak/Şubat/Mart/Çeyrek, Görevler, Bölgeler, Vardiyalar, Talep. MCP: Gelişmiş Filtre denetimi, vurgu/hedef çizgisi, Gantt için tarih serisi. 100 ders, 218 alıştırma, 20 soruluk seviye testi, 136 test, LibreOffice 255/255. Bulunan hatalar: adlandırılmış LAMBDA'da `null`/`undefined` karışması (#AD?), %100+ halkanın boş çizilmesi, ibrenin alttan taşması, `=İstanbul` ölçütünün formül sanılması (Excel'de de öyle; ders ve test `="=İstanbul"`a çevrildi), filtre iletisinin YA DA eksikliğini "ile başlar"a bağlaması, boş durumda "Denetim  iken" ön eki.
 - **2026-11-27 · 0.5.0** Eksiklerin tamamlanması: Ders 18.8 (mevsim endeksi), 18.9 (düzenli ifadeler), 18.10 (M2#, TRIMRANGE, PERCENTOF), 20.8 (Zaman Çizelgesi); 18.1'e isteğe bağlı parametreli LAMBDA, 19.3'e Birleştir alıştırması; 15.6'ya Gözcü Penceresi. Motor: `#` taşma başvurusu, ISOMITTED, REGEXTEST/NORMİFADEAYIKLA/NORMİFADEDEĞİŞTİR, PERCENTOF, TRIMRANGE (185 işlev), Birleştir. 104 ders, 231 alıştırma, 145 test. Bulunan hatalar: isteğe bağlı parametrenin tref `ozel: 'veri'` alanı yüzünden tanınmaması, Ürün ham sayfasında başlık satırının unutulması (alıştırma 1. satırdan başlıyordu), Zaman Çizelgesi'nin telefonda kabı genişletmesi.
 - **2026-11-27 · 0.6.0** Türkçe kurslarla üçüncü karşılaştırma (§9.x): Modül 21 Ofis pratikleri, güvenlik ve paylaşım (7 ders: gezinme ve Git > Özel, renge göre filtre, KÖPRÜ ve içindekiler, not ve birimli biçim, tanımlayıcı istatistik ve Araç Takımı, şifreleme ve Belge Denetçisi, yazdırma ve PowerPoint). Motor: HYPERLINK, FORMULATEXT, SKEW, KURT, TRIMMEAN (190 işlev). 111 ders, 250 alıştırma, 21 soruluk seviye testi, 152 test, LibreOffice 266/266. Bulunan hata: FORMÜLMETNİ rehber örneğinin boş hücrede #YOK vermesi.
+- **2026-11-27 · 0.6.1** Genel kullanıcı gözüyle üçüncü tur (§8.x): Dersler sayfasında arama, seviye süzgeci ve katlanır modüller (telefonda 16.381 → 4.392 px), Sık hatalar ve mülakatta arama, üst "Ara" düğmesi ders de buluyor, seviye testi başlık hatası, telefonda sol kenar gölgesi, masaüstü kahraman şeridi, ana sayfa seviye kartları.
