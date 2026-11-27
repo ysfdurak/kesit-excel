@@ -89,3 +89,11 @@ test('değer girişi Türkçe biçimi tanır', () => {
   k.yazGiris('S', 'A1', '1.234,5'); k.yazGiris('S', 'A2', '15.03.2025'); k.yazGiris('S', 'A3', 'doğru'); k.yazGiris('S', 'A4', '12%');
   assert.deepEqual([1, 2, 3, 4].map(r => k.hucre('S', r, 1)), [1234.5, 45731, true, 0.12]);
 });
+
+test('dizi sabiti: Türkçe bölge yazımı (\\ sütun, virgüllü ondalık) da tanınır', () => {
+  const k = kitap();
+  assert.equal(hesap(k, '=SÜTUNSAY({1\\2\\3})'), 3);
+  assert.equal(hesap(k, '=TOPLA({1,5\\2;3\\4})'), 10.5);
+  assert.equal(hesap(k, '=SÜTUNSAY({1,2,3})'), 3, 'Kesit yazımı bozulmadı');
+  assert.equal(hesap(k, '=SATIRSAY({"a\\b";"c"})'), 2, 'tırnak içindeki \\ ayırıcı sayılmaz');
+});

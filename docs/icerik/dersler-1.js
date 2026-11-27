@@ -269,7 +269,7 @@ export const DERSLER_1 = [
     anlatim: [
       '**=ÇOKETOPLA(toplam_aralığı; aralık1; ölçüt1; aralık2; ölçüt2; …)**. ETOPLA\'nın tersine **toplam aralığı en baştadır**. Elektronik ve Web: =ÇOKETOPLA(H2:H241;F2:F241;"Elektronik";E2:E241;"Web").',
       'Tüm koşullar **VE** ile birleşir: satır hepsini sağlamalıdır. **ÇOKEĞERSAY** aynı mantıkla sayar, toplam aralığı yoktur: =ÇOKEĞERSAY(F2:F241;"Kitap";K2:K241;"Teslim edildi").',
-      'YADA gerekiyorsa (Web ya da Mobil) iki ÇOKETOPLA toplanır ya da ölçüt dizisi kullanılır: =TOPLA(ÇOKETOPLA(H2:H241;E2:E241;{"Web","Mobil"})). Kesit\'te dizi sabitleri {…} her zaman virgülle yazılır.',
+      'YADA gerekiyorsa (Web ya da Mobil) iki ÇOKETOPLA toplanır ya da ölçüt dizisi kullanılır: =TOPLA(ÇOKETOPLA(H2:H241;E2:E241;{"Web";"Mobil"})). Dizi sabitinde **;** satır ayırır ve her Excel\'de aynıdır. Sütun ayırıcı bölge ayarına bağlıdır: İngilizce ayarda virgül {"Web","Mobil"}, Türkçe ayarda ters bölü {"Web"\\"Mobil"}. Bu yüzden tek boyutlu listelerde ; kullanın; Kesit iki sütun yazımını da kabul eder.',
       'Aralık boyları farklıysa ÇOKETOPLA #DEĞER! verir. Bu iyi bir şeydir: ETOPLA\'daki sessiz kaymayı engeller.',
     ],
     ornek: { sayfa: 'Satışlar', hucre: 'M2', formul: '=ÇOKETOPLA(H2:H241;F2:F241;"Elektronik";E2:E241;"Web")', aciklama: 'Web kanalından satılan Elektronik adedi.' },

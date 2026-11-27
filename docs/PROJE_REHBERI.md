@@ -221,6 +221,40 @@ DEVRESEL_ÖDEME, BD, GD bu denklemi doğrudan çözer; TAKSİT_SAYISI logaritmay
 
 Vakalar bilerek kesirli çıkacak şekilde seçildi: Üretim LP 185.555,56 → tamsayı 185.500; Vardiya (5 gün çalış, 2 gün izin) LP 22,33 → tamsayı 23 operatör. İlk denemede katsayılar "tamamen birimsel" (TU) bir matris verdi; LP zaten tamsayı çıktı ve "tamsayı kısıtını unutan öğrenci" yakalanamadı. Test bunu yakaladı, modeli değiştirdim.
 
+### 7.x Gerçek Excel'de örneklem (27.11.2026, kullanıcının bilgisayarı)
+
+Ortam: Windows, Excel **Office LTSC** (2021 sınıfı), menüler **İngilizce**, Windows bölge ayarı **Türkçe** (ondalık virgül, ayırıcı `;`). Dosya aktarılamadığı için veri ve model sayfaları panodan yapıştırıldı ve bir VBA makrosuyla kuruldu (`.Formula` İngilizce yazımla); Hedef Ara, Çözücü, veri doğrulama ve Power Query menülerden çalıştırıldı.
+
+| Konu | Kesit | Excel | Sonuç |
+| --- | --- | --- | --- |
+| 9 hesap işlevi (TOPLA.ÇARPIM, ALTTOPLAM, BASIKLIK, ÇARPIKLIK, TRIMMEAN, BENZERSİZ, FİLTRE, SIRALA) | 12 satırlık Satışlar | aynı | ✓ |
+| `METNEÇEVİR(B2;"aaaa yyyy")` | Ocak 2024 | Ocak 2024 (`mmmm` çalışmıyor) | ✓ |
+| DEVRESEL_ÖDEME (Kredi B6) | 106.285,35 | aynı | ✓ |
+| Hedef Ara: Fiyat B10=0 (B5) · B10=150.000 (B4) · Kredi B6=80.000 (B3) | 23.235,29 · 41,96 · 1.354.843,37 | aynı | ✓ |
+| Veri Tablosu (vade × faiz, 4×4) | 16 değer | aynı, hücrede `=TABLE(B5;B4)` | ✓ |
+| Çözücü Üretim (tamsayı) | 185.500 (64/110/39) | **varsayılan %1 toleransla 185.400**; %0 ile 185.500 (79/110/29) | ⚠ ders metnine not |
+| Çözücü Vardiya | 23 | 23 (başka bir karışım) | ✓ |
+| Makrolar: Tutar, İptalleri boya, Kategori özeti | | aynı; Türkçe İ ve `#,##0.00` doğru | ✓ |
+| `FormulaLocal = "=EĞER(...;...)"` | çalışır | **#NAME?**: İngilizce menülü Excel `IF` ister | ⚠ makro yorumu düzeltildi |
+| Excel Tablosu `Satışlar`, `=TOPLA(Satışlar[Adet])` | 22 | 22 | ✓ |
+| 3B başvuru `Ocak:Mart!B2:B8` · `Ocak:Mart!B2` | 3.616 · 682 | aynı | ✓ |
+| Gelişmiş Filtre: VE, YA DA, önek ("Eski"), boş ölçüt satırı, benzersiz | 3 · 3 · 2 · 12 · 6 satır | aynı satırlar | ✓ |
+| Birleştir (Ocak+Şubat+Mart, sol sütun) | 7 kategori | aynı toplamlar, Excel Mart'ın sırasını kullanıyor | ✓ |
+| Özet tablo Kanal × Adet | 8 / 11 / 3 | aynı; etiketler menü dilinde (Row Labels, Grand Total) | ✓ |
+| Power Query: Gruplandır (Kanal, Toplam Adet) | `Table.Group(... List.Sum([Adet]), type number)` | aynı sonuç, Excel `type nullable number` yazar | ✓ |
+| Veri doğrulama: liste `Web;Mobil;Mağaza`, 1–50 tamsayı, EĞERSAY benzersiz | C5, C13, E9, E20, E24, A11, A22 | aynı 7 hücre | ✓ |
+| Koşullu biçim `=$I2>1000` | I10 | I10 | ✓ |
+| Biçim `#.##0 "adet"`, `0,0 "lt"`, `%0,0`, `gg.aa.yyyy`, `gggg` | | aynı | ✓ |
+| `#.##0, "bin"` | 1.250.000, bin | aynı (ölçeklemiyor) | ⚠ ders metni `#.##0,` diyordu, `#.##0.` yapıldı |
+| `[Kırmızı]` | kırmızı | **reddedildi**; `[Red]` çalışır | ⚠ renk adı menü dilini izler, ders metnine not |
+| `dd.mm.yyyy` | 01.01.2024 | **00.mm.2024** (Türkçe ayarda d dakika) | ⚠ ders metnine not |
+| Dizi sabiti sütun ayırıcı | `,` | **`\`** (`{1\2\3}`) | ⚠ motor `\` yazımını da kabul ediyor |
+| TRIMRANGE, TEXTBEFORE, REGEX, PERCENTOF, LAMBDA ailesi, GRUPLAÖLÇÜT | var | #NAME? (bu sürümde yok) | sınanamadı |
+
+**Ders:** Kural "her şey Türkçe" değil: **ayırıcılar ve tarih harfleri Windows bölge ayarını, işlev ve renk adları ile özet tablo etiketleri Excel'in menü dilini izler.** Kesit Türkçe menülü Excel'i varsayıyordu; İngilizce menülü ama Türkçe bölgeli Excel (Türkiye'de şirket bilgisayarlarında yaygın) iki tarafı karıştırıyor.
+
+> 🧪 **Hâlâ sınanmayanlar:** Türkçe menülü Excel'de Türkçe işlev adları (ör. TRIMMEAN'ın Türkçe adı), Excel 365 işlevleri (GRUPLAÖLÇÜT "Toplam" satırı, NORMİFADE…), veri kitabı dosyasını açmak ve `.bas` dosyasını Dosya Al ile almak (dosya bilgisayara aktarılamadı). Türkçe arayüzlü web Excel bunun için yeterli.
+
 > 🧪 **Burada bir test daha yapalım (sizin bilgisayarda):** Kredi, Üretim ve Vardiya sayfalarını gerçek Excel'e kopyalayıp Hedef Ara ve Çözücü'yü (Simplex LP, "Kısıtlanmamış değişkenleri negatif olmayan yap" açık) çalıştırın. Beklenen: taksit 106.285,35; Üretim 185.500 (tamsayı); Vardiya 23.
 
 ### 5.13 İleri pivot ve pano (0.3.0)
@@ -731,3 +765,4 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 - **2026-11-27 · 0.6.0** Türkçe kurslarla üçüncü karşılaştırma (§9.x): Modül 21 Ofis pratikleri, güvenlik ve paylaşım (7 ders: gezinme ve Git > Özel, renge göre filtre, KÖPRÜ ve içindekiler, not ve birimli biçim, tanımlayıcı istatistik ve Araç Takımı, şifreleme ve Belge Denetçisi, yazdırma ve PowerPoint). Motor: HYPERLINK, FORMULATEXT, SKEW, KURT, TRIMMEAN (190 işlev). 111 ders, 250 alıştırma, 21 soruluk seviye testi, 152 test, LibreOffice 266/266. Bulunan hata: FORMÜLMETNİ rehber örneğinin boş hücrede #YOK vermesi.
 - **2026-11-27 · 0.6.1** Genel kullanıcı gözüyle üçüncü tur (§8.x): Dersler sayfasında arama, seviye süzgeci ve katlanır modüller (telefonda 16.381 → 4.392 px), Sık hatalar ve mülakatta arama, üst "Ara" düğmesi ders de buluyor, seviye testi başlık hatası, telefonda sol kenar gölgesi, masaüstü kahraman şeridi, ana sayfa seviye kartları.
 - **2026-11-27 · 0.6.2** Veri kitabı derslerle eşitlendi (§5.19): 17 model sayfası, başlıklı sayfalar Excel Tablosu, model formülleri İngilizce yazımla; LibreOffice'te 14 deneme formülü ve 35 model hücresi Kesit'le aynı. Veri sayfasında kitap indirme kartı; model sayfalarında "undefined" kaynak ve boş açıklama düzeltildi. Rehberde "Bilinen sınırlar" güncellendi.
+- **2026-11-27 · 0.6.3** Gerçek Excel'de örneklem (§7.x, İngilizce menülü, Türkçe bölgeli Office LTSC): 23 konu: 16'sı aynı, 6'sında ders metni ya da motor düzeltildi, 1'i bu Excel sürümünde sınanamadı. Düzeltilenler: dizi sabitinde `\` sütun ayırıcı ve virgüllü ondalık (motor), `#.##0.` ölçekleme ders metni, `{"Web";"Mobil"}` örneği ve ayırıcı açıklaması, FormulaLocal makro yorumu, biçim dersine "hangi dil?" notu ([Red], gg.aa), Çözücü dersine %1 tamsayı toleransı ve birden çok en iyi çözüm notu.

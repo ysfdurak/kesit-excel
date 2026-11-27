@@ -63,7 +63,7 @@ export const DERSLER_7 = [
     hedefler: ['Birimi biçim koduyla eklemek', 'Not ile açıklama (yazışmalı yorum) farkını bilmek', 'Birimin hesapta neden metin olmaması gerektiğini açıklamak'],
     anlatim: [
       '"42 kg" yazılan hücre metindir: TOPLA saymaz, sıralama bozulur. Hücreye 42 yazıp biçim kodu `#.##0 "kg"` verilirse 42 kg görünür, değer 42 kalır (Ders 15.5).',
-      'Yaygın birim kodları: `#.##0 "adet"`, `0,0 "lt"`, `#.##0 "palet"`, `0" gün"`, binle ölçekleyip birim: `#.##0, "bin ₺"`.',
+      'Yaygın birim kodları: `#.##0 "adet"`, `0,0 "lt"`, `#.##0 "palet"`, `0" gün"`, binle ölçekleyip birim: `#.##0. "bin ₺"` (Türkçe ayarda ölçekleme işareti binlik ayırıcı noktadır; `#.##0,` yazılırsa virgül metin gibi görünür ve sayı küçülmez).',
       '**Not** (Gözden Geçir > Notlar, Shift+F2): hücreye sarı bir yapışkan not; köşede kırmızı üçgen. **Açıklama** (yeni yorumlar): kişiler etiketlenir, yanıtlanır, çözüldü işaretlenir; ortak çalışma içindir. Yazdırırken Sayfa Yapısı > Sayfa > Açıklamalar: sayfa sonunda.',
     ],
     ornek: { tur: 'bicim', kod: '#.##0 "kg"', denemeDegerleri: [42, 1250.5, 0, -3], sayfa: 'Ürünler', alan: 'F2:F41', aciklama: 'Stok değerleri "kg" ile görünüyor; hücredeki değer sayı olarak kalıyor.' },

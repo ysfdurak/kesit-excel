@@ -112,12 +112,18 @@ export function yazimBul(f) {
   return 'en';
 }
 const AD_HARF = /[A-Za-zÇĞİÖŞÜçğıöşü_\\]/;
-// Dizi sabiti: Kesit kuralı, bölge ayarından bağımsız olarak , sütun, ; satır ayırır ve ondalık noktadır.
-// (Gerçek Türkçe Excel'de bu ayırıcılar Windows bölge ayarına bağlıdır; derste ayrıca anlatılır.)
+// Dizi sabiti: ; satır ayırır. Sütun ayırıcı iki yazımla tanınır:
+//   Kesit/İngilizce yazım  {1,2;3,4}      , sütun, ondalık nokta
+//   Türkçe bölge ayarı     {1\2;3,5\4}   \ sütun, ondalık virgül (Windows bölge ayarı Türkçe olan Excel böyle ister;
+//                                            27.11.2026'da İngilizce arayüzlü, Türkçe bölgeli Excel'de denendi)
+// Sabitin içinde (tırnak dışında) \ varsa Türkçe yazım kabul edilir.
 function diziSabiti(s, bas) {
   let i = bas + 1; const satirlar = [[]];
+  let tr = false;
+  for (let j = i, tirnak = false; j < s.length; j++) { if (s[j] === '"') tirnak = !tirnak; else if (!tirnak && s[j] === '}') break; else if (!tirnak && s[j] === '\\') { tr = true; break; } }
   const oge = () => {
     while (s[i] === ' ') i++;
+    if (tr) { const t = /^-?\d+,\d+/.exec(s.slice(i)); if (t) { i += t[0].length; return Number(t[0].replace(',', '.')); } }
     if (s[i] === '"') { let j = i + 1, v = ''; for (;;) { if (j >= s.length) throw new Error('Kapanmamış tırnak'); if (s[j] === '"') { if (s[j + 1] === '"') { v += '"'; j += 2; continue; } break; } v += s[j++]; } i = j + 1; return v; }
     const m = /^(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|TRUE|FALSE|DOĞRU|YANLIŞ|#[A-ZÇĞİÖŞÜ/0!?]+[!?]?)/i.exec(s.slice(i));
     if (!m) throw new Error('Dizi sabitinde yalnız sayı, metin, mantıksal ya da hata olabilir');
@@ -133,7 +139,7 @@ function diziSabiti(s, bas) {
     while (s[i] === ' ') i++;
     const c = s[i++];
     if (c === '}') break;
-    if (c === ',') continue;
+    if (c === (tr ? '\\' : ',')) continue;
     if (c === ';') { satirlar.push([]); continue; }
     throw new Error('Dizi sabiti kapanmadı: } bekleniyor');
   }
