@@ -192,6 +192,11 @@ const H = [
   ['REGEXREPLACE', 'metin', 'NORMİFADEDEĞİŞTİR(metin; desen; yeni; [kaçıncı]; [büyük_küçük])', 'Desene uyan yerleri değiştirir; $1 yakalanan grubu geri yazar. Kaçıncı 0 hepsi, eksi değer sondan.', '=NORMİFADEDEĞİŞTİR("ayse.yilmaz@gmail.com";"(?<=^.)[^@]*";"***")'],
   ['PERCENTOF', 'mat', 'PERCENTOF(alt_küme; bütün)', 'Alt kümenin toplamının bütünün toplamına oranı. GRUPLAÖLÇÜT\'e işlev olarak verilince her grubun payını verir.', '=PERCENTOF({2;3};{2;3;5})'],
   ['TRIMRANGE', 'ara', 'TRIMRANGE(başvuru; [satır_kırp]; [sütun_kırp])', 'Başvurunun baştaki ve sondaki boş satır ve sütunlarını atar (1 baş, 2 son, 3 ikisi); veriyle büyüyen aralık.', '=SATIRSAY(TRIMRANGE(H1:H1000))'],
+  ['HYPERLINK', 'ara', 'KÖPRÜ(bağ_konumu; [görünen_ad])', 'Tıklanınca kitap içinde bir yere (#Sayfa!A1), dosyaya, web adresine ya da e-postaya (mailto:) giden köprü. Hücrede görünen ad görünür.', '=KÖPRÜ("#Ürünler!A5";"Ürünlere git")'],
+  ['FORMULATEXT', 'ara', 'FORMÜLMETNİ(başvuru)', 'Hücredeki formülü metin olarak verir; formül yoksa #YOK. Denetim ve eğitim sayfaları için.', '=EĞERHATA(FORMÜLMETNİ(A1);"formül yok")'],
+  ['SKEW', 'ist', 'ÇARPIKLIK(sayı1; …)', 'Dağılımın çarpıklığı: 0\'dan büyükse uzun sağ kuyruk (birkaç çok büyük değer).', '=ÇARPIKLIK({1;2;3;10})'],
+  ['KURT', 'ist', 'BASIKLIK(sayı1; …)', 'Basıklık: 0\'dan büyükse uçlar normal dağılımdan kalın (uç değer çok).', '=BASIKLIK({1;2;3;4;20})'],
+  ['TRIMMEAN', 'ist', 'TRIMMEAN(dizi; yüzde)', 'Uçlardan toplam yüzde kadar veriyi (her uçtan yarısı) atıp ortalar; uç değerlere dayanıklı ortalama.', '=TRIMMEAN({4;5;6;7;2;3;4;5;1;2;3};0,2)'],
 ];
 
 export const ISLEV_BILGI = H.map(([en, kat, soz, aciklama, ornek]) => ({ en, tr: EN_TR[en] || en, kategori: kat, kategoriAd: KATEGORILER[kat], sozdizimi: soz, aciklama, ornek }));

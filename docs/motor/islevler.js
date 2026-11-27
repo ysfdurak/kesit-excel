@@ -895,4 +895,14 @@ tanim('TRIMRANGE', (a, b) => {
   return new Bas(v.sayfa, r1, c1, r2, c2);
 });
 
+/* ---------------------------------------------------------------- ofis pratikleri: köprü, formül metni, tanımlayıcı istatistik */
+// KÖPRÜ: hücrede görünen metni (yoksa hedefi) döndürür; tıklama tarayıcıdaki ızgarada yok, hedef formülde okunur
+tanim('HYPERLINK', (a, b) => { const hedef = deger(a[0], b); if (hataMi(hedef)) return hedef; if (a[1] == null) return T(hedef); const ad = deger(a[1], b); return ad == null ? 0 : ad; });
+tanim('FORMULATEXT', (a, b) => { const v = a[0]; if (!(v instanceof Bas)) return H.DEGER; const f = b.kitap.icerik(v.sayfa, v.r1, v.c1); return typeof f === 'string' && f.startsWith('=') ? f : H.NA; });
+function momentler(x) { const n = x.length, m = x.reduce((t, v) => t + v, 0) / n, s = Math.sqrt(x.reduce((t, v) => t + (v - m) ** 2, 0) / (n - 1)); return { n, m, s }; }
+tanim('SKEW', (a, b) => { const x = sayilar(a, b); if (hataMi(x)) return x; const { n, m, s } = momentler(x); if (n < 3 || !s) return H.BOL0; return n / ((n - 1) * (n - 2)) * x.reduce((t, v) => t + ((v - m) / s) ** 3, 0); });
+tanim('KURT', (a, b) => { const x = sayilar(a, b); if (hataMi(x)) return x; const { n, m, s } = momentler(x); if (n < 4 || !s) return H.BOL0; return n * (n + 1) / ((n - 1) * (n - 2) * (n - 3)) * x.reduce((t, v) => t + ((v - m) / s) ** 4, 0) - 3 * (n - 1) ** 2 / ((n - 2) * (n - 3)); });
+// Uçlardan yüzde p kadar veriyi (her uçtan yarısı, aşağı yuvarlanmış) atıp ortalar
+tanim('TRIMMEAN', (a, b) => { const x = sayilar([a[0]], b), p = N(deger(a[1], b)); if (hataMi(x)) return x; if (hataMi(p) || p < 0 || p >= 1) return H.SAYI; const s = x.slice().sort((u, v) => u - v), k = Math.floor(s.length * p / 2), ic = s.slice(k, s.length - k); return ic.length ? ic.reduce((t, v) => t + v, 0) / ic.length : H.SAYI; });
+
 export const ISLEVLER = F;

@@ -1,0 +1,135 @@
+// Modül 21: Türkçe kurumsal Excel eğitimlerinde (Uludağ ULUSEM, ODTÜ, Yenibiriş, Boğaziçi Enstitüsü, IIENSTITU) olup
+// Kesit'te eksik kalan ofis pratikleri: gezinme ve hızlı veri girişi, renge göre filtre, köprü, not ve birimli biçim,
+// tanımlayıcı istatistik ve Çözümleyici Araç Takımı, kitap güvenliği ve şifreleme, yazdırma ve PowerPoint'e aktarma.
+
+export const DERSLER_7 = [
+  {
+    id: 'm21-d1', modul: 'm21', baslik: 'Hızlı gezinme ve veri girişi: kısayollar, Git > Özel, seri', sure: 10,
+    ozet: 'Binlerce satırda kaydırmadan gezin, boş hücreleri tek seferde seçin, ay ay tarih serisini sürüklemeden üretin.',
+    hedefler: ['Ctrl+ok, Ctrl+Shift+ok, Ctrl+Enter, Ctrl+D kısayollarını kullanmak', 'Git > Özel ile boşları, formülleri, sabitleri seçmek', 'Seri doldurmayı formülle (SERİTARİH + SIRALI) kurmak'],
+    anlatim: [
+      '**Gezinme:** Ctrl+ok verinin kenarına atlar, Ctrl+Shift+ok o kenara kadar seçer, Ctrl+Home A1\'e, Ctrl+End kullanılan son hücreye gider. Ctrl+Enter seçili bütün hücrelere aynı girişi yazar; Ctrl+D üstteki hücreyi aşağı kopyalar.',
+      '**Git > Özel** (F5 > Özel): Boşluklar, Formüller, Sabitler, Görünür hücreler, Koşullu biçim. Klasik kullanım: birleşik hücreden kalan boşları seçip `=` ve üst hücreye tıklayıp Ctrl+Enter (Ders 9.3). Başka biri: Sabitler seçilip silinince formüller kalır, girdi temizlenir.',
+      '**Seri doldurma:** iki hücre (Ocak, Şubat) seçip doldurma tutamacını sürüklemek ya da Giriş > Doldur > Seri. Formülle: `=SERİTARİH(H1;SIRALI(12;1;0))` H1\'den başlayan 12 ay başını taşırır; başlangıç değişince bütün seri değişir.',
+      '**Bölmeleri Dondur** (Görünüm) başlık satırını kaydırırken sabit tutar; **Özel Görünümler** aynı sayfanın farklı filtre/gizleme durumlarını adla kaydeder (Tablo varken çalışmaz).',
+    ],
+    ornek: { sayfa: 'Hedef', hucre: 'G2', formul: '=SERİTARİH(H1;SIRALI(12;1;0))', hazirlik: { G1: 'Ay', H1: 45658 }, alan: 'G13', aciklama: 'H1 (01.01.2025) başlangıç; SIRALI(12;1;0) 0–11 ay ekler. H1\'i değiştirin, seri kayar.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Hedef', hedef: 'G2', okunan: 'G2:G13', hazirlik: { G1: 'Ay', H1: 45658 }, soru: 'G2\'ye H1\'deki tarihten başlayan **12 ayın ilk günlerini** tek formülle taşırın.', cozum: '=SERİTARİH(H1;SIRALI(12;1;0))', durumlar: [{}, { H1: 45748 }], ipuclari: ['=SERİTARİH(H1;SIRALI(12;1;0)): 0, 1, …, 11 ay ekler.'] },
+      { id: 'a2', tur: 'secmeli', soru: 'Bir raporda girdi hücrelerini (sabit sayıları) silip formülleri korumak istiyorsunuz. En hızlı yol?', secenekler: ['Hücreleri tek tek seçip silmek', 'Git > Özel > Sabitler > Sayılar ile seçip Delete', 'Sayfayı korumak', 'Formülleri değere çevirmek'], dogru: 1, aciklama: 'Git > Özel > Sabitler yalnız elle yazılmış değerleri seçer; formüller seçime girmez. Sayılar işaretli bırakılırsa başlık metinleri de korunur.' },
+      { id: 'a3', tur: 'secmeli', soru: '240 satırlık listede aşağı kaydırınca başlıklar kayboluyor. Ne yaparsınız?', secenekler: ['Başlıkları her 30 satırda bir tekrar yazmak', 'Görünüm > Bölmeleri Dondur > Üst Satırı Dondur', 'Yazı tipini küçültmek', 'Listeyi sayfalara bölmek'], dogru: 1, aciklama: 'Bölmeleri dondurmak başlık satırını ekranda sabit tutar; veriyi değiştirmez. Yazdırırken aynı iş Sayfa Düzeni > Başlıkları Yazdır ile yapılır (Ders 21.7).' },
+    ],
+    sikHata: { yanlis: 'Ay serisini her yıl elle yazmak ya da sürüklemek', dogru: 'Başlangıç hücresine bağlı formülle üretmek', neden: 'Elle seri bir hücre unutunca ya da yıl değişince bozulur; formül tek hücreden yönetilir.' },
+    mulakat: { soru: 'Excel\'de en çok kullandığınız verimlilik kısayolları hangileri?', cevap: 'Ctrl+ok ve Ctrl+Shift+ok ile gezinme ve seçim, Ctrl+T ile tablo, Ctrl+Enter ile çoklu giriş, Ctrl+D ile aşağı doldurma, F4 ile $ ve son işlemi tekrar, F5 > Özel ile boşları ya da formülleri seçme, Alt+= ile otomatik toplam, Ctrl+Shift+L ile filtre. Tekrarlanan işi kısayolla değil formül, tablo ya da Power Query ile kalıcı hâle getiririm.' },
+  },
+  {
+    id: 'm21-d2', modul: 'm21', baslik: 'Renge ve simgeye göre filtre: renk veri değildir', sure: 9,
+    ozet: 'Excel renkli hücreleri süzebilir ve sıralayabilir; ama renkle işaretlenmiş bilgi formüle giremez. Rengi üreten kuralı bir sütuna yazın.',
+    hedefler: ['Renge, yazı rengine ve koşullu biçim simgesine göre filtrelemek', 'Renkli satırları saymanın neden zor olduğunu bilmek', 'Rengi üreten kuralı formülle saymak'],
+    anlatim: [
+      'Filtre okunda **Renge Göre Filtre** hücre rengi, yazı rengi ya da koşullu biçim simgesi (ok, bayrak) listeler; Sırala\'da da "Sıralama ölçütü: Hücre Rengi" seçilebilir. Elle boyanmış ve koşullu biçimle boyanmış hücrelerde ikisi de çalışır.',
+      'Ama **renk veri değildir**: EĞERSAY rengi bilmez, başka biri farklı tonla boyarsa kayıt kaybolur, renk körü okuyucu ayırt edemez. Renkli satırları toplamak için filtrelenip ALTTOPLAM(109;…) kullanılır; kalıcı çözüm rengin nedenini bir sütuna yazmaktır ("Durum: Hedef altı").',
+      'Koşullu biçimle boyanan hücrede kural zaten bir formüldür: `=$D2<$C2*0,9` kuralı kırmızı yapıyorsa kaç satırın kırmızı olduğu `=TOPLA.ÇARPIM(--(D2:D43<C2:C43*0,9))` ile sayılır.',
+    ],
+    ornek: { sayfa: 'Bütçe', hucre: 'F2', formul: '=TOPLA.ÇARPIM(--(D2:D43<C2:C43*0,9))', hazirlik: { E2: 'Kırmızı satır' }, aciklama: 'Ders 13.4\'teki kırmızı kuralı (%10\'dan fazla hedef altı) kaç satırı boyuyor? Renge bakmadan, kuralın kendisiyle sayılıyor.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Bütçe', hedef: 'F3', hazirlik: { E3: 'Hedef altı toplam' }, soru: 'Koşullu biçim gerçekleşeni hedefin %90\'ının altında kalan satırları kırmızı yapıyor. F3\'e bu **kırmızı satırların gerçekleşen toplamını** renge bakmadan yazın.', cozum: '=TOPLA.ÇARPIM((D2:D43<C2:C43*0,9)*D2:D43)', ipuclari: ['Koşulu çarpan yapın: =TOPLA.ÇARPIM((D2:D43<C2:C43*0,9)*D2:D43)'] },
+      { id: 'a2', tur: 'secmeli', soru: 'Bir meslektaşınız "önemli siparişleri sarıya boyadım, kaç tane olduğunu bul" diyor. En sağlam yol?', secenekler: ['Sarı hücreleri gözle saymak', 'Renge göre filtreleyip durum çubuğundaki sayıya bakmak, sonra "Öncelik" sütunu ekleyip sarıyı oraya yazmak', 'EĞERSAY ile "sarı" aramak', 'Hücre rengini VBA olmadan formülle okumak'], dogru: 1, aciklama: 'Renge göre filtre bir kerelik sayım verir; formül rengi okuyamaz (yalnız VBA ya da eski HÜCRE.AL makro işlevi). Rengin anlamı bir sütuna yazılınca süzülebilir, sayılabilir, pivotta kullanılabilir.' },
+    ],
+    sikHata: { yanlis: 'Bilgiyi yalnız hücre rengiyle saklamak', dogru: 'Bilgiyi sütuna yazıp rengi koşullu biçimle o sütundan üretmek', neden: 'Renk formüle, pivota ve renk körü okuyucuya görünmez; ton farkı kaydı kaybettirir.' },
+    mulakat: { soru: 'Renkli hücreleri nasıl sayarsınız?', cevap: 'Renk koşullu biçimden geliyorsa kuralı formül olarak yazıp sayarım (TOPLA.ÇARPIM ya da ÇOKEĞERSAY). Elle boyanmışsa renge göre filtreleyip ALTTOPLAM(103;…) ile sayarım ve sonrası için rengin anlamını bir sütuna taşımayı öneririm. Rengi okuyan VBA işlevi yazmak mümkündür ama renk değişince yeniden hesaplanmaz.' },
+  },
+  {
+    id: 'm21-d3', modul: 'm21', baslik: 'Köprüler ve içindekiler sayfası: KÖPRÜ', sure: 9,
+    ozet: 'Çok sayfalı kitapta kaybolmayın: içindekiler sayfası, "Panoya dön" bağlantısı, ürün satırından ayrıntıya atlayan köprü.',
+    hedefler: ['Ekle > Bağlantı ile sayfa, hücre, dosya ve e-posta köprüsü vermek', 'KÖPRÜ işleviyle veriden köprü üretmek', 'FORMÜLMETNİ ile formülü belgelemek'],
+    anlatim: [
+      '**Ekle > Bağlantı** (Ctrl+K): Bu Belgede (sayfa ve hücre), Varolan Dosya ya da Web Sayfası, E-posta Adresi. Köprü düzenlemek için hücreye sağ tık > Köprüyü Düzenle; köprüyü açmadan hücreyi seçmek için basılı tutmak.',
+      '`=KÖPRÜ(bağ_konumu;[görünen_ad])` köprüyü formülle üretir: `=KÖPRÜ("#Ürünler!A"&KAÇINCI(G2;Ürünler!B:B;0);G2)` ürün adına tıklayınca o ürünün satırına atlar. `#` aynı kitabın içi demektir; `mailto:` e-posta açar. Hücrede görünen değer görünen addır.',
+      '**İçindekiler sayfası**: her sayfa için bir satır, KÖPRÜ ile sayfaya, her sayfanın köşesinde "İçindekilere dön" köprüsü. Büyük kitapta yönetici gezinmeyi sekmelerden değil buradan yapar.',
+      '`=FORMÜLMETNİ(D11)` bir hücrenin formülünü metin olarak gösterir: eğitim ve denetim sayfasında "bu sayı nasıl hesaplandı" sorusunun cevabı.',
+    ],
+    ornek: { sayfa: 'Ürünler', hucre: 'H2', formul: '=KÖPRÜ("#Ürünler!A"&SATIR();B2&" · stok "&F2)', hazirlik: { H1: 'Bağlantı' }, aciklama: 'Görünen ad veriden kuruluyor; Excel\'de tıklayınca o satıra atlar.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Ürünler', hedef: 'H2:H41', hazirlik: { H1: 'Bağlantı' }, soru: 'H2\'ye ürünün kendi satırına giden bir köprü yazın; hücrede **"Ürün adı · stok N"** görünsün (ör. "Kablosuz Kulaklık · stok 42"). H41\'e kadar doldurun.', cozum: '=KÖPRÜ("#Ürünler!A"&SATIR();B2&" · stok "&F2)', gerekli: ['HYPERLINK'], ipuclari: ['=KÖPRÜ("#Ürünler!A"&SATIR();B2&" · stok "&F2)'] },
+      { id: 'a2', tur: 'secmeli', soru: 'Panoda 6 sayfa var; yönetici her seferinde sekmelerde kayboluyor. En kullanışlı çözüm?', secenekler: ['Sekmeleri renklendirmek', 'İlk sayfaya köprülü bir içindekiler listesi ve her sayfaya "İçindekilere dön" köprüsü', 'Sayfa adlarını kısaltmak', 'Bütün sayfaları tek sayfada birleştirmek'], dogru: 1, aciklama: 'İçindekiler ve geri dönüş köprüleri gezinmeyi bir tıka indirir; Excel web ve mobilde de çalışır.' },
+    ],
+    sikHata: { yanlis: 'Köprü hedefini "Ürünler!A5" diye # olmadan yazmak', dogru: '"#Ürünler!A5"', neden: '# olmadan Excel hedefi bir dosya adı sanar ve "dosya açılamıyor" der.' },
+    mulakat: { soru: 'Kalabalık bir Excel kitabını yeni gelen birine nasıl anlaşılır kılarsınız?', cevap: 'İlk sayfaya amaç, veri kaynağı, güncelleme sıklığı ve köprülü içindekiler koyarım; girdi, hesap ve rapor sayfalarını ayırıp renk kodu veririm; önemli hücrelere not, kritik formüllerin yanına FORMÜLMETNİ ile açıklama eklerim; adlandırılmış aralık ve tablo adları kullanırım.' },
+  },
+  {
+    id: 'm21-d4', modul: 'm21', baslik: 'Not, açıklama ve birimli sayı biçimi (kg, lt, adet)', sure: 8,
+    ozet: 'Sayının yanına birimi metin olarak yazarsanız hesap bozulur. Birimi biçim kodu gösterir, açıklamayı not taşır.',
+    hedefler: ['Birimi biçim koduyla eklemek', 'Not ile açıklama (yazışmalı yorum) farkını bilmek', 'Birimin hesapta neden metin olmaması gerektiğini açıklamak'],
+    anlatim: [
+      '"42 kg" yazılan hücre metindir: TOPLA saymaz, sıralama bozulur. Hücreye 42 yazıp biçim kodu `#.##0 "kg"` verilirse 42 kg görünür, değer 42 kalır (Ders 15.5).',
+      'Yaygın birim kodları: `#.##0 "adet"`, `0,0 "lt"`, `#.##0 "palet"`, `0" gün"`, binle ölçekleyip birim: `#.##0, "bin ₺"`.',
+      '**Not** (Gözden Geçir > Notlar, Shift+F2): hücreye sarı bir yapışkan not; köşede kırmızı üçgen. **Açıklama** (yeni yorumlar): kişiler etiketlenir, yanıtlanır, çözüldü işaretlenir; ortak çalışma içindir. Yazdırırken Sayfa Yapısı > Sayfa > Açıklamalar: sayfa sonunda.',
+    ],
+    ornek: { tur: 'bicim', kod: '#.##0 "kg"', denemeDegerleri: [42, 1250.5, 0, -3], sayfa: 'Ürünler', alan: 'F2:F41', aciklama: 'Stok değerleri "kg" ile görünüyor; hücredeki değer sayı olarak kalıyor.' },
+    alistirmalar: [
+      { id: 'a1', tur: 'bicim', soru: 'Stokları **binlik ayırıcıyla ve sonunda "adet"** gösterin: 1250 → 1.250 adet.', cozum: '#.##0 "adet"', denemeDegerleri: [1250, 7, 0, 125000], ipuclari: ['#.##0 "adet"'] },
+      { id: 'a2', tur: 'bicim', soru: 'Yakıt tüketimini **bir ondalıkla ve "lt"** ile gösterin: 12,345 → 12,3 lt.', cozum: '0,0 "lt"', denemeDegerleri: [12.345, 0.04, 120, 7.95], ipuclari: ['0,0 "lt"'] },
+      { id: 'a3', tur: 'secmeli', soru: 'Ekip, rapordaki bir sayı hakkında soru soracak, cevap verilecek ve konu kapatılacak. Hangisini kullanırsınız?', secenekler: ['Not (sarı yapışkan not)', 'Açıklama (yazışmalı yorum: etiketle, yanıtla, çözüldü)', 'Hücreye metin yazmak', 'Hücreyi boyamak'], dogru: 1, aciklama: 'Yazışmalı açıklama kişi etiketleme, yanıt ve çözüldü durumu taşır; not tek seferlik bilgi içindir. Hücreye metin yazmak veriyi bozar.' },
+    ],
+    sikHata: { yanlis: 'Hücreye "42 kg" yazmak', dogru: '42 yazıp biçim kodu #.##0 "kg" vermek', neden: 'Birimli metin hesaba girmez; TOPLA 0 verir, sıralama alfabetik olur.' },
+    mulakat: { soru: 'Birimleri Excel\'de nasıl tutarsınız?', cevap: 'Değeri sayı olarak, birimi biçim kodunda ya da sütun başlığında tutarım ("Ağırlık (kg)"). Farklı birimler karışıyorsa ayrı bir Birim sütunu ve dönüşüm tablosu kullanırım; hesaplar tek birime çevrilmiş sütundan yapılır.' },
+  },
+  {
+    id: 'm21-d5', modul: 'm21', baslik: 'Tanımlayıcı istatistik ve Çözümleyici Araç Takımı', sure: 11,
+    ozet: 'Veri > Veri Çözümleme eklentisi tek tıkla istatistik tablosu verir; ama sonuç sabittir. Aynı tabloyu formülle canlı kurun.',
+    hedefler: ['Çözümleyici Araç Takımı\'nı etkinleştirip Tanımlayıcı İstatistik almak', 'ÇARPIKLIK, BASIKLIK ve kırpılmış ortalamayı yorumlamak', 'Eklentinin sabit çıktısı ile formül tablosu farkını bilmek'],
+    anlatim: [
+      '**Dosya > Seçenekler > Eklentiler > Excel Eklentileri > Çözümleyici Araç Takımı**. Sonra Veri > Veri Çözümleme: Tanımlayıcı İstatistik, Histogram, Regresyon, Korelasyon, t-Testi, Hareketli Ortalama.',
+      'Tanımlayıcı İstatistik tablosu: ortalama, standart hata, ortanca, mod, standart sapma, varyans, **basıklık**, **çarpıklık**, aralık, en küçük, en büyük, toplam, sayı. Çıktı **değerdir**: veri değişince güncellenmez, araç yeniden çalıştırılır.',
+      'Formül karşılıkları canlıdır: `=ÇARPIKLIK(I2:I241)` (0\'dan büyükse uzun sağ kuyruk: birkaç çok pahalı ürün ortalamayı yukarı çeker), `=BASIKLIK(I2:I241)` (0\'dan büyükse uçlar kalın), `=TRIMMEAN(I2:I241;0,1)` uçlardan toplam %10\'u atıp ortalar.',
+      'Çarpık veride ortalama yerine ortanca ya da kırpılmış ortalama raporlanır; "ortalama sipariş tutarı" birkaç dev siparişle şişebilir.',
+    ],
+    ornek: { sayfa: 'Satışlar', hucre: 'M2', formul: '=ÇARPIKLIK(I2:I241)', hazirlik: { L2: 'Birim fiyat çarpıklığı' }, aciklama: 'Pozitif çarpıklık: çoğu ürün ucuz, birkaç pahalı ürün sağ kuyruğu uzatıyor.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Satışlar', hedef: 'M3', hazirlik: { L3: 'Birim fiyat basıklığı' }, soru: 'M3\'e birim fiyatların (I2:I241) **basıklığını** yazın.', cozum: '=BASIKLIK(I2:I241)', gerekli: ['KURT'], ipuclari: ['=BASIKLIK(I2:I241)'] },
+      { id: 'a2', sayfa: 'Satışlar', hedef: 'M4', hazirlik: { L4: 'Kırpılmış ortalama (%10)' }, soru: 'M4\'e birim fiyatların, uçlardan **toplam %10** atılarak hesaplanan ortalamasını yazın.', cozum: '=TRIMMEAN(I2:I241;0,1)', gerekli: ['TRIMMEAN'], ipuclari: ['=TRIMMEAN(I2:I241;0,1): her uçtan %5.'] },
+      { id: 'a3', tur: 'secmeli', soru: 'Çözümleyici Araç Takımı ile aylık raporda Tanımlayıcı İstatistik tablosu ürettiniz. Ertesi ay veri güncellendi. Ne olur?', secenekler: ['Tablo kendiliğinden güncellenir', 'Tablo sabit değerdir; araç yeniden çalıştırılmalı ya da tablo formüllerle kurulmalı', 'Excel uyarı verir', 'Tablo silinir'], dogru: 1, aciklama: 'Araç takımı çıktısı formül değil değerdir. Tekrarlanan raporda ORTALAMA, ORTANCA, STDSAPMA.S, ÇARPIKLIK gibi formüllerle canlı tablo kurulur.' },
+    ],
+    sikHata: { yanlis: 'Çarpık veride yalnız ortalamayı raporlamak', dogru: 'Ortanca ya da kırpılmış ortalamayı yanına koymak', neden: 'Birkaç uç değer ortalamayı tipik değerden uzaklaştırır; karar yanlış "tipik" sayıya göre verilir.' },
+    mulakat: { soru: 'Çözümleyici Araç Takımı ile formül arasında nasıl seçim yaparsınız?', cevap: 'Tek seferlik keşifte araç takımı hızlıdır (regresyon tablosu, histogram). Tekrarlanan raporda çıktı sabit kaldığı için formül kurarım; regresyon için DOT ya da EĞİM/KESMENOKTASI, histogram için SIKLIK. Sonucu kimin, ne sıklıkla güncelleyeceğine göre karar veririm.' },
+  },
+  {
+    id: 'm21-d6', modul: 'm21', baslik: 'Kitap güvenliği: şifreleme, parolalar ve paylaşmadan önce', sure: 9,
+    ozet: 'Sayfa koruması güvenlik değildir. Kitabı açma parolasıyla şifreleyin, paylaşmadan önce Belge Denetçisi\'ni çalıştırın.',
+    hedefler: ['Açma parolası, değiştirme parolası ve sayfa korumasını ayırt etmek', 'Belge Denetçisi ile gizli bilgiyi temizlemek', '"Son hâli olarak işaretle"nin güvenlik olmadığını bilmek'],
+    anlatim: [
+      '**Dosya > Bilgi > Çalışma Kitabını Koru > Parolayla Şifrele**: dosya şifrelenir, parola olmadan açılmaz. Parola unutulursa Microsoft da açamaz; parola yöneticisinde saklayın.',
+      '**Farklı Kaydet > Araçlar > Genel Seçenekler**: açma parolası, değiştirme parolası (açar ama kaydedemez; salt okunur açılır) ve "Salt okunur önerilir". **Sayfa/kitap yapısı koruması** (Ders 15.7) yanlışlıkla değişikliği önler, dosyayı şifrelemez ve kolayca aşılır.',
+      '**Belge Denetçisi** (Dosya > Bilgi > Sorunları Denetle): gizli sayfa/satır/sütun, açıklamalar, kişisel bilgiler (yazar), gizli adlar, harici bağlantılar. Müşteriye gidecek dosyada gizli sayfada maliyet kalmasın.',
+      '**Son Hâli Olarak İşaretle** yalnız bir uyarı çubuğudur; tek tıkla kaldırılır. Hassas veride (KVKK) şifreleme ve erişimi kısıtlı paylaşım (OneDrive/SharePoint bağlantı izinleri) gerekir.',
+    ],
+    ornek: null,
+    alistirmalar: [
+      { id: 'a1', tur: 'secmeli', soru: 'Personel maaş listesini e-postayla İK\'ya göndereceksiniz. Hangisi dosyayı gerçekten korur?', secenekler: ['Sayfa koruması', 'Son Hâli Olarak İşaretle', 'Dosyayı açma parolasıyla şifrelemek ve parolayı ayrı bir kanaldan (telefon, SMS) iletmek', 'Maaş sütununu gizlemek'], dogru: 2, aciklama: 'Yalnız açma parolası dosyayı şifreler. Sayfa koruması ve gizleme kolayca aşılır; Son Hâli işareti uyarıdır. Parolayı dosyayla aynı e-postada göndermek korumayı boşa çıkarır.' },
+      { id: 'a2', tur: 'secmeli', soru: 'Teklif dosyasını müşteriye göndermeden önce ne yaparsınız?', secenekler: ['Hiçbir şey; dosya zaten hazır', 'Belge Denetçisi ile gizli sayfa, açıklama, kişisel bilgi ve harici bağlantıları temizlemek; gerekirse değerlere çevrilmiş bir kopya göndermek', 'Sadece yazı tipini düzeltmek', 'Dosyayı sıkıştırmak'], dogru: 1, aciklama: 'Gizli sayfadaki maliyet ya da iç yorumlar en sık yaşanan sızıntıdır. Belge Denetçisi bunları bulur; dış dosyada formüller yerine değerler de gönderilebilir.' },
+      { id: 'a3', tur: 'secmeli', soru: 'Bütçe dosyasını herkes okuyabilsin ama yalnız siz değiştirebilin. Hangisi?', secenekler: ['Açma parolası', 'Değiştirme parolası (Genel Seçenekler) ya da paylaşımda "görüntüleyebilir" izni', 'Sayfa koruması parolasız', 'Dosyayı PDF yapmak'], dogru: 1, aciklama: 'Değiştirme parolası dosyayı salt okunur açtırır; bulutta ise bağlantı izni "görüntüleyebilir" verilir. PDF etkileşimi ve formülleri kaybettirir.' },
+    ],
+    sikHata: { yanlis: 'Hassas veriyi sayfa korumasıyla "güvenceye almak"', dogru: 'Dosyayı açma parolasıyla şifrelemek, paylaşımı izinle kısıtlamak', neden: 'Sayfa koruması şifreleme yapmaz; dosyayı açan herkes veriyi görür ve koruma basit araçlarla kaldırılır.' },
+    mulakat: { soru: 'Excel\'de veri güvenliğini nasıl sağlarsınız?', cevap: 'Üç katman: erişim (dosyayı paylaşılan klasörde izinle, e-postada açma parolasıyla ve parolayı ayrı kanaldan), bütünlük (sayfa koruması, kilitli formül hücreleri, veri doğrulama, değiştirme parolası) ve temizlik (Belge Denetçisi, gizli sayfa ve kişisel bilgi temizliği). KVKK kapsamındaki veriyi mümkünse maskeler ya da hiç göndermem.' },
+  },
+  {
+    id: 'm21-d7', modul: 'm21', baslik: 'Yazdırma, PDF ve PowerPoint\'e aktarma', sure: 9,
+    ozet: 'Ekranda güzel duran rapor kâğıtta 14 sayfaya bölünmesin; sunumdaki grafik her ay elle güncellenmesin.',
+    hedefler: ['Yazdırma alanı, başlıkları yazdır ve ölçeklendirmeyi ayarlamak', 'Sayfa sonu önizlemesiyle bölünmeyi düzeltmek', 'Grafiği PowerPoint\'e bağlantılı aktarmak; şeridi özelleştirmek'],
+    anlatim: [
+      '**Sayfa Düzeni**: Yazdırma Alanı > Ayarla; **Başlıkları Yazdır** > Üstte yinelenecek satırlar `$1:$1` (her sayfada başlık); Ölçeklendir: "Tüm sütunları bir sayfaya sığdır". **Görünüm > Sayfa Sonu Önizleme**de mavi kesikli çizgiler sürüklenir.',
+      'Üst bilgi/alt bilgi: &[Sayfa] / &[Sayfalar], dosya adı, tarih. **PDF**: Dosya > Dışarı Aktar > PDF; seçilen sayfalar ya da tüm kitap. Yazdırmadan önce Ctrl+P önizlemesi.',
+      '**PowerPoint\'e grafik**: Excel\'de kopyala, PowerPoint\'te Giriş > Yapıştır > Özel Yapıştır > **Bağlantı yapıştır** (ya da "Hedef Temayı Kullan ve Veriyi Bağla"). Veri değişince sunumda Bağlantıları Güncelleştir yeter; resim olarak yapıştırılan grafik her ay yeniden yapıştırılır.',
+      '**Şeridi özelleştir** (Dosya > Seçenekler) ve **Hızlı Erişim Araç Çubuğu**: sık kullanılan komutları (Değerleri Yapıştır, Git > Özel, Gözcü Penceresi) bir tıka indirir; Alt tuşu numaralarıyla klavyeden çağrılır.',
+    ],
+    ornek: null,
+    alistirmalar: [
+      { id: 'a1', tur: 'secmeli', soru: '6 sayfalık raporun yalnız ilk sayfasında başlık satırı çıkıyor. Ne yaparsınız?', secenekler: ['Her sayfanın başına başlığı elle kopyalamak', 'Sayfa Düzeni > Başlıkları Yazdır > Üstte yinelenecek satırlar: $1:$1', 'Bölmeleri dondurmak', 'Yazı tipini küçültmek'], dogru: 1, aciklama: 'Başlıkları Yazdır her basılan sayfaya başlık satırını ekler; bölmeleri dondurmak yalnız ekranı etkiler.' },
+      { id: 'a2', tur: 'secmeli', soru: 'Aylık yönetim sunumundaki 5 grafik her ay Excel\'den kopyalanıp yeniden yapıştırılıyor. Daha iyi yol?', secenekler: ['Grafikleri resim olarak yapıştırmaya devam etmek', 'Özel Yapıştır > Bağlantı yapıştır ile bağlantılı grafik; her ay Bağlantıları Güncelleştir', 'Sunumu PDF yapmak', 'Grafikleri PowerPoint\'te elle yeniden çizmek'], dogru: 1, aciklama: 'Bağlantılı grafik kaynak Excel\'e bağlıdır; veri değişince tek komutla güncellenir. Dosya yolu değişirse bağlantı Dosya > Bilgi > Bağlantıları Düzenle\'den güncellenir.' },
+      { id: 'a3', tur: 'secmeli', soru: 'Geniş bir tablo yazdırınca son iki sütun ayrı sayfaya düşüyor. En hızlı çözüm?', secenekler: ['Sütunları silmek', 'Sayfa Düzeni > Ölçeklendir: Tüm sütunları bir sayfaya sığdır (ya da Yatay yönlendirme)', 'Yazıcıyı değiştirmek', 'Tabloyu iki parçaya bölmek'], dogru: 1, aciklama: 'Ölçeklendirme ve yatay sayfa sütunları bir sayfaya sığdırır; okunurluk için yazı %70\'in altına düşmemeli, gerekirse gereksiz sütunlar yazdırma alanından çıkarılır.' },
+    ],
+    sikHata: { yanlis: 'Sunuma grafiği resim olarak yapıştırmak', dogru: 'Bağlantılı yapıştırmak ve güncellemek', neden: 'Resim olarak yapıştırılan grafik veriden kopar; eski ayın rakamı sunumda kalır.' },
+    mulakat: { soru: 'Excel raporunu yönetime nasıl sunarsınız?', cevap: 'Ekranda kullanılacaksa pano sayfası; e-postayla gidecekse yazdırma alanı, başlıkları yazdır ve sayfaya sığdır ayarlı PDF; sunumda ise bağlantılı grafikler. Her durumda tek mesaj başlığı, tarih ve kaynak notu eklerim.' },
+  },
+];

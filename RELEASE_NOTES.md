@@ -1,5 +1,12 @@
 # Sürüm notları
 
+## 0.6.0 (Kasım 2026): Türkçe kurslardan ofis pratikleri
+
+Türkçe kurumsal Excel eğitimleri (ULUSEM, ODTÜ, Yenibiriş, Boğaziçi Enstitüsü, IIENSTITU) ile karşılaştırmada eksik kalan konular.
+- **Modül 21 · Ofis pratikleri, güvenlik ve paylaşım (7 ders):** kısayollar, Git > Özel ve formülle seri; renge göre filtre ve rengi üreten kuralı sayma; KÖPRÜ ile içindekiler ve FORMÜLMETNİ; not/açıklama ve birimli sayı biçimi (kg, lt, adet); tanımlayıcı istatistik ve Çözümleyici Araç Takımı; dosya şifreleme, değiştirme parolası, Belge Denetçisi; yazdırma, PDF ve PowerPoint'e bağlantılı aktarma, şerit özelleştirme.
+- **Motor:** KÖPRÜ, FORMÜLMETNİ, ÇARPIKLIK, BASIKLIK, TRIMMEAN (190 işlev).
+- 111 ders, 250 alıştırma; 152 test, LibreOffice 266/266.
+
 ## 0.5.0 (Kasım 2026): eksiklerin tamamlanması
 
 0.4.0 karşılaştırmasında "yok" kalan konular.

@@ -306,6 +306,19 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 
 **Bilinçli olarak eklenmeyenler:** harita grafiği (Excel'de Bing çevrimiçi hizmetine bağlı, Kesit'in "veri cihazdan çıkmaz" ilkesiyle çelişir; il sınırı verisi de ≈200 KB), TAHMİN.ETS (Excel'in AAA parametre seçimi yayımlanmış değil; yakın ama farklı sonuç yanıltır), Hızlı Doldurma'nın desen tahmini (yanlış tahmin sessizdir; ders formül karşılığını öğretiyor), kamera aracı ve resimli arama (ekran görüntüsüne dayalı, öğretme değeri düşük).
 
+
+### 5.18 Türkçe kurslardan gelen ofis pratikleri (0.6.0)
+
+**KÖPRÜ (HYPERLINK).** Motor köprüyü açmaz, yalnız **görünen adı** döndürür (verilmemişse hedef metni). Gezinme Kesit'in ızgarasında anlamsız olduğu için denetçi sonucu ve `gerekli: ['HYPERLINK']` ile işlevin kullanıldığını denetler.
+
+**FORMÜLMETNİ (FORMULATEXT).** Bağımsız değişken değer değil **başvuru** olmalı: işlev `Bas` nesnesini alır, `kitap.icerik()` ile hücrenin ham girişini okur. `=` ile başlamıyorsa #YOK (Excel de böyle). Rehber örneği EĞERHATA ile sarıldı, çünkü boş A1'de #YOK verir ve "örnek hatasız" testi bunu yakaladı.
+
+**ÇARPIKLIK, BASIKLIK, TRIMMEAN.** Ortak `momentler()` yardımcısı n, ortalama ve örneklem standart sapmasını verir; formüller Excel'in örneklem düzeltmeli tanımıdır (BASIKLIK'ta `-3(n-1)²/((n-2)(n-3))` terimi). TRIMMEAN her uçtan `taban(n·p/2)` değer atar; Microsoft'un örneği (3,7778) ve LibreOffice ile aynı.
+
+> 💡 **Şöyle daha iyi olur:** TRIMMEAN'ın Türkçe adı Microsoft'un Türkçe işlev listesinde doğrulanamadı; bu yüzden İngilizce adla bırakıldı. Excel'in Türkçe sürümünde adı görülürse `TR_EN`'e eklenmeli. **Burada bir test daha yapalım:** Türkçe Excel'de `=KIRPORTALAMA(…)` yazıp tanınıp tanınmadığını deneyin.
+
+**Neden çoğu ders seçmeli?** Şifreleme, Belge Denetçisi, yazdırma ve PowerPoint bağlantısı tarayıcıdaki ızgarada taklit edilemez; taklit etmek "yaptım sandım" yanılgısı yaratır. Bunlar karar soruları olarak sorulur (hangi koruma gerçekten korur?), uygulanabilen her şey (seri, köprü, birim biçimi, istatistik, renk kuralını sayma) ise denetlenen alıştırmadır.
+
 ---
 
 ## 6. Sunucu ve yayın
@@ -517,6 +530,23 @@ Kaynaklar: Excel Off The Grid "Dynamic Formulas Unleashed" (11 bölüm), Microso
 
 > 💡 **Not (0.5.0):** Aşağıdaki öneri uygulandı. Kalan eksiklerden en değerlisi **Zaman Çizelgesi** (tarih dilimleyicisi): pano dersinin doğal parçası ve motor (pivot tarih gruplama) hazır. Harita grafiği için Türkiye il sınırları verisi gerekir (≈200 KB); yalnız bölge düzeyi (7 bölge) daha hafif bir başlangıç olur.
 
+
+### 9.x Türkçe kurslarla üçüncü karşılaştırma (0.6.0)
+
+Bakılan müfredatlar: Uludağ Üniversitesi ULUSEM (İleri Excel), ODTÜ Sürekli Eğitim, Yenibiriş, Boğaziçi Enstitüsü, IIENSTITU. İleri Excel ve pano konularında Kesit zaten daha geniş (LAMBDA, Power Query, Çözücü, VBA); eksik kalanlar **ofis pratikleriydi**.
+
+| Türkçe kurslarda olan konu | 0.5.0 | 0.6.0 |
+|---|---|---|
+| Kısayollar, Git > Özel, bölmeleri dondur, seri doldurma | dağınık | Ders 21.1 |
+| Renge/simgeye göre filtre ve sıralama | yok | Ders 21.2 |
+| Köprü ve içindekiler sayfası | yok | Ders 21.3 (KÖPRÜ, FORMÜLMETNİ) |
+| Not/açıklama, birimli sayı biçimi | kısmen (15.5) | Ders 21.4 |
+| Çözümleyici Araç Takımı, tanımlayıcı istatistik | yok | Ders 21.5 (ÇARPIKLIK, BASIKLIK, TRIMMEAN) |
+| Kitabı parolayla şifreleme, Belge Denetçisi | yalnız sayfa koruması | Ders 21.6 |
+| Yazdırma ayarları, PDF, PowerPoint'e bağlantılı aktarma, şerit | yok | Ders 21.7 |
+
+Ders: Türkçe kurumsal eğitimler "kâğıda ve e-postaya giden Excel"i (yazdırma, parola, PowerPoint) önemser; uluslararası ileri kurslar bunları atlar. İkisi farklı kitleye hitap eder; Kesit artık ikisini de kapsıyor.
+
 ## 10. Mülakat soruları
 
 **S: Neden kendi formül motorunu yazdın, hazır kütüphane yok mu?**
@@ -584,6 +614,13 @@ C: Çapa hücre hesaplanırken dizi sonucu taşınca kitap çapanın adresine di
 **S: Harita grafiğini neden eklemedin?**
 C: Excel'in harita grafiği coğrafi eşleştirme için Bing'e bağlanıyor; Kesit'in sözü verinin cihazdan çıkmaması. İl sınırlarını gömmek de yüzlerce KB veri demek. Öğretme değeri, yani "coğrafi dağılımı haritada göster", sıralı çubuk ya da bölge tablosuyla çoğu zaman daha doğru okunuyor; bunu bilinçli bir sınır olarak belgeledim.
 
+
+**S: Sayfa koruması ile dosya şifreleme arasındaki fark ne?**
+C: Sayfa koruması yanlışlıkla değişikliği önler, dosyayı şifrelemez; dosyayı açan herkes veriyi görür ve koruma basit araçlarla kalkar. Parolayla Şifrele dosyanın kendisini şifreler. Hassas veride ikincisini kullanır, parolayı ayrı kanaldan iletirim.
+
+**S: Çözümleyici Araç Takımı'nın çıktısını neden tekrarlanan raporda kullanmazsın?**
+C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tabloyu ORTALAMA, ORTANCA, ÇARPIKLIK gibi formüllerle kurarım.
+
 ---
 
 ## 11. Kendini test et
@@ -611,6 +648,9 @@ C: Excel'in harita grafiği coğrafi eşleştirme için Bing'e bağlanıyor; Kes
 <details><summary>22. `=LAMBDA(a;[b];…)(5)` çağrısında b nedir, nasıl anlaşılır?</summary>Verilmemiştir; değeri boştur ve ISOMITTED(b) DOĞRU döner.</details>
 <details><summary>23. M2'de tek bir sayı varken `=TOPLA(M2#)` ne verir?</summary>#BAŞV!: # yalnız taşan bir çapaya uygulanır.</details>
 <details><summary>24. Birleştir'de etiket kutuları işaretlenmezse sıra farklı sayfalarda ne olur?</summary>Konuma göre toplar: farklı kategoriler üst üste eklenir, hata vermez.</details>
+<details><summary>25. Hücreye "42 kg" yazmak yerine ne yapılır, neden?</summary>42 yazılır, biçim kodu #.##0 "kg" verilir; metin olan "42 kg" TOPLA'ya girmez.</details>
+<details><summary>26. ÇARPIKLIK pozitif çıkan fiyatlarda hangi ortalama raporlanmalı?</summary>Ortanca ya da kırpılmış ortalama (TRIMMEAN); birkaç pahalı ürün ortalamayı yukarı çeker.</details>
+<details><summary>27. KÖPRÜ hedefinde # neden gerekli?</summary># aynı kitabın içini gösterir; olmazsa Excel hedefi dosya adı sanar.</details>
 <details><summary>6. CSP `style-src 'self'` iken kenar çizgisi nasıl renkleniyor?</summary>CSSOM ile (`td.style.boxShadow = …`); CSP satır içi `style` özniteliğini engeller, CSSOM'u engellemez.</details>
 
 ---
@@ -654,3 +694,4 @@ C: Excel'in harita grafiği coğrafi eşleştirme için Bing'e bağlanıyor; Kes
 - **2026-11-27 · 0.3.0** Kitap tasarımı, senaryo ve finans, ileri pano: Modül 15 (7 ders), 16 (7), 17 (6). Motor: yapılandırılmış başvuru, adlar, DOLAYLI/KAYDIR/ADRES/ÖZETVERİAL, 16 finans işlevi (151 işlev), `bicim.js`, `dogrulama.js`, `senaryo.js` (Hedef Ara, Veri Tablosu, Senaryo, Çözücü), hesaplanmış alan, ayrıntıya inme. Model sayfaları (`modeller.js`). MCP `durum_cozumle`. 81 ders, 170 alıştırma, 17 soruluk seviye testi, 108 test, LibreOffice 219/219, tarama temiz. Bulunan hatalar: TU matrisli Çözücü vakası (LP zaten tamsayı), Fiyat sayfasında satır kayması, FAİZ_ORANI çözümsüzde Excel–LO farkı, rehberde `%36` yazımı.
 - **2026-11-27 · 0.4.0** İleri Excel ve pano kurslarıyla ikinci karşılaştırma (§9): Modül 18 (modern formüller, 7 ders), 19 (veri araçları, 5), 20 (pano tasarımı ve özel grafikler, 7). Motor: LAMBDA (çağrı, ad, eta, kapanış), MAP/BYROW/BYCOL/SCAN/REDUCE/MAKEARRAY, GRUPLAÖLÇÜT/ÖZETÖLÇÜT, SÜTUNA/SATIRA/SATIRSAR/SÜTUNSAR/GENİŞLET, rastgele işlevler, regresyon ve tahmin, SIKLIK, TOPLAMA, YOKSAY (179 işlev), 3B başvuru, Gelişmiş Filtre (`veriaraclari.js`), 8 grafik türü + vurgu + hedef çizgisi, iki düzeyli kategori. Model sayfaları: İadeler, Ocak/Şubat/Mart/Çeyrek, Görevler, Bölgeler, Vardiyalar, Talep. MCP: Gelişmiş Filtre denetimi, vurgu/hedef çizgisi, Gantt için tarih serisi. 100 ders, 218 alıştırma, 20 soruluk seviye testi, 136 test, LibreOffice 255/255. Bulunan hatalar: adlandırılmış LAMBDA'da `null`/`undefined` karışması (#AD?), %100+ halkanın boş çizilmesi, ibrenin alttan taşması, `=İstanbul` ölçütünün formül sanılması (Excel'de de öyle; ders ve test `="=İstanbul"`a çevrildi), filtre iletisinin YA DA eksikliğini "ile başlar"a bağlaması, boş durumda "Denetim  iken" ön eki.
 - **2026-11-27 · 0.5.0** Eksiklerin tamamlanması: Ders 18.8 (mevsim endeksi), 18.9 (düzenli ifadeler), 18.10 (M2#, TRIMRANGE, PERCENTOF), 20.8 (Zaman Çizelgesi); 18.1'e isteğe bağlı parametreli LAMBDA, 19.3'e Birleştir alıştırması; 15.6'ya Gözcü Penceresi. Motor: `#` taşma başvurusu, ISOMITTED, REGEXTEST/NORMİFADEAYIKLA/NORMİFADEDEĞİŞTİR, PERCENTOF, TRIMRANGE (185 işlev), Birleştir. 104 ders, 231 alıştırma, 145 test. Bulunan hatalar: isteğe bağlı parametrenin tref `ozel: 'veri'` alanı yüzünden tanınmaması, Ürün ham sayfasında başlık satırının unutulması (alıştırma 1. satırdan başlıyordu), Zaman Çizelgesi'nin telefonda kabı genişletmesi.
+- **2026-11-27 · 0.6.0** Türkçe kurslarla üçüncü karşılaştırma (§9.x): Modül 21 Ofis pratikleri, güvenlik ve paylaşım (7 ders: gezinme ve Git > Özel, renge göre filtre, KÖPRÜ ve içindekiler, not ve birimli biçim, tanımlayıcı istatistik ve Araç Takımı, şifreleme ve Belge Denetçisi, yazdırma ve PowerPoint). Motor: HYPERLINK, FORMULATEXT, SKEW, KURT, TRIMMEAN (190 işlev). 111 ders, 250 alıştırma, 21 soruluk seviye testi, 152 test, LibreOffice 266/266. Bulunan hata: FORMÜLMETNİ rehber örneğinin boş hücrede #YOK vermesi.

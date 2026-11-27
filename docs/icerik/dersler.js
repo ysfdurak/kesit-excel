@@ -5,6 +5,7 @@ import { DERSLER_3 } from './dersler-3.js';
 import { DERSLER_4 } from './dersler-4.js';
 import { DERSLER_5 } from './dersler-5.js';
 import { DERSLER_6 } from './dersler-6.js';
+import { DERSLER_7 } from './dersler-7.js';
 export const MODULLER = [
   { id: 'm1', no: 1, baslik: "Excel'in mantığı", ozet: 'Hücre, tür, formül, $ ve Türkçe/İngilizce yazım.', seviye: 'temel' },
   { id: 'm2', no: 2, baslik: 'Temel hesaplar', ozet: 'Özet işlevleri, yuvarlama, oran ve hata değerleri.', seviye: 'temel' },
@@ -26,5 +27,6 @@ export const MODULLER = [
   { id: 'm18', no: 18, baslik: 'Modern formüller: LAMBDA, dizi ve tahmin', ozet: 'Kendi işlevini yazmak, satır satır hesap, birikim, formülle özet tablo, diziyi biçimlendirmek, eğim ve tahmin.', seviye: 'ileri' },
   { id: 'm19', no: 19, baslik: 'Veri araçları', ozet: 'Gelişmiş Filtre, benzersiz kayıtlar, 3B başvuru ve Birleştir, Hızlı Doldurma, özel sıralama ve Alt Toplam.', seviye: 'orta' },
   { id: 'm20', no: 20, baslik: 'Pano tasarımı ve özel grafikler', ozet: 'Pano süreci, madde, ibre ve ilerleme halkası, Pareto, Gantt, kelebek, halter, vurgu ve hedef çizgisi.', seviye: 'ileri' },
+  { id: 'm21', no: 21, baslik: 'Ofis pratikleri, güvenlik ve paylaşım', ozet: 'Kısayol ve Git > Özel, renge göre filtre, köprü, birimli biçim, tanımlayıcı istatistik, şifreleme, yazdırma ve PowerPoint.', seviye: 'orta' },
 ];
-export const DERSLER = [...DERSLER_1, ...DERSLER_2, ...DERSLER_3, ...DERSLER_4, ...DERSLER_5, ...DERSLER_6];
+export const DERSLER = [...DERSLER_1, ...DERSLER_2, ...DERSLER_3, ...DERSLER_4, ...DERSLER_5, ...DERSLER_6, ...DERSLER_7];

@@ -278,7 +278,11 @@
   "=AGGREGATE(14,6,C2:C9,2)",
   "=AGGREGATE(4,0,C2:C9)",
   "=STDEV.P(C2:C9)",
-  "=ISNA(NA())"
+  "=ISNA(NA())",
+  "=SKEW(C2:C9)",
+  "=KURT(C2:C9)",
+  "=TRIMMEAN(C2:C9,0.25)",
+  "=HYPERLINK(\"#A1\",\"Git\")"
  ],
  "elle": [
   [
