@@ -87,13 +87,16 @@ export class Izgara {
     cubuk.append(this.listeSec);
     // Formül denetimi araç çubuğu (Formüller > Formül Denetleme)
     this.denetimKutu = h('div.denetim-sonuc', { 'aria-live': 'polite' });
+    // Gözcü Penceresi (Formüller > Gözcü Penceresi): seçilen hücrelerin değeri, tablo kaydırılınca da görünür kalır ve her hesaplamada güncellenir
+    this.gozcu = []; this.gozcuKutu = h('div.gozcu', { hidden: true, 'aria-live': 'polite' });
     const denetimCubuk = s.denetim ? h('div.denetim-cubuk', { role: 'group', 'aria-label': 'Formül denetleme' },
       h('button.btn.tiny', { type: 'button', on: { click: () => this.izle('once') } }, '⇠ Etkileyenleri izle'),
       h('button.btn.tiny', { type: 'button', on: { click: () => this.izle('sonra') } }, 'Etkilenenleri izle ⇢'),
       h('button.btn.tiny', { type: 'button', on: { click: () => this.degerlendirAc() } }, 'Formülü değerlendir'),
       h('button.btn.tiny', { type: 'button', on: { click: () => this.izTemizle() } }, 'Okları kaldır'),
+      h('button.btn.tiny', { type: 'button', on: { click: () => this.gozcuEkle() } }, '👁 Gözcüye ekle'),
       s.dogrulama ? h('button.btn.tiny', { type: 'button', on: { click: () => this.gecersizGoster() } }, '◯ Geçersiz verileri işaretle') : null) : null;
-    const kap = h('div.izgara-kap', {}, cubuk, this.oneriler, this.ipucu, denetimCubuk, this.denetimKutu, kaydirma, h('div.izgara-alt', {}, this.turEtiket, this.aciklama));
+    const kap = h('div.izgara-kap', {}, cubuk, this.oneriler, this.ipucu, denetimCubuk, this.denetimKutu, this.gozcuKutu, kaydirma, h('div.izgara-alt', {}, this.turEtiket, this.aciklama));
     this.guncelle();
     // Sayfaya eklenince seçili (hedef) hücreyi görünür alana kaydır
     let deneme = 0; const bekle = () => { if (kap.isConnected) this.gorunurYap(true); else if (deneme++ < 30) requestAnimationFrame(bekle); };
@@ -238,7 +241,21 @@ export class Izgara {
     yerlestir(this.denetimKutu, h('div.degerlendir', {}, h('b', {}, `Formülü değerlendir · ${adres(r, c)}`), liste, h('div.btn-row', {}, ileri, h('button.btn.tiny', { type: 'button', on: { click: () => { while (i < adimlar.length) goster(); } } }, 'Hepsini göster'))));
     goster();
   }
+  gozcuEkle() {
+    const { r, c } = this.secili;
+    if (!this.gozcu.some(g => g.r === r && g.c === c)) this.gozcu.push({ r, c });
+    this.gozcuCiz();
+  }
+  gozcuCiz() {
+    this.gozcuKutu.hidden = !this.gozcu.length;
+    if (!this.gozcu.length) return;
+    yerlestir(temizle(this.gozcuKutu), h('table.veri', {}, h('caption', {}, 'Gözcü Penceresi'),
+      h('thead', {}, h('tr', {}, ['Hücre', 'Formül', 'Değer', ''].map(b => h('th', { scope: 'col' }, b)))),
+      h('tbody', {}, this.gozcu.map((g, i) => h('tr', {}, h('td', {}, adres(g.r, g.c)), h('td', {}, h('code', {}, String(this.k.icerik(this.sayfa, g.r, g.c) ?? ''))), h('td.sayi', {}, goster(this.k.hucre(this.sayfa, g.r, g.c))),
+        h('td', {}, h('button.btn.tiny', { type: 'button', 'aria-label': adres(g.r, g.c) + ' gözcüden çıkar', on: { click: () => { this.gozcu.splice(i, 1); this.gozcuCiz(); } } }, '✕')))))));
+  }
   guncelle() {
+    if (this.gozcu && this.gozcu.length) queueMicrotask(() => this.gozcuCiz());
     const bic = this.s.bicimler || [], hb = this.s.hucreBicim || {};
     let gor = null; try { gor = this.s.kurallar && this.s.kurallar.length ? kosulluUygula(this.k, this.sayfa, this.s.kurallar) : null; this.kuralHatasi = null; } catch (e) { this.kuralHatasi = e.message; }
     const stiller = this.k.stiller;

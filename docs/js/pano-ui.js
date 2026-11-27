@@ -3,11 +3,14 @@ import { h, temizle, yerlestir } from './yardim.js';
 import { pivot, OZETLER } from '../motor/pivot.js';
 import { grafikCiz, pivotVerisi, TURLER, kisaSayi } from '../motor/grafik.js';
 import { panoKpi } from '../motor/denetci.js';
-import { trSayi } from '../motor/tarih.js';
+import { trSayi, bicimle } from '../motor/tarih.js';
 import { svgDugum, ipucuBagla, genislikBul } from './grafik-ui.js';
 
 const KPI_OZET = [['toplam', 'Toplam'], ['ortalama', 'Ortalama'], ['say', 'Kayıt sayısı'], ['benzersiz', 'Farklı değer sayısı']];
-const PANO_TURLER = ['sutun', 'cubuk', 'cizgi', 'alan', 'halka', 'agac', 'huni'];
+const PANO_TURLER = ['sutun', 'cubuk', 'cizgi', 'alan', 'halka', 'agac', 'huni', 'pareto'];
+// Zaman Çizelgesi (Excel: Ekle > Zaman Çizelgesi): tarih alanını ay ay gösterir, bir ay ya da ay aralığı seçilir.
+const ayNo = d => Number(bicimle(d, 'yyyy')) * 100 + Number(bicimle(d, 'aa'));
+const ayAd = m => bicimle(Math.round((Date.UTC(Math.floor(m / 100), m % 100 - 1, 1) - Date.UTC(1899, 11, 30)) / 864e5), 'aaa yy');
 
 export class PanoAlani {
   // s: { tablo, sayfaAd, pano?, onDegis(pano) }
@@ -29,12 +32,16 @@ export class PanoAlani {
   ciz() {
     const p = this.pano, B = this.t.basliklar, alanlar = B.map(b => [b, b]), sayisal = B.filter(b => this.sayisalMi(b)).map(b => [b, b]);
     const filtreler = p.dilimler.map(d => ({ alan: d.alan, degerler: d.degerler || [] }));
+    // Zaman çizelgesi seçimi, o aylara düşen tarih değerlerinin listesi olarak özet tabloya filtre olur
+    const z = p.zaman, zi = z ? B.indexOf(z.alan) : -1, aylar = zi >= 0 ? [...new Set(this.t.satirlar.map(r => r[zi]).filter(v => typeof v === 'number').map(ayNo))].sort((a, b) => a - b) : [];
+    if (z && z.bas != null) { const tarihler = [...new Set(this.t.satirlar.map(r => r[zi]).filter(v => typeof v === 'number' && ayNo(v) >= z.bas && ayNo(v) <= z.son))]; filtreler.push({ alan: z.alan, degerler: tarihler, zaman: true }); }
     // --- Düzenleyici (açılır bölüm: panoyu kuran kişi için)
     const yeniG = { satir: B.find(b => !this.sayisalMi(b) && !this.tarihMi(b)) || B[0], deger: sayisal[0]?.[0] || null, ozet: sayisal.length ? 'toplam' : 'say', tur: 'sutun' };
     const yeniK = { alan: sayisal[0]?.[0] || B[0], ozet: sayisal.length ? 'toplam' : 'say' };
     const duzen = h('details.pano-duzen', { open: !p.grafikler.length }, h('summary', {}, 'Panoyu düzenle (dilimleyici, KPI, grafik ekle)'),
       h('div.pivot-alanlar', {},
         h('div.alan', {}, h('label', { for: this.id + 'bas' }, 'Pano başlığı'), h('input', { id: this.id + 'bas', type: 'text', value: p.baslik || '', placeholder: 'Satış panosu · 2024', on: { change: e => { p.baslik = e.target.value; this.degisti(); } } })),
+        this.sec('Zaman çizelgesi', p.zaman?.alan || '', alanlar.filter(([b]) => this.tarihMi(b)), v => { p.zaman = v ? { alan: v, bas: null, son: null } : null; this.degisti(); }, '(yok)'),
         this.sec('Dilimleyici ekle', '', alanlar.filter(([b]) => !this.tarihMi(b) && !p.dilimler.some(d => d.alan === b)), v => { if (v) { p.dilimler.push({ alan: v, degerler: [] }); this.degisti(); } }, 'Alan seçin…')),
       h('h4', {}, 'KPI kutusu'),
       h('div.pivot-alanlar', {}, this.sec('Alan', yeniK.alan, alanlar, v => { yeniK.alan = v; }), this.sec('Özet', yeniK.ozet, KPI_OZET, v => { yeniK.ozet = v; }),
@@ -56,6 +63,13 @@ export class PanoAlani {
         d.degerler = coklu ? (on ? d.degerler.filter(x => x !== v) : [...d.degerler, v]) : (on && d.degerler.length === 1 ? [] : [v]);
         this.degisti();
       } } }, String(v)); }))));
+    // --- Zaman çizelgesi: tık bir ay seçer, ikinci tık (ya da Shift+tık) aralığı genişletir
+    const zaman = z ? h('div.zaman-cizelgesi', { role: 'group', 'aria-label': z.alan + ' zaman çizelgesi' },
+      h('div.dilim-bas', {}, h('b', {}, z.alan + (z.bas != null ? ' · ' + ayAd(z.bas) + (z.son !== z.bas ? ' – ' + ayAd(z.son) : '') : ' · tüm dönem')), h('button.btn.tiny', { type: 'button', on: { click: () => { z.bas = z.son = null; this.degisti(); } } }, 'Tümü'), h('button.btn.tiny', { type: 'button', 'aria-label': 'Zaman çizelgesini kaldır', on: { click: () => { p.zaman = null; this.degisti(); } } }, '✕')),
+      h('div.zaman-aylar', {}, aylar.map(m => { const on = z.bas != null && m >= z.bas && m <= z.son; return h('button', { type: 'button', 'aria-pressed': String(on), class: on ? 'secili' : '', on: { click: e => {
+        if (z.bas != null && z.bas === z.son && m !== z.bas || (e.shiftKey && z.bas != null)) { z.bas = Math.min(z.bas, m); z.son = Math.max(z.son, m); } else { z.bas = z.son = m; }
+        this.degisti();
+      } } }, ayAd(m)); }))) : null;
     // --- KPI kutuları
     const kpi = p.kpi.map((k, ki) => {
       const tum = panoKpi(this.t, k, []), suz = panoKpi(this.t, k, filtreler), oran = tum ? suz / tum : null;
@@ -78,8 +92,9 @@ export class PanoAlani {
     yerlestir(temizle(this.el), duzen,
       h('section.pano', { 'aria-label': p.baslik || 'Pano' }, p.baslik ? h('h3', {}, p.baslik) : null,
         // Telefonda dilimleyiciler ilk ekranı kaplıyordu; yönetici önce KPI'yı görmeli. Dar ekranda açılır bölüm, kapalı başlar.
+        zaman,
         dilimler.length ? (this.dar() ? h('details.dilim-kutu', { open: !!this.dilimAcik, on: { toggle: e => { this.dilimAcik = e.target.open; } } }, h('summary', {}, `Dilimleyiciler (${dilimler.length})` + (aktif.length ? ' · ' + aktif.length + ' filtre açık' : '')), h('div.dilimleyiciler', {}, dilimler)) : h('div.dilimleyiciler', {}, dilimler)) : null,
-        h('p.small-note.muted', { 'aria-live': 'polite' }, aktif.length ? 'Filtre: ' + aktif.map(f => f.alan + ' = ' + f.degerler.join(', ')).join('; ') : 'Filtre yok: bütün kayıtlar.' + (dilimler.length && !this.dar() ? ' Tık bir değer seçer, Ctrl+tık ekler.' : '')),
+        h('p.small-note.muted', { 'aria-live': 'polite' }, aktif.length ? 'Filtre: ' + aktif.map(f => f.zaman ? f.alan + ': ' + ayAd(z.bas) + (z.son !== z.bas ? ' – ' + ayAd(z.son) : '') : f.alan + ' = ' + f.degerler.join(', ')).join('; ') : 'Filtre yok: bütün kayıtlar.' + (dilimler.length && !this.dar() ? ' Tık bir değer seçer, Ctrl+tık ekler.' : '')),
         kpi.length ? h('div.kpi-sira', {}, kpi) : null,
         kartlar.length ? h('div.pano-izgara', { sinif: kartlar.length === 1 ? 'tek' : '' }, kartlar) : h('p.muted', {}, 'Henüz grafik yok. "Panoyu düzenle" bölümünden grafik ekleyin.')));
   }

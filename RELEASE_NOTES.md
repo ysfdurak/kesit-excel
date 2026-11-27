@@ -1,5 +1,15 @@
 # Sürüm notları
 
+## 0.5.0 (Kasım 2026): eksiklerin tamamlanması
+
+0.4.0 karşılaştırmasında "yok" kalan konular.
+- **Yeni dersler:** 18.8 Mevsimsellik ve mevsim endeksiyle tahmin (Tahmin Sayfası/ETS ile karşılaştırma), 18.9 Düzenli ifadeler (NORMİFADEAYIKLA, NORMİFADEDEĞİŞTİR, REGEXTEST; KVKK için e-posta maskeleme), 18.10 Taşma başvurusu `M2#`, TRIMRANGE ve PERCENTOF, 20.8 Zaman Çizelgesi ile dönem seçen pano.
+- **Yeni alıştırmalar:** 18.1'de isteğe bağlı parametreli LAMBDA (`[oran]`, ISOMITTED), 19.3'te Veri > Birleştir (etiketsiz birleştirme Mart sırası yüzünden yakalanır).
+- **Motor:** `M2#` taşma başvurusu, LAMBDA isteğe bağlı parametre ve ISOMITTED, REGEXTEST/NORMİFADEAYIKLA/NORMİFADEDEĞİŞTİR, PERCENTOF (GRUPLAÖLÇÜT'te iki bağımsız değişkenli özet), TRIMRANGE (185 işlev); Birleştir (`veriaraclari.js`).
+- **Arayüz:** panoda Zaman Çizelgesi (ay ya da ay aralığı), formül denetiminde Gözcü Penceresi, Birleştir kutusu.
+- **Bilinçli olarak yok:** harita grafiği (Excel'de Bing çevrimiçi hizmeti ister), TAHMİN.ETS algoritması, Hızlı Doldurma'nın desen tahmini, kamera aracı.
+- 104 ders, 231 alıştırma; 145 test, LibreOffice 262/262.
+
 ## 0.4.0 (Kasım 2026): modern formüller, veri araçları, pano tasarımı
 
 İleri Excel (Excel Off The Grid, Microsoft Press next-gen formulas, Udemy LAMBDA kursları) ve pano kurslarıyla (Gharani, My Online Training Hub, GoSkills, Udemy 50+ grafik, STL) ikinci karşılaştırmada çıkan eksikler.

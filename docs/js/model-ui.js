@@ -5,7 +5,7 @@ import { DOGRULAMA_TURLERI, DOGRULAMA_OP, HATA_STILI } from '../motor/dogrulama.
 import { ozelBicim } from '../motor/bicim.js';
 import { hedefAra, veriTablosu, senaryoOzeti, cozucu } from '../motor/senaryo.js';
 import { goster } from '../motor/kitap.js';
-import { gelismisFiltre } from '../motor/veriaraclari.js';
+import { gelismisFiltre, birlestir, BIRLESTIR_ISLEVLERI } from '../motor/veriaraclari.js';
 import { alanCoz, adres } from '../motor/formul.js';
 
 let sayac = 0;
@@ -223,5 +223,35 @@ export class GelismisFiltreAlani {
     yerlestir(temizle(this.sonuc), h('p', {}, `${r.satirlar.length} kayıt bulundu${r.bosSatir ? ' (ölçüt aralığında boş satır var: her kayıt geçer)' : ''}.` + (r.satirlar.length > 20 ? ' İlk 20 gösteriliyor.' : '')),
       h('div.tablo-kaydir', {}, h('table.veri', {}, h('thead', {}, h('tr', {}, r.basliklar.map(b => h('th', { scope: 'col' }, b)))),
         h('tbody', {}, goster20.map(sat => h('tr', {}, sat.map(x => h('td', {}, goster(x)))))))));
+  }
+}
+
+/* ---------------------------------------------------------------- Birleştir */
+export class BirlestirAlani {
+  // s: { kitap, varsayilan?: { kaynaklar, islev, solSutun, ustSatir } }
+  constructor(s) {
+    this.s = s; const v = s.varsayilan || {};
+    this.a = { kaynaklar: [...(v.kaynaklar || [])], islev: v.islev || 'TOPLA', solSutun: !!v.solSutun, ustSatir: !!v.ustSatir };
+    this.sonuc = h('div.small-note', { 'aria-live': 'polite' }); this.liste = h('ul.birlestir-liste');
+    const yeni = metin('', () => {}, 'Ocak!A1:C8');
+    const kutu = (ad, alan) => h('label.cip', {}, h('input', { type: 'checkbox', checked: this.a[alan], on: { change: e => { this.a[alan] = e.target.checked; } } }), ad);
+    this.el = h('div.durum-kutu', {}, h('h4', {}, 'Birleştir'),
+      h('div.pivot-alanlar', {}, alan('İşlev', secim(this.a.islev, BIRLESTIR_ISLEVLERI.map(x => [x, x]), x => { this.a.islev = x; })),
+        alan('Başvuru', yeni, 'Sayfa!A1:C8, Ekle ile listeye'),
+        h('div.alan', {}, h('span', {}, ' '), h('button.btn.tiny', { type: 'button', on: { click: () => { const x = yeni.value.trim(); if (x) { this.a.kaynaklar.push(x); yeni.value = ''; this.listeCiz(); } } } }, 'Ekle'))),
+      this.liste,
+      h('div.alan.cipler', {}, h('span.small-note', {}, 'Etiketleri kullan: '), kutu('Üst satır', 'ustSatir'), kutu('Sol sütun', 'solSutun')),
+      h('div.btn-row', {}, h('button.btn.primary', { type: 'button', on: { click: () => this.calistir() } }, 'Tamam')),
+      this.sonuc);
+    this.listeCiz();
+  }
+  listeCiz() {
+    yerlestir(temizle(this.liste), this.a.kaynaklar.length ? this.a.kaynaklar.map((k, i) => h('li', {}, h('code', {}, k), ' ', h('button.btn.tiny', { type: 'button', 'aria-label': k + ' kaldır', on: { click: () => { this.a.kaynaklar.splice(i, 1); this.listeCiz(); } } }, 'Sil'))) : h('li.muted', {}, 'Henüz başvuru yok.'));
+  }
+  ayar() { return { ...this.a, kaynaklar: [...this.a.kaynaklar] }; }
+  calistir() {
+    let r; try { r = birlestir(this.s.kitap, this.a.kaynaklar, this.a); } catch (e) { yerlestir(temizle(this.sonuc), h('p.uyari', {}, e.message)); return; }
+    yerlestir(temizle(this.sonuc), h('div.tablo-kaydir', {}, h('table.veri', {}, r.basliklar ? h('thead', {}, h('tr', {}, r.basliklar.map(b => h('th', { scope: 'col' }, b)))) : null,
+      h('tbody', {}, r.satirlar.map(s => h('tr', {}, s.map(x => h('td', {}, goster(x)))))))));
   }
 }

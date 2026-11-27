@@ -1,7 +1,7 @@
 // Ders içeriği doğrulaması: her alıştırmanın çözümü denetçiden geçer; elle yazılmış sonuç (sabit) gizli varyantta yakalanır.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gelismisFiltreDenetle } from '../docs/motor/denetci.js';
+import { gelismisFiltreDenetle, birlestirDenetle } from '../docs/motor/denetci.js';
 import { DERSLER, MODULLER } from '../docs/icerik/dersler.js';
 import { SAYFALAR } from '../docs/icerik/sayfalar.js';
 import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, kosulluDenetle, panoDenetle, dogrulamaDenetle, bicimDenetle, hucreBulDenetle, sayiDenetle, hedefAraDenetle, veriTablosuDenetle, cozucuDenetle, adDenetle, kitapKur } from '../docs/motor/denetci.js';
@@ -65,6 +65,12 @@ for (const d of DERSLER) {
       if (a.tur === 'ad') { assert.ok(adDenetle(a, SAYFALAR, a.cozum).tamam, ad + ': ' + adDenetle(a, SAYFALAR, a.cozum).mesaj); assert.equal(adDenetle(a, SAYFALAR, { ad: a.cozum.ad, tanim: '=A1:A2' }).tamam, false, ad); assert.equal(adDenetle(a, SAYFALAR, { ad: 'KDV 1', tanim: a.cozum.tanim }).tamam, false, ad + ': boşluklu ad geçiyor'); continue; }
       if (a.tur === 'hedefAra') { const r = hedefAraDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj); assert.equal(hedefAraDenetle(a, SAYFALAR, { ...a.cozum, hedefHucre: a.cozum.degisenHucre, degisenHucre: a.cozum.hedefHucre }).tamam, false, ad); continue; }
       if (a.tur === 'veriTablosu') { assert.ok(veriTablosuDenetle(a, SAYFALAR, { satirGiris: a.cozum.satirGiris, sutunGiris: a.cozum.sutunGiris }).tamam, ad); assert.equal(veriTablosuDenetle(a, SAYFALAR, { satirGiris: a.cozum.sutunGiris, sutunGiris: a.cozum.satirGiris }).tamam, false, ad + ': ters giriş geçiyor'); continue; }
+      if (a.tur === 'birlestir') {
+        const r = birlestirDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj);
+        // Etiketsiz (konuma göre) birleştirme Mart sırası yüzünden geçmemeli
+        assert.equal(birlestirDenetle(a, SAYFALAR, { ...a.cozum, solSutun: false }).tamam, false, ad + ': etiketsiz birleştirme geçiyor');
+        continue;
+      }
       if (a.tur === 'gelismisFiltre') {
         const r = gelismisFiltreDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj);
         // Ölçütsüz (her kayıt) ve boş satırlı ölçüt alanı geçmemeli

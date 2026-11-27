@@ -1,7 +1,7 @@
 // Kesit Excel · alıştırma denetçisi.
 // Öğrencinin formülü iki veriyle hesaplanır: gördüğü tablo ve aynı yapıda gizli bir varyant (sayılar, satır sırası ve
 // metinler karıştırılmış). Sonucu elle yazmak ya da yanlış hücreye bağlanmak görünür veride tutsa bile varyantta yakalanır.
-import { gelismisFiltre } from './veriaraclari.js';
+import { gelismisFiltre, birlestir } from './veriaraclari.js';
 import { Kitap, goster } from './kitap.js';
 import { ayristir, belirtec, adresCoz, alanCoz, adres, kaydir, hataMi, HATA_TR, yazimBul, islevAdi, EN_TR, Lambda, lambdaCagir } from './formul.js';
 import { ISLEVLER } from './islevler.js';
@@ -286,6 +286,7 @@ export function panoDenetle(alistirma, tablolar, pano) {
   if (k.baslikGerekli && !String(p.baslik || '').trim()) return { tamam: false, mesaj: 'Panonun bir başlığı olmalı: kim, ne için bakıyor? (ör. "Satış panosu · 2024")' };
   for (const a of k.dilimler || []) if (!dil.includes(a)) return { tamam: false, mesaj: `"${a}" dilimleyicisi eksik: yönetici bu alana göre süzmek istiyor.` };
   for (const x of k.kpi || []) if (!kp.some(y => y.alan === x.alan && (!x.ozet || y.ozet === x.ozet))) return { tamam: false, mesaj: `KPI eksik: ${x.alan} (${x.ozet || 'herhangi bir özet'}).` };
+  if (k.zaman && p.zaman?.alan !== k.zaman) return { tamam: false, mesaj: `"${k.zaman}" için Zaman Çizelgesi eksik: yönetici dönemi (ay ya da ay aralığı) seçebilmeli. Tarih alanını dilimleyici yapmak yüzlerce düğme üretir.` };
   if (k.enAzGrafik && gr.length < k.enAzGrafik) return { tamam: false, mesaj: `Panoda en az ${k.enAzGrafik} grafik olmalı; şu an ${gr.length}.` };
   for (const x of k.grafikler || []) {
     const g = gr.find(y => y.yapi?.satir === x.satir && (x.deger === undefined || (y.yapi.degerler?.[0]?.alan || null) === x.deger) && (!x.ozet || y.yapi.degerler?.[0]?.ozet === x.ozet));
@@ -443,4 +444,19 @@ export function gelismisFiltreDenetle(alistirma, tablolar, { liste, olcut: olcut
     return { tamam: false, mesaj: `Filtre ${r.satirlar.length} kayıt getirdi, beklenen ${cr.satirlar.length}. ` + (fark > 0 ? 'Fazla kayıt var: koşullar aynı satırda (VE) mı, alt alta (YA DA) mı yazılmalı? Düz metin "ile başlar" demektir; tam eşleşme için ="=metin" yazılır.' : 'Eksik kayıt var: bir YA DA satırı eksik ya da bir koşul fazla olabilir. Ölçüt aralığının bütün koşul satırlarını kapsadığına da bakın.'), ipucu: alistirma.ipuclari?.[0] };
   }
   return { tamam: true, mesaj: `Doğru. Gelişmiş Filtre ${r.satirlar.length} kaydı getiriyor.` + (benzersiz ? ' Yinelenenler atıldı.' : '') };
+}
+
+// Birleştir: öğrencinin kaynakları ve ayarlarıyla çıkan tablo çözümünkiyle karşılaştırılır (etiket sırası farkı önemsenmez).
+export function birlestirDenetle(alistirma, tablolar, ayar) {
+  const k = kitapKur(alistirma, tablolar);
+  let o; try { o = birlestir(k, ayar.kaynaklar || [], ayar); } catch (e) { return { tamam: false, mesaj: e.message }; }
+  const c = birlestir(k, alistirma.cozum.kaynaklar, alistirma.cozum);
+  if ((ayar.kaynaklar || []).length < alistirma.cozum.kaynaklar.length) return { tamam: false, mesaj: `${alistirma.cozum.kaynaklar.length} kaynak birleştirilmeli; listede ${(ayar.kaynaklar || []).length} var.` };
+  if (ayar.islev !== alistirma.cozum.islev) return { tamam: false, mesaj: `Soruda istenen işlev ${alistirma.cozum.islev}.` };
+  const sira = t => JSON.stringify((t.satirlar || []).map(r => r.map(x => typeof x === 'number' ? Math.round(x * 1e6) / 1e6 : x)).sort());
+  if (sira(o) !== sira(c)) {
+    if (alistirma.cozum.solSutun && !ayar.solSutun) return { tamam: false, mesaj: 'Etiket kullanılmadan Birleştir konuma göre toplar: Mart sayfasında kategoriler farklı sırada olduğu için Elektronik\'e Giyim eklenir. "Sol sütun" etiketini işaretleyin.', ipucu: alistirma.ipuclari?.[0] };
+    return { tamam: false, mesaj: 'Birleştirilmiş tablo beklenenden farklı: kaynak aralıklarının başlık ve etiket sütununu kapsadığına, etiket kutularına bakın.', ipucu: alistirma.ipuclari?.[0] };
+  }
+  return { tamam: true, mesaj: `Doğru. ${o.satirlar.length} satırlık birleşik tablo etiketlere göre eşleşti.` };
 }

@@ -186,6 +186,12 @@ const H = [
   ['AGGREGATE', 'ist', 'TOPLAMA(işlev_no; seçenek; alan; [k])', '19 özet işlevi tek çatıda; seçenek 6 hata değerlerini atlar. 1 ORTALAMA, 4 MAK, 9 TOPLA, 14 BÜYÜK.', '=TOPLAMA(9;6;{1;2;3})'],
   ['STDEV.P', 'ist', 'STDSAPMA.P(sayı1; …)', 'Ana kütlenin standart sapması (verinin tamamı elinizdeyse).', '=STDSAPMA.P({2;4;4;4;5;5;7;9})'],
   ['NA', 'bilgi', 'YOKSAY()', '#YOK hata değeri üretir. Grafikte boşluk bırakmak ve SÜTUNA(…;2) ile atlanacak hücreleri işaretlemek için.', '=EYOKSA(YOKSAY())'],
+  ['ISOMITTED', 'lambda', 'ISOMITTED(parametre)', 'LAMBDA\'nın isteğe bağlı ([köşeli]) parametresi verilmediyse DOĞRU döner; varsayılan değer vermek için.', '=LAMBDA(a;[b];EĞER(ISOMITTED(b);a;a*b))(5)'],
+  ['REGEXTEST', 'metin', 'REGEXTEST(metin; desen; [büyük_küçük])', 'Metnin herhangi bir yeri düzenli ifadeyle eşleşiyorsa DOĞRU. Son bağımsız değişken 1: büyük/küçük harf duyarsız.', '=REGEXTEST("SP-2024-118";"^[A-Z]{2}-\\d{4}")'],
+  ['REGEXEXTRACT', 'metin', 'NORMİFADEAYIKLA(metin; desen; [mod]; [büyük_küçük])', 'Desene uyan parçayı çeker: mod 0 ilk eşleşme, 1 bütün eşleşmeler (alt alta), 2 yakalama grupları (yan yana). Yoksa #YOK.', '=NORMİFADEAYIKLA("E01 Kablosuz Kulaklık";"^[A-Z]\\d{2}")'],
+  ['REGEXREPLACE', 'metin', 'NORMİFADEDEĞİŞTİR(metin; desen; yeni; [kaçıncı]; [büyük_küçük])', 'Desene uyan yerleri değiştirir; $1 yakalanan grubu geri yazar. Kaçıncı 0 hepsi, eksi değer sondan.', '=NORMİFADEDEĞİŞTİR("ayse.yilmaz@gmail.com";"(?<=^.)[^@]*";"***")'],
+  ['PERCENTOF', 'mat', 'PERCENTOF(alt_küme; bütün)', 'Alt kümenin toplamının bütünün toplamına oranı. GRUPLAÖLÇÜT\'e işlev olarak verilince her grubun payını verir.', '=PERCENTOF({2;3};{2;3;5})'],
+  ['TRIMRANGE', 'ara', 'TRIMRANGE(başvuru; [satır_kırp]; [sütun_kırp])', 'Başvurunun baştaki ve sondaki boş satır ve sütunlarını atar (1 baş, 2 son, 3 ikisi); veriyle büyüyen aralık.', '=SATIRSAY(TRIMRANGE(H1:H1000))'],
 ];
 
 export const ISLEV_BILGI = H.map(([en, kat, soz, aciklama, ornek]) => ({ en, tr: EN_TR[en] || en, kategori: kat, kategoriAd: KATEGORILER[kat], sozdizimi: soz, aciklama, ornek }));

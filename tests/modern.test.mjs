@@ -3,9 +3,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Kitap } from '../docs/motor/kitap.js';
-import { gelismisFiltre } from '../docs/motor/veriaraclari.js';
+import { gelismisFiltre, birlestir } from '../docs/motor/veriaraclari.js';
 import { grafikCiz, aralikVerisi, TURLER, grafikDenetle } from '../docs/motor/grafik.js';
-import { kitapKur } from '../docs/motor/denetci.js';
+import { kitapKur, panoDenetle } from '../docs/motor/denetci.js';
 import { SAYFALAR } from '../docs/icerik/sayfalar.js';
 
 // Formülü A1'e yazıp taşan sonucu satır satır okur
@@ -133,4 +133,46 @@ test('Model sayfaları: Mart sırası farklı, 3B toplam ve etiketli toplam ayr�
   assert.equal(toplam, [182, 240, 310, 75, 128, 96, 140, 165, 226, 284, 140, 117, 104, 133, 201, 258, 335, 88, 131, 112, 151].reduce((a, b) => a + b, 0));
   const konum = k.formulDegerlendir('Çeyrek', 2, 2, '=TOPLA(Ocak:Mart!B2)'), etiket = k.formulDegerlendir('Çeyrek', 2, 2, '=ETOPLA(Ocak!A:A;A2;Ocak!B:B)+ETOPLA(Şubat!A:A;A2;Şubat!B:B)+ETOPLA(Mart!A:A;A2;Mart!B:B)');
   assert.equal(etiket, 182 + 165 + 201); assert.notEqual(konum, etiket, '3B başvuru Mart\'ta yanlış satırı toplar');
+});
+
+test('LAMBDA isteğe bağlı parametre ve ISOMITTED', () => {
+  const f = '=LAMBDA(a;[b];EĞER(ISOMITTED(b);a;a*b))';
+  assert.deepEqual(tasan(f + '(5)'), [[5]]); assert.deepEqual(tasan(f + '(5;3)'), [[15]]); assert.deepEqual(tasan(f + '(5;)'), [[5]], 'boş bağımsız değişken de atlanmış sayılır');
+  assert.deepEqual(tasan('=LAMBDA(a;b;a)(5)'), [['#VALUE!']], 'zorunlu parametre eksik');
+  assert.deepEqual(tasan(f + '(1;2;3)'), [['#VALUE!']], 'fazla bağımsız değişken');
+});
+
+test('Taşma başvurusu (#) ve TRIMRANGE', () => {
+  const k = new Kitap(); k.sayfa('S');
+  k.yaz('S', 'A1', '=SIRALI(4)'); k.yaz('S', 'C1', '=TOPLA(A1#)'); k.yaz('S', 'C2', '=SATIRSAY(A1#)'); k.yaz('S', 'C3', '=TOPLA(B1#)'); k.yaz('S', 'C4', '=SATIRSAY(TRIMRANGE(A1:A500))');
+  assert.equal(k.hucre('S', 1, 3), 10); assert.equal(k.hucre('S', 2, 3), 4); assert.equal(k.hucre('S', 3, 3).kod, '#REF!', 'taşmayan çapa'); assert.equal(k.hucre('S', 4, 3), 4);
+  k.yaz('S', 'A1', '=SIRALI(6)'); k.sifirla();
+  assert.equal(k.hucre('S', 2, 3), 6, 'liste uzayınca A1# da uzar');
+});
+
+test('Düzenli ifadeler ve PERCENTOF', () => {
+  assert.deepEqual(tasan('=REGEXTEST("SP-2024-118";"^[A-Z]{2}-\\d{4}-\\d+$")'), [[true]]);
+  assert.deepEqual(tasan('=REGEXTEST("abc";"B")'), [[false]]); assert.deepEqual(tasan('=REGEXTEST("abc";"B";1)'), [[true]], 'büyük/küçük duyarsız');
+  assert.deepEqual(tasan('=NORMİFADEAYIKLA("a1 b22 c333";"\\d+";1)'), [['1'], ['22'], ['333']]);
+  assert.deepEqual(tasan('=NORMİFADEAYIKLA("SP-2024";"([A-Z]+)-(\\d+)";2)'), [['SP', '2024']]);
+  assert.deepEqual(tasan('=NORMİFADEAYIKLA("abc";"\\d")'), [['#N/A']]);
+  assert.deepEqual(tasan('=NORMİFADEDEĞİŞTİR("ayse.yilmaz@gmail.com";"(?<=^.)[^@]*";"***")'), [['a***@gmail.com']]);
+  assert.deepEqual(tasan('=NORMİFADEDEĞİŞTİR("1-2-3";"\\d";"x";-1)'), [['1-2-x']], 'sondan ilk eşleşme');
+  assert.deepEqual(tasan('=GRUPLAÖLÇÜT({"a";"b";"a"};{1;2;3};PERCENTOF)'), [['a', 4 / 6], ['b', 2 / 6], ['Toplam', 1]].map(r => r.map(x => typeof x === 'number' ? Math.round(x * 1e9) / 1e9 : x)));
+});
+
+test('Birleştir: konuma göre ve etikete göre', () => {
+  const k = kitapKur({ sayfa: 'Çeyrek' }, SAYFALAR), K = ['Ocak!A1:C8', 'Şubat!A1:C8', 'Mart!A1:C8'];
+  const et = birlestir(k, K, { solSutun: true, ustSatir: true });
+  assert.deepEqual(et.basliklar, ['', 'Adet', 'Ciro']); assert.deepEqual(et.satirlar[0], ['Elektronik', 548, 1833200]);
+  const konum = birlestir(k, K, {});
+  assert.equal(konum.satirlar[1][1], 182 + 165 + 335, 'etiketsiz: Mart\'ın ilk satırı (Giyim) Elektronik\'e eklenir');
+  assert.throws(() => birlestir(k, ['Yok!A1:B2']), /sayfası yok/);
+  assert.equal(birlestir(k, K, { islev: 'MAK', solSutun: true, ustSatir: true }).satirlar[0][1], 201);
+});
+
+test('Pano: Zaman Çizelgesi kuralı', () => {
+  const a = { kural: { zaman: 'Tarih' } };
+  assert.equal(panoDenetle(a, null, { dilimler: [{ alan: 'Tarih' }] }).tamam, false, 'tarih dilimleyicisi yetmez');
+  assert.equal(panoDenetle(a, null, { zaman: { alan: 'Tarih' } }).tamam, true);
 });

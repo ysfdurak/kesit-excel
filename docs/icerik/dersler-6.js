@@ -16,11 +16,13 @@ export const DERSLER_6 = [
       '`=LAMBDA(parametre1; parametre2; hesap)` bir **işlev** üretir, değer değil. Hücreye yalnızca LAMBDA yazarsanız `#HESAP!` görürsünüz: işlevi çağırmadınız. Denemek için sonuna bağımsız değişkenleri ekleyin: `=LAMBDA(fiyat;maliyet;(fiyat-maliyet)/fiyat)(D2;E2)`.',
       'Çalıştığını görünce **Formüller > Ad Yöneticisi > Yeni**: Ad kutusuna `MARJ`, Başvurur kutusuna `=LAMBDA(fiyat;maliyet;(fiyat-maliyet)/fiyat)`. Artık kitabın her yerinde `=MARJ(D2;E2)` yazılır; tanımı değiştirince her kullanım birlikte değişir.',
       'Parametre adları hücre adresine benzememeli (`A1`, `KDV1` olmaz) ve formüldeki adlarla aynı yazılmalı. LAMBDA dizi de alır: `=MAK(MARJ(D2:D41;E2:E41))` bütün ürünlerin marjını bir kerede hesaplayıp en büyüğünü verir.',
+      '**İsteğe bağlı parametre** köşeli parantezle yazılır: `=LAMBDA(tutar;[oran];tutar*(1+EĞER(ISOMITTED(oran);0,2;oran)))`. `ISOMITTED(oran)` parametre verilmediyse DOĞRU döner; böylece =KDVLİ(100) varsayılan %20\'yi, =KDVLİ(100;0,1) verilen oranı kullanır.',
       "LAMBDA yalnız tanımlandığı kitapta yaşar; başka kitaba kopyalamak için adı taşıyan bir sayfayı kopyalayın ya da Gelişmiş Formül Ortamı (Excel Labs) eklentisini kullanın. Eski Excel'de (2019 ve öncesi) LAMBDA yoktur, dosyayı açan kişi `#AD?` görür.",
     ],
     ornek: { sayfa: 'Ürünler', hucre: 'H2', formul: '=LAMBDA(fiyat;maliyet;(fiyat-maliyet)/fiyat)(D2;E2)', hazirlik: { H1: 'Marj' }, aciklama: 'LAMBDA önce hücrede, sonuna (D2;E2) eklenerek denenir. Marj = (fiyat − maliyet) / fiyat.' },
     alistirmalar: [
       { id: 'a1', tur: 'ad', sayfa: 'Ürünler', soru: "Ad Yöneticisi'nde **MARJ** adında bir işlev tanımlayın: fiyat ve maliyet alsın, **(fiyat − maliyet) / fiyat** döndürsün.", adGerekli: 'MARJ', cozum: { ad: 'MARJ', tanim: MARJ }, lambdaDeneme: [[100, 60], [250, 200], [80, 80], [1, 0.5]], ipuclari: ['Başvurur: =LAMBDA(fiyat;maliyet;(fiyat-maliyet)/fiyat)'] },
+      { id: 'a3', tur: 'ad', sayfa: 'Ürünler', soru: "**KDVLİ** adında bir işlev tanımlayın: tutar ve **isteğe bağlı** oran alsın; oran verilmezse %20 kullansın. =KDVLİ(100) 120, =KDVLİ(100;0,1) 110 vermeli.", adGerekli: 'KDVLİ', cozum: { ad: 'KDVLİ', tanim: '=LAMBDA(tutar;[oran];tutar*(1+EĞER(ISOMITTED(oran);0,2;oran)))' }, lambdaDeneme: [[100], [100, 0.1], [250], [80, 0]], ipuclari: ['İsteğe bağlı parametre köşeli parantezle yazılır: =LAMBDA(tutar;[oran];tutar*(1+EĞER(ISOMITTED(oran);0,2;oran)))'] },
       { id: 'a2', sayfa: 'Ürünler', hedef: 'H2', hazirlik: { H1: 'En yüksek marj' }, adlar: { MARJ }, soru: 'MARJ işlevi kitapta tanımlı. H2\'ye **en yüksek ürün marjını** MARJ ile tek formülde yazın.', cozum: '=MAK(MARJ(D2:D41;E2:E41))', ipuclari: ['LAMBDA dizi de alır: =MAK(MARJ(D2:D41;E2:E41))'] },
     ],
     sikHata: { yanlis: 'Hücreye =LAMBDA(x;x*1,2) yazıp sonuç beklemek', dogru: '=LAMBDA(x;x*1,2)(B2) ile denemek, sonra Ad Yöneticisi\'nde adlandırmak', neden: 'LAMBDA bir işlev üretir; çağrılmadan hücreye yazılırsa #HESAP! verir.' },
@@ -139,6 +141,63 @@ export const DERSLER_6 = [
     mulakat: { soru: 'Uçucu işlev nedir, neden önemlidir?', cevap: 'Bağımlı olduğu hücre değişmese de her hesaplamada yeniden hesaplanan işlevdir: BUGÜN, ŞİMDİ, S_SAYI_ÜRET, KAYDIR, DOLAYLI. Büyük kitapta her tuş vuruşunda zincirleme hesap tetikler. KAYDIR yerine İNDİS, DOLAYLI yerine doğrudan başvuru ya da ELEMAN kullanır, BUGÜN\'ü tek hücreye alırım.' },
   },
 
+  {
+    id: 'm18-d8', modul: 'm18', baslik: 'Mevsimsellik: mevsim endeksiyle tahmin', sure: 11,
+    ozet: 'Kasım ve Aralık her yıl zirve yapıyorsa doğrusal tahmin onları kaçırır. Mevsim endeksi "bu ay ortalamanın kaç katı" sorusunu cevaplar.',
+    hedefler: ['Bir ayın mevsim endeksini hesaplamak', 'Eğilimi endeksle düzeltmek', 'Tahmin Sayfası (ETS) ne zaman gerekir bilmek'],
+    anlatim: [
+      '**Mevsim endeksi** = o ayların ortalaması / bütün ayların ortalaması. 1,15 "Kasım ortalama bir aydan %15 yüksek" demektir. `=ORTALAMA(FİLTRE(B2:B25;AY(A2:A25)=11))/ORTALAMA(B2:B25)`.',
+      'Basit mevsimsel tahmin: doğrusal eğilimin o aydaki değeri × o ayın endeksi. `=TAHMİN.DOĞRUSAL(35;B2:B25;D2:D25)*F6` Kasım 2026 için. Bu kaba bir yöntemdir: endeks eğilimli seriden hesaplandığı için biraz şişer; doğrusu önce seriyi endekse bölüp (mevsimden arındırıp) eğilimi öyle bulmaktır.',
+      "**Veri > Tahmin Sayfası** (TAHMİN.ETS) üstel düzeltmeyle (AAA) mevsim uzunluğunu kendisi bulur, eğilimi ve mevsimi birlikte modeller, güven aralığı çizer. En az iki tam mevsim (burada 24 ay) ister. Kesit bu algoritmayı çalıştırmaz (Excel'in iç parametreleri yayımlanmış değil); bu ders mantığını formülle kurar, Tahmin Sayfası'nı Excel'de denemenizi önerir.",
+    ],
+    ornek: { sayfa: 'Talep', hucre: 'F2', formul: '=ORTALAMA(FİLTRE(B2:B25;AY(A2:A25)=12))/ORTALAMA(B2:B25)', hazirlik: { E2: 'Aralık endeksi' }, aciklama: "Aralık ayları ortalamanın ne kadar üstünde? 1'den büyük endeks zirve ayı demektir." },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Talep', hedef: 'F6', hazirlik: { E6: 'Kasım endeksi' }, soru: "F6'ya **Kasım ayının mevsim endeksini** yazın (iki Kasım'ın ortalaması / 24 ayın ortalaması).", cozum: '=ORTALAMA(FİLTRE(B2:B25;AY(A2:A25)=11))/ORTALAMA(B2:B25)', ipuclari: ['=ORTALAMA(FİLTRE(B2:B25;AY(A2:A25)=11))/ORTALAMA(B2:B25)'] },
+      { id: 'a2', sayfa: 'Talep', hedef: 'F7', hazirlik: { E6: 'Kasım endeksi', F6: '=ORTALAMA(FİLTRE(B2:B25;AY(A2:A25)=11))/ORTALAMA(B2:B25)', E7: 'Kasım 2026 tahmini' }, soru: "F6'da Kasım endeksi var. F7'ye **Kasım 2026'nın (35. ay)** mevsimsel tahminini yazın: doğrusal eğilim × endeks.", cozum: '=TAHMİN.DOĞRUSAL(35;B2:B25;D2:D25)*F6', gerekli: ['FORECAST.LINEAR'], ipuclari: ['=TAHMİN.DOĞRUSAL(35;B2:B25;D2:D25)*F6'] },
+      { id: 'a3', tur: 'secmeli', soru: 'Depo, Kasım–Aralık kampanyası için geçici personel planlıyor. 24 aylık sipariş verisi var. En uygun tahmin yolu?', secenekler: ["Son ayın siparişini 12 ile çarpmak", 'Doğrusal tahmin (TAHMİN.DOĞRUSAL) tek başına', 'Mevsimi hesaba katan bir yöntem: mevsim endeksi ya da Tahmin Sayfası (ETS), güven aralığıyla', 'Geçen yılın aynı ayını aynen kullanmak'], dogru: 2, aciklama: 'Zirve ayları mevsimseldir; doğrusal tahmin onları ortalamaya çeker ve personel eksik planlanır. Endeks ya da ETS zirveyi taşır, güven aralığı da "en kötü durumda kaç kişi" sorusunu cevaplar.' },
+    ],
+    sikHata: { yanlis: 'Mevsimsel seriye yalnız doğrusal tahmin uygulamak', dogru: 'Mevsim endeksiyle düzeltmek ya da Tahmin Sayfası kullanmak', neden: 'Doğrusal eğilim zirve ve dip aylarını ortalamaya çeker; kampanya ayı için kapasite eksik planlanır.' },
+    mulakat: { soru: "Mevsimsel bir seriyi Excel'de nasıl tahmin edersiniz?", cevap: 'Önce seriyi çizip mevsim uzunluğunu görürüm (aylık veride 12). Hızlı yol Tahmin Sayfası (ETS): mevsimi kendisi bulur, güven aralığı verir. Şeffaf yol mevsim endeksi: her ayın ortalamasını genel ortalamaya bölerim, seriyi endekse bölüp eğilimi bulurum, gelecek ayın eğilim değerini endeksle çarparım. Son birkaç ayı saklayıp geriye dönük deneyerek hatayı ölçerim.' },
+  },
+  {
+    id: 'm18-d9', modul: 'm18', baslik: 'Düzenli ifadeler: NORMİFADEAYIKLA ve NORMİFADEDEĞİŞTİR', sure: 12,
+    ozet: 'Ürün kodunu metinden çekin, e-posta biçimini sınayın, kişisel veriyi maskeleyin: tek bir desenle.',
+    hedefler: ['Temel desen dilini okumak (\\d, [A-Z], +, {n}, ^, $)', 'NORMİFADEAYIKLA ile metinden parça çıkarmak', 'REGEXTEST ile biçim sınamak, NORMİFADEDEĞİŞTİR ile maskelemek'],
+    anlatim: [
+      'Düzenli ifade (regex) bir metin desenidir: `\\d` rakam, `[A-Z]` büyük harf, `+` bir ya da daha çok, `{2}` tam iki kez, `^` başlangıç, `$` son, `.` herhangi bir karakter, `( )` yakalama grubu. `^[A-Z]\\d{2}` "bir harf ve iki rakamla başlayan" demektir.',
+      '`=NORMİFADEAYIKLA(metin;desen;[mod];[büyük_küçük])`: mod 0 ilk eşleşme, 1 bütün eşleşmeler (alt alta taşar), 2 ilk eşleşmenin grupları (yan yana). Eşleşme yoksa #YOK. `=REGEXTEST(metin;desen;1)` DOĞRU/YANLIŞ verir; son bağımsız değişken 1 büyük/küçük harfi önemsemez.',
+      "`=NORMİFADEDEĞİŞTİR(metin;desen;yeni)` eşleşen yeri değiştirir; `$1` yakalanan grubu geri yazar. KVKK için e-posta maskeleme: `=NORMİFADEDEĞİŞTİR(C2;\"(?<=^.)[^@]*\";\"***\")` ilk harften sonra @'ye kadar olan kısmı yıldızlar.",
+      "Excel 365 bu işlevleri 2024'te ekledi (PCRE2 deseni). Eski sürümde aynı iş SOLDAN/BUL/PARÇAAL zincirleriyle, Power Query'de Metin.Seç gibi işlevlerle yapılır. Deseni örnek metinde sınayın: yanlış desen hata değil boş ya da #YOK sonuç verir.",
+    ],
+    ornek: { sayfa: 'Ürün ham', hucre: 'D2', hazirlik: { D1: 'Kod' }, formul: '=NORMİFADEAYIKLA(B2;"^[A-Z]\\d{2}")', alan: 'D10', aciklama: 'Her satırın başındaki "harf + iki rakam" ürün kodu çekiliyor. Deseni "\\d+(?=mAh|ml)" yapıp kapasiteyi çekmeyi deneyin.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Ürün ham', hedef: 'D2:D10', hazirlik: { D1: 'Kod' }, soru: "D2'ye B2'deki metnin başındaki **ürün kodunu** (bir büyük harf ve iki rakam, ör. E01) düzenli ifadeyle çekin, D10'a kadar doldurun.", cozum: '=NORMİFADEAYIKLA(B2;"^[A-Z]\\d{2}")', gerekli: ['REGEXEXTRACT'], durumlar: [{}, { B3: 'E07 Kamera' }], ipuclari: ['=NORMİFADEAYIKLA(B2;"^[A-Z]\\d{2}")'] },
+      { id: 'a2', sayfa: 'Müşteri ham', hedef: 'E2:E7', hazirlik: { E1: 'E-posta geçerli mi' }, soru: "E2'ye C2'deki e-postanın **biçimce geçerli** olup olmadığını (bir @, öncesi ve sonrası boşluksuz, sonda nokta ve en az iki harf) büyük/küçük harf ayırmadan sınayın, E7'ye kadar doldurun.", cozum: '=REGEXTEST(C2;"^[^@\\s]+@[^@\\s]+\\.[a-z]{2,}$";1)', gerekli: ['REGEXTEST'], durumlar: [{}, { C3: 'mehmet@' }], ipuclari: ['=REGEXTEST(C2;"^[^@\\s]+@[^@\\s]+\\.[a-z]{2,}$";1)'] },
+      { id: 'a3', sayfa: 'Müşteri ham', hedef: 'F2:F7', hazirlik: { F1: 'Maskeli e-posta' }, soru: "Rapor dışarı gidecek. F2'ye e-postanın **ilk harfi dışında @'ye kadar olan kısmını *** ile** değiştirin (Ayse.Yilmaz@… → A***@…), F7'ye kadar doldurun.", cozum: '=NORMİFADEDEĞİŞTİR(C2;"(?<=^.)[^@]*";"***")', gerekli: ['REGEXREPLACE'], durumlar: [{}, { C4: 'veli.ak@firma.com' }], ipuclari: ['(?<=^.) "baştaki ilk karakterden sonra" demektir: =NORMİFADEDEĞİŞTİR(C2;"(?<=^.)[^@]*";"***")'] },
+    ],
+    sikHata: { yanlis: 'Ürün kodunu =SOLDAN(B2;3) ile almak', dogru: 'Deseni tarif etmek: =NORMİFADEAYIKLA(B2;"^[A-Z]\\d{2}")', neden: 'SOLDAN kodun uzunluğu değişince (E101) ya da başta boşluk olunca sessizce yanlış alır; desen eşleşmezse #YOK ile uyarır.' },
+    mulakat: { soru: "Düzenli ifadeyi Excel'de nerede kullanırsınız?", cevap: "Dağınık metinden kod, telefon, e-posta, sipariş numarası çekmek; bir sütunun biçimini sınamak (veri doğrulamada özel formül olarak); kişisel veriyi maskelemek. Excel 365'te NORMİFADEAYIKLA/DEĞİŞTİR ve REGEXTEST ile, eski sürümlerde Power Query ya da VBA RegExp ile. Deseni küçük örneklerde sınar, eşleşmeyen satırları ayrıca sayarım." },
+  },
+  {
+    id: 'm18-d10', modul: 'm18', baslik: 'Taşan aralığa başvuru (M2#), TRIMRANGE ve PERCENTOF', sure: 10,
+    ozet: "Taşan bir listenin yanına formül yazarken boyutunu bilmeniz gerekmez: M2# \"M2'nin taştığı alanın tamamı\" demektir.",
+    hedefler: ['# taşma başvurusunu kullanmak', 'TRIMRANGE ile boşları atılmış dinamik aralık kurmak', "GRUPLAÖLÇÜT'te PERCENTOF ile pay sütunu almak"],
+    anlatim: [
+      "`=BENZERSİZ(F2:F241)` M2'den aşağı taşar; kaç satır olduğu veriye bağlıdır. Yanına `=ETOPLA(F2:F241;M2#;H2:H241)` yazınca **M2#** taşan alanın tamamını alır, liste uzayıp kısalınca formül de değişir. Grafik ya da veri doğrulama kaynağı olarak da `=$M$2#` yazılır.",
+      "Çapa hücre taşmıyorsa (tek değer, #TAŞMA! ya da boş) M2# #BAŞV! verir.",
+      "`TRIMRANGE(A1:A1000)` aralığın baştaki ve sondaki boş satırlarını atar: veri 240 satırsa 240 satırlık başvuru döner. Excel 365 bunun kısa yazımını da getirdi: `A1:.A1000` (Kesit yalnız işlev biçimini destekler).",
+      "`PERCENTOF(alt_küme;bütün)` alt kümenin toplamını bütünün toplamına böler. GRUPLAÖLÇÜT'e işlev olarak verilince her grubun payını hesaplar: `=GRUPLAÖLÇÜT(E2:E241;H2:H241;PERCENTOF)`.",
+    ],
+    ornek: { sayfa: 'Satışlar', hucre: 'N2', formul: '=ETOPLA(F2:F241;M2#;H2:H241)', hazirlik: { M1: 'Kategori', M2: '=BENZERSİZ(F2:F241)', N1: 'Adet' }, alan: 'N8', aciklama: "M2'deki BENZERSİZ 7 kategori taşırıyor; N2 M2# ile hepsine birden ETOPLA uyguluyor." },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Satışlar', hedef: 'N2', okunan: 'N2:N13', hazirlik: { M1: 'Şehir', M2: '=SIRALA(BENZERSİZ(FİLTRE(D2:D241;D2:D241<>"")))', N1: 'Sipariş' }, soru: "M2'de şehirlerin listesi taşıyor. N2'ye her şehrin **sipariş sayısını** taşma başvurusuyla tek formülde yazın.", cozum: '=EĞERSAY(D2:D241;M2#)', ipuclari: ['=EĞERSAY(D2:D241;M2#): M2# listenin tamamı.'] },
+      { id: 'a2', sayfa: 'Satışlar', hedef: 'M1', okunan: 'M1:N5', soru: "M1'e her **kanalın toplam adetteki payını** başlıklarıyla GRUPLAÖLÇÜT ve PERCENTOF ile yazın.", cozum: '=GRUPLAÖLÇÜT(E1:E241;H1:H241;PERCENTOF)', gerekli: ['GROUPBY'], ipuclari: ['İşlev olarak PERCENTOF verilir: =GRUPLAÖLÇÜT(E1:E241;H1:H241;PERCENTOF)'] },
+      { id: 'a3', sayfa: 'Satışlar', hedef: 'M2', hazirlik: { M1: 'Kayıt sayısı' }, soru: "M2'ye H1:H1000 aralığının **boşlar atıldıktan sonra kaç satır veri içerdiğini** (başlık hariç) TRIMRANGE ile yazın.", cozum: '=SATIRSAY(TRIMRANGE(H1:H1000))-1', gerekli: ['TRIMRANGE'], ipuclari: ['=SATIRSAY(TRIMRANGE(H1:H1000))-1'] },
+    ],
+    sikHata: { yanlis: 'Taşan listenin yanına =ETOPLA(…;M2:M8;…) yazmak', dogru: '=ETOPLA(…;M2#;…)', neden: 'Liste bir gün 9 kategoriye çıkınca sabit M2:M8 son ikisini atlar; M2# taşan alanla birlikte büyür.' },
+    mulakat: { soru: 'Dinamik dizi formülünün sonucuna nasıl başvurursunuz?', cevap: "Çapa hücrenin adresinin sonuna # koyarak: =TOPLA(M2#). Taşan alan büyüyüp küçüldükçe başvuru da değişir; grafik serisi, veri doğrulama listesi ve ad tanımı için de kullanılır. Eski yöntem KAYDIR ile dinamik ad tanımlamaktı; # hem daha okunur hem uçucu değil." },
+  },
+
   // ---------------------------------------------------------------- M19 Veri araçları
   {
     id: 'm19-d1', modul: 'm19', baslik: 'Gelişmiş Filtre: VE, YA DA ve ölçüt alanı', sure: 12,
@@ -189,6 +248,7 @@ export const DERSLER_6 = [
     alistirmalar: [
       { id: 'a1', sayfa: 'Çeyrek', hedef: 'B10', varyantSayfalar: AYLAR3, soru: 'B10\'a üç ayın (Ocak, Şubat, Mart sayfaları, B2:B8) **toplam adedini** 3B başvuruyla tek formülde yazın.', cozum: '=TOPLA(Ocak:Mart!B2:B8)', ipuclari: ['=TOPLA(Ocak:Mart!B2:B8): ilk sayfa:son sayfa!alan'] },
       { id: 'a2', sayfa: 'Çeyrek', hedef: 'B2:B8', varyantSayfalar: AYLAR3, soru: 'B2\'ye A2\'deki kategorinin **üç aylık adet toplamını** etikete göre yazın, B8\'e kadar doldurun. Dikkat: Mart sayfasında satır sırası farklı.', cozum: '=ETOPLA(Ocak!$A:$A;A2;Ocak!$B:$B)+ETOPLA(Şubat!$A:$A;A2;Şubat!$B:$B)+ETOPLA(Mart!$A:$A;A2;Mart!$B:$B)', ipuclari: ['Her ay için ETOPLA(Ay!$A:$A;A2;Ay!$B:$B) ve üçünü toplayın. =TOPLA(Ocak:Mart!B2) Mart\'ta yanlış satırı toplar.'] },
+      { id: 'a4', tur: 'birlestir', sayfa: 'Çeyrek', soru: 'Veri > Birleştir ile Ocak, Şubat ve Mart\'ın **Adet ve Ciro** sütunlarını kategoriye göre **toplayın**. Her ayın aralığını başlık ve kategori sütunuyla ekleyin (ör. Ocak!A1:C8).', cozum: { kaynaklar: ['Ocak!A1:C8', 'Şubat!A1:C8', 'Mart!A1:C8'], islev: 'TOPLA', solSutun: true, ustSatir: true }, ipuclari: ['Üç başvuruyu ekleyin, işlev TOPLA, "Üst satır" ve "Sol sütun" işaretli.'] },
       { id: 'a3', tur: 'secmeli', soru: 'Veri > Birleştir ile üç bölgenin satış sayfasını birleştiriyorsunuz; bölgelerde ürünler farklı sırada ve bazı ürünler bir bölgede yok. Hangi ayar şart?', secenekler: ['İşlev: Ortalama', 'Etiketleri kullan: Sol sütun (ve gerekirse Üst satır)', 'Kaynak verilere bağlantı oluştur', 'Hiçbiri; Birleştir konuma göre doğru toplar'], dogru: 1, aciklama: 'Etiket kullanılmazsa Birleştir 3B başvuru gibi konuma göre toplar; sıra farklıysa yanlış ürünler toplanır. Sol sütun etiketiyle ürün adları eşleştirilir, olmayan ürün de listeye eklenir.' },
     ],
     sikHata: { yanlis: '=TOPLA(Ocak:Mart!B2) ile kategori kategori toplamak', dogru: 'Kategori adına göre toplamak (ETOPLA ya da Birleştir, Sol sütun)', neden: '3B başvuru yalnız konuma bakar; sayfalardan birinde sıra farklıysa sessizce yanlış toplar.' },
@@ -353,5 +413,26 @@ export const DERSLER_6 = [
     ],
     sikHata: { yanlis: 'Genel gerçekleşmeyi bölge oranlarının ortalaması almak', dogru: 'Toplam gerçekleşeni toplam hedefe bölmek', neden: 'Küçük bir bölgenin yüksek oranı ortalamayı şişirir; oranların ortalaması ağırlıksızdır.' },
     mulakat: { soru: 'Pivot kullanmadan etkileşimli bir pano kurabilir misiniz?', cevap: 'Evet: seçimi veri doğrulama listesi ya da form denetimiyle bir hücreye alırım; KPI\'ları İNDİS, ÇOKETOPLA, FİLTRE, GRUPLAÖLÇÜT gibi formüllerle o hücreye bağlarım; grafikleri bu hesap alanından beslerim. Avantajı yenileme gerektirmemesi ve her hesabın görünür olması; dezavantajı çok boyutlu keşfin pivot kadar kolay olmaması.' },
+  },
+  {
+    id: 'm20-d8', modul: 'm20', baslik: 'Zaman Çizelgesi: dönem seçen pano', sure: 10,
+    ozet: 'Tarih alanını dilimleyici yapmak yüzlerce düğme üretir. Zaman Çizelgesi ayları sıralar; bir ayı ya da bir aralığı seçersiniz, bütün pano süzülür.',
+    hedefler: ['Zaman Çizelgesi eklemek ve aralık seçmek', 'Dilimleyici ile Zaman Çizelgesi farkını bilmek', 'Dönem karşılaştırmasını panoya taşımak'],
+    anlatim: [
+      'Excel: özet tabloyu seçip **Ekle > Zaman Çizelgesi**, tarih alanı işaretlenir. Çubukta aylar (ya da gün, çeyrek, yıl) sıralanır; bir aya tıklanır, kenarından sürüklenip aralık seçilir. **Rapor Bağlantıları** ile birden çok özet tabloya bağlanır.',
+      'Dilimleyici her farklı değeri düğme yapar: 240 siparişin tarihleri yüzlerce düğme olur. Zaman Çizelgesi tarihi kendisi aylara gruplar ve **aralık** seçtirir; "ilk çeyrek", "son üç ay" sorularının aracıdır.',
+      "Kesit'te panoda \"Zaman çizelgesi\" seçilince aylar sıralanır: tık bir ay seçer, ikinci tık (ya da Shift+tık) aralığı genişletir, Tümü sıfırlar. KPI'lar ve grafikler birlikte süzülür.",
+    ],
+    ornek: { tur: 'pano', sayfa: 'Satışlar', pano: { baslik: 'Satış panosu · dönem seçimi', zaman: { alan: 'Tarih', bas: null, son: null }, dilimler: [{ alan: 'Kanal', degerler: [] }], kpi: [{ alan: 'Adet', ozet: 'toplam' }, { alan: 'Sipariş No', ozet: 'say' }], grafikler: [{ baslik: 'Adet · Kategori', tur: 'cubuk', yapi: { satir: 'Kategori', sutun: null, degerler: [{ alan: 'Adet', ozet: 'toplam' }], filtreler: [], grupla: {}, goster: 'deger' } }] }, aciklama: 'Zaman çizelgesinde bir aya, sonra başka bir aya tıklayın: aralık seçilir, KPI ve grafik o döneme göre süzülür.' },
+    alistirmalar: [
+      { id: 'a1', tur: 'pano', soru: "Satışlar'dan bir pano kurun: **başlık**, **Tarih** için **Zaman Çizelgesi**, **Kanal** dilimleyicisi, **toplam Adet** KPI'ı ve **kategori başına adet** grafiği.", sayfa: 'Satışlar',
+        baslangic: { baslik: '', dilimler: [], kpi: [], grafikler: [] },
+        cozum: { baslik: 'Satış panosu', zaman: { alan: 'Tarih', bas: null, son: null }, dilimler: [{ alan: 'Kanal', degerler: [] }], kpi: [{ alan: 'Adet', ozet: 'toplam' }], grafikler: [{ baslik: 'Adet · Kategori', tur: 'cubuk', yapi: { satir: 'Kategori', sutun: null, degerler: [{ alan: 'Adet', ozet: 'toplam' }], filtreler: [], grupla: {}, goster: 'deger' } }] },
+        kural: { baslikGerekli: true, zaman: 'Tarih', dilimler: ['Kanal'], kpi: [{ alan: 'Adet', ozet: 'toplam' }], grafikler: [{ satir: 'Kategori', deger: 'Adet', turler: ['cubuk', 'sutun', 'pareto'], turNeden: 'Kategorileri karşılaştırmak için çubuk seçin.' }], enCokGrafik: 4 },
+        ipuclari: ['"Panoyu düzenle" bölümünde Zaman çizelgesi: Tarih seçin.'] },
+      { id: 'a2', tur: 'secmeli', soru: 'Yönetici panoda "son üç ay" ile "önceki üç ay"ı karşılaştırmak istiyor. Tarih alanı için hangisi?', secenekler: ['Tarih dilimleyicisi (her tarih bir düğme)', 'Zaman Çizelgesi: ay düzeyinde aralık seçimi', 'Her ay için ayrı sayfa', 'Tarih sütununu metne çevirip filtrelemek'], dogru: 1, aciklama: 'Zaman Çizelgesi tarihi aylara gruplar ve sürükleyerek aralık seçtirir; dilimleyici yüzlerce tarih düğmesi üretir ve aralık seçimi zahmetlidir.' },
+    ],
+    sikHata: { yanlis: 'Tarih alanını dilimleyici yapmak', dogru: 'Zaman Çizelgesi ya da (pivotta) tarihi aya gruplayıp dilimleyici yapmak', neden: 'Her farklı tarih bir düğme olur; panoyu kaplar ve aralık seçimi tek tek tıklama ister.' },
+    mulakat: { soru: 'Dilimleyici ile Zaman Çizelgesi arasındaki fark nedir?', cevap: 'Dilimleyici metin ve kategori alanlarının değerlerini düğme yapar, çoklu seçim alır. Zaman Çizelgesi yalnız tarih alanında çalışır, tarihi gün/ay/çeyrek/yıl düzeyinde gösterir ve sürükleyerek ardışık aralık seçtirir. İkisi de Rapor Bağlantıları ile birden çok özet tabloyu birlikte süzer.' },
   },
 ];

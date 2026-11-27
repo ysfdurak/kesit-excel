@@ -108,6 +108,7 @@ export const DERSLER_5 = [
     ozet: 'Toplam tutmuyor: hata nereden geliyor? Etkileyenleri izle, Etkilenenleri izle ve Formülü Değerlendir ile geriye doğru gidin.',
     hedefler: ['Etkileyenleri ve etkilenenleri izlemek', 'Formülü Değerlendir ile adım adım hesabı görmek', 'Kontrol toplamıyla hatanın varlığını, izlemeyle yerini bulmak'],
     anlatim: [
+      '**Gözcü Penceresi** (Formüller > Gözcü Penceresi): uzak bir sayfadaki ya da ekran dışındaki önemli hücreleri (toplam, KPI) küçük bir pencerede izler; girdiyi değiştirirken sonucun nasıl tepki verdiğini kaydırmadan görürsünüz. Kesit\'te ızgaradaki "👁 Gözcüye ekle" düğmesi.',
       '**Formüller > Formül Denetleme**. **Etkileyenleri İzle**: seçili formülün baktığı hücrelere ok çizer. **Etkilenenleri İzle**: bu hücreyi okuyan formülleri gösterir; bir hücreyi silmeden önce kimin ona baktığını görürsünüz.',
       '**Formülü Değerlendir**: formülü Excel\'in hesapladığı sırayla açar. Her "Değerlendir" basışında en içteki parça değere döner: `=TOPLA(B4:C4)` → `=TOPLA({251700;247300})` → `499000`. Burada bir sütunun eksik olduğu görülür.',
       '**Kontrol toplamı** hatanın varlığını söyler: satır toplamlarının toplamı sütun toplamlarının toplamına eşit olmalı. Fark sıfır değilse izlemeye başlayın.',

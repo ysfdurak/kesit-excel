@@ -23,7 +23,7 @@ export class Dizi {
 // LAMBDA değeri: parametre adları, gövde ağacı, tanımlandığı andaki değişkenler (kapanış).
 // yerlesik doluysa "eta" biçimidir: BYROW(A2:C5;TOPLA) gibi işlev adının kendisi.
 export class Lambda {
-  constructor(params, govde, kapsam, yerlesik = null) { this.params = params; this.govde = govde; this.kapsam = kapsam; this.yerlesik = yerlesik; }
+  constructor(params, govde, kapsam, yerlesik = null, secimli = null) { this.params = params; this.govde = govde; this.kapsam = kapsam; this.yerlesik = yerlesik; this.secimli = secimli; }
   toString() { return '#CALC!'; }
 }
 // Başvuru: sayfa + dikdörtgen (1 tabanlı satır ve sütun)
@@ -71,7 +71,7 @@ export const TR_EN = {
   'GRUPLAÖLÇÜT': 'GROUPBY', 'ÖZETÖLÇÜT': 'PIVOTBY', 'SÜTUNA': 'TOCOL', 'SATIRA': 'TOROW', 'SATIRSAR': 'WRAPROWS', 'SÜTUNSAR': 'WRAPCOLS', 'GENİŞLET': 'EXPAND',
   'S_SAYI_ÜRET': 'RAND', 'RASTGELEARADA': 'RANDBETWEEN', 'RASGDİZİ': 'RANDARRAY',
   'EĞİM': 'SLOPE', 'KESMENOKTASI': 'INTERCEPT', 'KORELASYON': 'CORREL', 'RKARE': 'RSQ', 'TAHMİN.DOĞRUSAL': 'FORECAST.LINEAR', 'TAHMİN': 'FORECAST', 'EĞİLİM': 'TREND',
-  'SIKLIK': 'FREQUENCY', 'YOKSAY': 'NA', 'TOPLAMA': 'AGGREGATE', 'STDSAPMA.P': 'STDEV.P',
+  'SIKLIK': 'FREQUENCY', 'YOKSAY': 'NA', 'NORMİFADEDEĞİŞTİR': 'REGEXREPLACE', 'NORMİFADEAYIKLA': 'REGEXEXTRACT', 'TOPLAMA': 'AGGREGATE', 'STDSAPMA.P': 'STDEV.P',
   'FİLTRE': 'FILTER', 'BENZERSİZ': 'UNIQUE', 'SIRALA': 'SORT', 'SIRALAÖLÇÜT': 'SORTBY', 'SIRALI': 'SEQUENCE', 'LET': 'LET', 'AL': 'TAKE', 'BIRAK': 'DROP',
   'DÜŞEYYIĞ': 'VSTACK', 'YATAYYIĞ': 'HSTACK', 'SÜTUNSEÇ': 'CHOOSECOLS', 'SATIRSEÇ': 'CHOOSEROWS',
   'DOLAYLI': 'INDIRECT', 'KAYDIR': 'OFFSET', 'ADRES': 'ADDRESS', 'ÖZETVERİAL': 'GETPIVOTDATA',
@@ -162,7 +162,7 @@ export function belirtec(f, yazim = yazimBul(f)) {
       if (s[j + 1] !== '!') throw new Error('Sayfa adından sonra ! bekleniyor');
       const r = basvuruOku(s, j + 2); if (!r) throw new Error('Sayfa adından sonra başvuru bekleniyor');
       const uc = ad.split(':');
-      out.push({ ...r.tk, sayfa: uc[0], ...(uc.length === 2 ? { sayfa2: uc[1] } : {}), bas: j + 2, son: r.son }); i = r.son; continue;
+      const ts = s[r.son] === '#'; out.push({ ...r.tk, sayfa: uc[0], ...(uc.length === 2 ? { sayfa2: uc[1] } : {}), ...(ts ? { tasan: true } : {}), bas: j + 2, son: r.son + (ts ? 1 : 0) }); i = r.son + (ts ? 1 : 0); continue;
     }
     // satır başvurusu (1:5) ya da sayı
     if (/[0-9$]/.test(ch) || ch === ondalik) {
@@ -174,13 +174,13 @@ export function belirtec(f, yazim = yazimBul(f)) {
     // başvuru ya da ad
     if (ch === '$' || /[A-Za-z]/.test(ch) || AD_HARF.test(ch)) {
       const r = basvuruOku(s, i);
-      if (r && !/[(\wÇĞİÖŞÜçğıöşü.!]/.test(s[r.son] || '')) { out.push({ ...r.tk, bas: i, son: r.son }); i = r.son; continue; }
+      if (r && !/[(\wÇĞİÖŞÜçğıöşü.!]/.test(s[r.son] || '')) { const ts = s[r.son] === '#'; out.push({ ...r.tk, ...(ts ? { tasan: true } : {}), bas: i, son: r.son + (ts ? 1 : 0) }); i = r.son + (ts ? 1 : 0); continue; }
       const m = /^[A-Za-zÇĞİÖŞÜçğıöşü_\\][\wÇĞİÖŞÜçğıöşü.]*/.exec(s.slice(i));
       if (m) {
         const ad = m[0], j = i + ad.length;
         const m3 = s[j] === ':' ? /^:([A-Za-zÇĞİÖŞÜçğıöşü_][\wÇĞİÖŞÜçğıöşü.]*)!/.exec(s.slice(j)) : null;
         if (m3) { const k3 = j + m3[0].length, r4 = basvuruOku(s, k3); if (!r4) throw new Error('Sayfa adından sonra başvuru bekleniyor'); out.push({ ...r4.tk, sayfa: ad, sayfa2: m3[1], bas: k3, son: r4.son }); i = r4.son; continue; }
-        if (s[j] === '!') { const r2 = basvuruOku(s, j + 1); if (!r2) throw new Error('Sayfa adından sonra başvuru bekleniyor'); out.push({ ...r2.tk, sayfa: ad, bas: j + 1, son: r2.son }); i = r2.son; continue; }
+        if (s[j] === '!') { const r2 = basvuruOku(s, j + 1); if (!r2) throw new Error('Sayfa adından sonra başvuru bekleniyor'); { const ts = s[r2.son] === '#'; out.push({ ...r2.tk, sayfa: ad, ...(ts ? { tasan: true } : {}), bas: j + 1, son: r2.son + (ts ? 1 : 0) }); i = r2.son + (ts ? 1 : 0); } continue; }
         if (s[j] === '[') { const r3 = koseliOku(s, j); out.push({ t: 'tref', tablo: ad, ...r3.tk, bas: i, son: r3.son }); i = r3.son; continue; }
         let k = j; while (/\s/.test(s[k] || '')) k++;
         if (s[k] === '(') { out.push({ t: 'fn', v: ad, bas: i, son: j }); i = j; continue; }
@@ -380,6 +380,12 @@ export function degerlendir(agac, bag) {
       const sayfa = agac.sayfa ? bag.kitap.sayfaBul(agac.sayfa) : bag.sayfa;
       if (!sayfa) return H.BASV;
       if (agac.sayfa2) return ucBoyutlu(agac, bag);
+      // Taşma başvurusu (M2#): çapa hücresi hesaplanır, taştığı alan başvuru olarak döner; taşmıyorsa #BAŞV!
+      if (agac.tasan) {
+        const v = bag.kitap.hucre(sayfa.ad, agac.r1, agac.c1), b = bag.kitap.tasmaBoyut && bag.kitap.tasmaBoyut.get(sayfa.ad + '!' + agac.r1 + ',' + agac.c1);
+        if (!b) return hataMi(v) ? v : H.BASV;
+        return new Bas(sayfa.ad, agac.r1, agac.c1, agac.r1 + b.R - 1, agac.c1 + b.C - 1);
+      }
       let { r1, r2, c1, c2 } = agac;
       if (agac.tip === 'sutun' || agac.tip === 'satir') { const s = sayfa.kullanilan(); if (agac.tip === 'sutun') { r1 = 1; r2 = Math.max(1, s.r); } else { c1 = 1; c2 = Math.max(1, s.c); } }
       return new Bas(sayfa.ad, r1, c1, r2, c2);
@@ -423,13 +429,19 @@ export function degerlendir(agac, bag) {
 }
 
 // LAMBDA çağrısı: parametreler kapanışa eklenir; parametre sayısı tutmazsa #DEĞER! (Excel gibi)
+export const ATLANAN = '\u0000atlanan';
 export function lambdaCagir(L, args, bag) {
   if (L.yerlesik) { const f = bag.kitap.islevler[L.yerlesik]; return f.fn(args, bag); }
-  if (args.length !== L.params.length) return H.DEGER;
+  // Köşeli parantezli parametre ([b]) isteğe bağlıdır; verilmezse boş gelir ve ISOMITTED(b) DOĞRU döner
+  const secimli = L.secimli || new Set();
+  if (args.length > L.params.length) return H.DEGER;
+  for (let i = args.length; i < L.params.length; i++) if (!secimli.has(L.params[i])) return H.DEGER;
   bag.lambdaDerinlik = (bag.lambdaDerinlik || 0) + 1;
   if (bag.lambdaDerinlik > 256) { bag.lambdaDerinlik--; return H.SAYI; } // çok derin özyineleme: Excel #SAYI!
   const onceki = bag.degisken, yeni = new Map(L.kapsam || []);
-  L.params.forEach((p, i) => yeni.set(p, args[i]));
+  const atlanan = new Set();
+  L.params.forEach((p, i) => { const v = i < args.length ? args[i] : null; if (secimli.has(p) && (i >= args.length || v == null)) atlanan.add(p); yeni.set(p, v); });
+  yeni.set(ATLANAN, atlanan);
   bag.degisken = yeni;
   try { return degerlendir(L.govde, bag); } finally { bag.degisken = onceki; bag.lambdaDerinlik--; }
 }
@@ -511,7 +523,7 @@ export function kaydir(formul, dr, dc) {
     if (t.tip !== 'satir') { yeni.c1 = k(t.ac1, t.c1, dc); yeni.c2 = k(t.ac2, t.c2, dc); }
     if (t.tip !== 'sutun') { yeni.r1 = k(t.ar1, t.r1, dr); yeni.r2 = k(t.ar2, t.r2, dr); }
     const bozuk = yeni.c1 < 1 || yeni.c2 < 1 || yeni.r1 < 1 || yeni.r2 < 1;
-    out += bozuk ? '#BAŞV!' : refMetin(yeni);
+    out += bozuk ? '#BAŞV!' : refMetin(yeni) + (t.tasan ? '#' : '');
     i = t.son;
   }
   out += g.slice(i);

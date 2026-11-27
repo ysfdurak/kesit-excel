@@ -1,6 +1,6 @@
 // Kesit Excel · işlev kütüphanesi. İç adlar İngilizce; Türkçe adlar formul.js'deki TR_EN tablosuyla eşlenir.
 // Davranış Excel 365'e göredir (dinamik diziler, taşma). Excel'den bilinçli ayrılan yerler belgede listelenir.
-import { H, Hata, Dizi, Bas, hataMi, coz, sayiya, metne, mantiga, karsilastir, degerlendir, sayiMetin, SINIR, Lambda, lambdaCagir } from './formul.js';
+import { H, Hata, Dizi, Bas, hataMi, coz, sayiya, metne, mantiga, karsilastir, degerlendir, sayiMetin, SINIR, Lambda, lambdaCagir, ATLANAN } from './formul.js';
 import { seriden, seriye, zaman, ayinSonGunu, bicimle, metindenTarih } from './tarih.js';
 
 const F = {};
@@ -647,10 +647,13 @@ tanim('NOMINAL', (a, b) => { const er = finAl(a, b, 0), n = Math.trunc(finAl(a, 
 tanim('LAMBDA', (args, bag) => {
   if (!args.length) return H.DEGER;
   const params = args.slice(0, -1);
-  if (params.some(p => p.t !== 'ad')) return H.DEGER;
-  const adlar = params.map(p => trB(p.v));
+  // [b] köşeli parantezli parametre: belirteçleyici bunu tablo başvurusu (tref) olarak okur
+  const secimliMi = p => p.t === 'tref' && !p.tablo && p.s1 && p.s2 == null && (!p.ozel || p.ozel === 'veri') && !p.satirlik;
+  if (params.some(p => p.t !== 'ad' && !secimliMi(p))) return H.DEGER;
+  const adlar = params.map(p => trB(p.t === 'ad' ? p.v : p.s1));
   if (new Set(adlar).size !== adlar.length) return H.DEGER;
-  return new Lambda(adlar, args[args.length - 1], bag.degisken ? new Map(bag.degisken) : null);
+  const secimli = new Set(params.filter(secimliMi).map(p => trB(p.s1)));
+  return new Lambda(adlar, args[args.length - 1], bag.degisken ? new Map(bag.degisken) : null, null, secimli);
 }, { tembel: true });
 const lambdaAl = (x, bag) => { const v = deger(x, bag); return v instanceof Lambda ? v : null; };
 const tekDeger = v => { v = v instanceof Bas ? coz(v, { kitap: null }) : v; if (v instanceof Dizi) return v.satir === 1 && v.sutun === 1 ? v.v[0][0] : H.HESAP; return v; };
@@ -707,7 +710,9 @@ tanim('GROUPBY', (a, b) => {
   let idx = rf.v.map((_, i) => i);
   if (filtre) { if (filtre.satir !== rf.satir + (basR ? 1 : 0) && filtre.satir !== rf.satir) return H.DEGER; const fo = filtre.satir === rf.satir ? 0 : 1; idx = idx.filter(i => mantiga(filtre.v[i + fo][0]) === true); }
   if (!idx.length) return H.HESAP;
-  const ozet = sat => vf.v[0].map((_, c) => cagirTek(L, [new Dizi(sat.map(i => [vf.v[i][c]]))], b));
+  // İki parametreli işlev (PERCENTOF ya da LAMBDA(grup;hepsi;…)) grubun ve bütün süzülmüş verinin değerlerini alır
+  const ikili = L.yerlesik === 'PERCENTOF' || (L.params && L.params.length === 2);
+  const ozet = sat => vf.v[0].map((_, c) => cagirTek(L, [new Dizi(sat.map(i => [vf.v[i][c]])), ...(ikili ? [new Dizi(idx.map(i => [vf.v[i][c]]))] : [])], b));
   let gruplar = grupla(rf, idx);
   const K = rf.sutun;
   if (Math.abs(sira) <= K) sirala(gruplar, Math.abs(sira) - 1, sira < 0 ? -1 : 1);
@@ -742,7 +747,8 @@ tanim('PIVOTBY', (a, b) => {
   let idx = rf.v.map((_, i) => i);
   if (filtre) idx = idx.filter(i => mantiga((filtre.v[i + (filtre.satir === rf.satir ? 0 : 1)] || [])[0]) === true);
   if (!idx.length) return H.HESAP;
-  const ozet = sat => cagirTek(L, [new Dizi(sat.map(i => [vf.v[i][0]]))], b);
+  const ikili = L.yerlesik === 'PERCENTOF' || (L.params && L.params.length === 2);
+  const ozet = sat => cagirTek(L, [new Dizi(sat.map(i => [vf.v[i][0]])), ...(ikili ? [new Dizi(idx.map(i => [vf.v[i][0]]))] : [])], b);
   const sg = sirala(grupla(rf, idx), Math.max(0, Math.abs(rSira) - 1), rSira < 0 ? -1 : 1), cg = sirala(grupla(cf, idx), Math.max(0, Math.abs(cSira) - 1), cSira < 0 ? -1 : 1);
   const K = rf.sutun, kesis = (p, q) => { const s = new Set(q); return p.filter(i => s.has(i)); };
   const ust = [...(hk === 3 ? basR : Array(K).fill('')), ...cg.map(g => g.degerler.join(' ')), ...(cDer ? [TOPLAM_ETIKET] : [])];
@@ -837,6 +843,56 @@ tanim('AGGREGATE', (a, b) => {
   const temizle = x => { const v = diziyeCevir(x, b); return hataAtla ? new Dizi(v.v.map(s => s.map(y => hataMi(y) ? null : y))) : v; };
   if (fno >= 14) return F[ad].fn([temizle(a[2]), a[3] == null ? null : deger(a[3], b)], b);
   return F[ad].fn(a.slice(2).filter(x => x != null).map(temizle), b);
+});
+
+tanim('ISOMITTED', (args, bag) => {
+  const a = args[0]; if (!a || a.t !== 'ad') return H.DEGER;
+  const at = bag.degisken && bag.degisken.get(ATLANAN);
+  return !!(at && at.has(trB(a.v)));
+}, { tembel: true });
+
+/* ---------------------------------------------------------------- düzenli ifadeler (Excel 365: PCRE2; burada JavaScript RegExp, yaygın desenlerde aynı) */
+function desen(p, buyukKucuk, g = '') {
+  const cs = buyukKucuk == null ? 0 : Math.trunc(N(buyukKucuk));
+  try { return new RegExp(T(p), 'u' + g + (cs === 1 ? 'i' : '')); } catch { return null; }
+}
+tanim('REGEXTEST', yay(([m, p, cs]) => { const re = desen(p, cs); if (!re) return H.DEGER; return re.test(T(m)); }, [0]));
+tanim('REGEXEXTRACT', (a, b) => {
+  const mod = a[2] == null ? 0 : Math.trunc(N(deger(a[2], b)));
+  const tekil = (m, p, cs) => {
+    const re = desen(p, cs, mod === 1 ? 'g' : ''); if (!re) return H.DEGER;
+    const t = T(m);
+    if (mod === 1) { const hep = [...t.matchAll(re)].map(x => x[0]); return hep.length ? new Dizi(hep.map(x => [x])) : H.NA; }
+    const x = re.exec(t); if (!x) return H.NA;
+    if (mod === 2) return x.length > 1 ? new Dizi([x.slice(1).map(g => g ?? '')]) : H.NA;
+    return x[0];
+  };
+  const m = deger(a[0], b), p = deger(a[1], b), cs = a[3] == null ? null : deger(a[3], b);
+  if (m instanceof Dizi) { if (mod !== 0) return H.DEGER; return new Dizi(m.v.map(s => s.map(x => tekil(x, p, cs)))); }
+  return tekil(m, p, cs);
+});
+tanim('REGEXREPLACE', yay(([m, p, yeni, kez, cs]) => {
+  const n = kez == null ? 0 : Math.trunc(N(kez)), re = desen(p, cs, 'g'); if (!re) return H.DEGER;
+  const t = T(m), y = T(yeni);
+  if (!n) return t.replace(re, y);
+  const hep = [...t.matchAll(re)], k = n > 0 ? n - 1 : hep.length + n; if (k < 0 || k >= hep.length) return t;
+  const x = hep[k], tek = new RegExp(re.source, re.flags.replace('g', ''));
+  return t.slice(0, x.index) + x[0].replace(tek, y) + t.slice(x.index + x[0].length);
+}, [0]));
+// YÜZDE: alt kümenin toplamı / bütünün toplamı (GRUPLAÖLÇÜT'te pay sütunu için)
+tanim('PERCENTOF', (a, b) => { const x = sayilar([a[0]], b), y = sayilar([a[1]], b); if (hataMi(x)) return x; if (hataMi(y)) return y; const ty = y.reduce((t, v) => t + v, 0); return ty === 0 ? H.BOL0 : x.reduce((t, v) => t + v, 0) / ty; });
+// KIRPARALIK: başvurunun baştaki/sondaki boş satır ve sütunlarını atar (1 baş, 2 son, 3 ikisi)
+tanim('TRIMRANGE', (a, b) => {
+  const v = a[0]; if (!(v instanceof Bas)) return H.DEGER;
+  const ks = a[1] == null ? 3 : Math.trunc(N(deger(a[1], b))), kc = a[2] == null ? 3 : Math.trunc(N(deger(a[2], b)));
+  const dolu = (r, c) => { const x = b.kitap.hucre(v.sayfa, r, c); return x != null && x !== ''; };
+  let { r1, r2, c1, c2 } = v; r2 = Math.min(r2, r1 + 100000); c2 = Math.min(c2, c1 + 1000);
+  const satirDolu = r => { for (let c = c1; c <= c2; c++) if (dolu(r, c)) return true; return false; }, sutunDolu = c => { for (let r = r1; r <= r2; r++) if (dolu(r, c)) return true; return false; };
+  if (ks & 1) while (r1 < r2 && !satirDolu(r1)) r1++;
+  if (ks & 2) while (r2 > r1 && !satirDolu(r2)) r2--;
+  if (kc & 1) while (c1 < c2 && !sutunDolu(c1)) c1++;
+  if (kc & 2) while (c2 > c1 && !sutunDolu(c2)) c2--;
+  return new Bas(v.sayfa, r1, c1, r2, c2);
 });
 
 export const ISLEVLER = F;

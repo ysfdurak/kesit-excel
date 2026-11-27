@@ -11,8 +11,8 @@ import { Kitap } from '../motor/kitap.js';
 import { ISLEVLER } from '../motor/islevler.js';
 import { pivot } from '../motor/pivot.js';
 import { alanCoz, adresCoz, EN_TR } from '../motor/formul.js';
-import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, kosulluDenetle, panoDenetle, kitapKur as denetciKitap, gelismisFiltreDenetle, dogrulamaDenetle, bicimDenetle, hucreBulDenetle, sayiDenetle, hedefAraDenetle, veriTablosuDenetle, cozucuDenetle, adDenetle } from '../motor/denetci.js';
-import { DogrulamaAlani, BicimAlani, HedefAraAlani, VeriTablosuAlani, SenaryoAlani, CozucuAlani, GelismisFiltreAlani } from './model-ui.js';
+import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, kosulluDenetle, panoDenetle, kitapKur as denetciKitap, gelismisFiltreDenetle, birlestirDenetle, dogrulamaDenetle, bicimDenetle, hucreBulDenetle, sayiDenetle, hedefAraDenetle, veriTablosuDenetle, cozucuDenetle, adDenetle } from '../motor/denetci.js';
+import { DogrulamaAlani, BicimAlani, HedefAraAlani, VeriTablosuAlani, SenaryoAlani, CozucuAlani, GelismisFiltreAlani, BirlestirAlani } from './model-ui.js';
 import { aralikVerisi, grafikCiz as grafikCizMotor } from '../motor/grafik.js';
 import { sorguCalistir } from '../motor/sorgu.js';
 import { MODULLER, DERSLER } from '../icerik/dersler.js';
@@ -25,6 +25,7 @@ const dersBul = id => DERSLER.find(d => d.id === id);
 const alistirmaYonergesi = d => {
   const t = new Set(d.alistirmalar.map(a => a.tur || 'formul'));
   if (t.has('dogrulama')) return 'Kuralı ekleyin, tablodaki "Geçersiz verileri işaretle" ile mevcut veriyi görün, kural alanındaki bir hücreye değer yazarak deneyin, sonra Denetle. Denetçi mevcut verideki geçersiz hücreleri ve deneme girişlerini çözümle karşılaştırır.';
+  if (t.has('birlestir')) return 'Birleştir kutusuna her ayın aralığını ekleyin, işlevi ve etiket kutularını seçin, Tamam ile sonucu görün, sonra Denetle.';
   if (t.has('gelismisFiltre')) return 'Ölçütleri tablodaki açık (düzenlenebilir) alana yazın: ilk satıra başlıklar, altına koşullar. Gelişmiş Filtre kutusuna liste ve ölçüt aralığını yazıp Tamam ile sonucu görün, sonra Denetle.';
   if (t.has('hedefAra') || t.has('cozucu') || t.has('veriTablosu')) return 'Aracın kutularını doldurup çalıştırın; tablo yeniden hesaplanır. Sonra Denetle: denetçi seçtiğiniz hücreleri ve bulunan sonucu çözümle karşılaştırır.';
   if (t.has('bicim')) return 'Biçim kodunu yazın; önizleme tablosu her değerin nasıl görüneceğini gösterir. Sonra Denetle.';
@@ -344,7 +345,7 @@ export function hakkindaSayfasi(main) {
 }
 
 /* ---------------------------------------------------------------- görselleştirme ve makro: örnek + alıştırma kurucuları */
-const TUR_ETIKET = { pivot: 'ÖZET TABLO', sorgu: 'POWER QUERY', grafik: 'GRAFİK', pivotGrafik: 'PİVOT GRAFİK', kosullu: 'KOŞULLU BİÇİM', pano: 'PANO', makro: 'MAKRO (VBA)', secmeli: 'SORU', dogrulama: 'VERİ DOĞRULAMA', bicim: 'ÖZEL BİÇİM', hucreBul: 'FORMÜL DENETİMİ', sayi: 'SORU', ad: 'AD YÖNETİCİSİ', hedefAra: 'HEDEF ARA', veriTablosu: 'VERİ TABLOSU', cozucu: 'ÇÖZÜCÜ', gelismisFiltre: 'GELİŞMİŞ FİLTRE' };
+const TUR_ETIKET = { pivot: 'ÖZET TABLO', sorgu: 'POWER QUERY', grafik: 'GRAFİK', pivotGrafik: 'PİVOT GRAFİK', kosullu: 'KOŞULLU BİÇİM', pano: 'PANO', makro: 'MAKRO (VBA)', secmeli: 'SORU', dogrulama: 'VERİ DOĞRULAMA', bicim: 'ÖZEL BİÇİM', hucreBul: 'FORMÜL DENETİMİ', sayi: 'SORU', ad: 'AD YÖNETİCİSİ', hedefAra: 'HEDEF ARA', veriTablosu: 'VERİ TABLOSU', cozucu: 'ÇÖZÜCÜ', gelismisFiltre: 'GELİŞMİŞ FİLTRE', birlestir: 'BİRLEŞTİR' };
 const hataListesi = r => r.hatalar && r.hatalar.length > 1 ? { ...r, notlar: r.hatalar.slice(1).map(x => 'Ayrıca: ' + x) } : r;
 // Her kurucu { el, denetle() } döndürür. ornek=true ise denetleme yok, yalnız gösterim.
 const YENI_TURLER = {
@@ -419,6 +420,11 @@ Object.assign(YENI_TURLER, {
     const tn = h('input.fx', { id: i2, type: 'text', placeholder: lambdaMi ? '=LAMBDA(parametre;…;hesap)' : '=Satışlar!$H$2:$H$241', autocomplete: 'off', spellcheck: 'false' });
     return { el: h('div.durum-kutu', {}, h('h4', {}, 'Yeni Ad'), h('div.pivot-alanlar', {}, h('div.alan', {}, h('label', { for: i1 }, 'Ad'), ad), h('div.alan', {}, h('label', { for: i2 }, 'Başvurur'), tn)),
       h('p.small-note.muted', {}, lambdaMi ? 'Excel: Formüller > Ad Yöneticisi > Yeni. Başvurur kutusuna LAMBDA yazılır; kitapta =AD(…) diye çağrılır.' : 'Excel: Formüller > Ad Tanımla. Ad harfle başlar, boşluk içermez, B2 gibi bir adrese benzemez.')), denetle: () => adDenetle(a, SAYFALAR, { ad: ad.value.trim(), tanim: tn.value.trim() }) };
+  },
+  birlestir(a, ornek) {
+    const k = kitapKur(a.hazirlik, a.sayfa, a), iz = modelIzgara(a, k);
+    const ba = new BirlestirAlani({ kitap: k, varsayilan: ornek ? a.cozum : null });
+    return { el: h('div', {}, iz.el, ba.el), denetle: () => birlestirDenetle(a, SAYFALAR, ba.ayar()) };
   },
   gelismisFiltre(a, ornek) {
     const bolge = alanCoz(a.bolge), hz = { ...(a.hazirlik || {}), ...(ornek ? a.cozum.hucreler : {}) };

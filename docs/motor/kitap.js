@@ -24,7 +24,7 @@ export class Kitap {
     this.adlar = new Map(); this.tablolar = new Map(); this.adDerinlik = 0;
     this.sifirla();
   }
-  sifirla() { this.sonuc = new Map(); this.tasma = new Map(); this.tasmaSahibi = new Map(); this.hesapta = new Set(); this.adim = { n: 0 }; }
+  sifirla() { this.sonuc = new Map(); this.tasma = new Map(); this.tasmaBoyut = new Map(); this.tasmaSahibi = new Map(); this.hesapta = new Set(); this.adim = { n: 0 }; }
   sayfa(ad = 'Sayfa1') { const v = this.sayfaBul(ad); if (v) return v; const s = new Sayfa(this, ad); this.sayfalar.set(ad, s); return s; }
   sayfaBul(ad) { if (this.sayfalar.has(ad)) return this.sayfalar.get(ad); const b = trB(ad); for (const [k, v] of this.sayfalar) if (trB(k) === b) return v; return null; }
 
@@ -128,7 +128,7 @@ export class Kitap {
     this.hesapta.delete(k);
     if (v instanceof Dizi) {
       if (v.satir === 1 && v.sutun === 1) v = v.v[0][0];
-      else v = this.tasir(s, r, c, v);
+      else { const d = v; v = this.tasir(s, r, c, d); if (v !== H.TASMA && v !== H.SAYI) this.tasmaBoyut.set(s.ad + '!' + anahtar(r, c), { R: d.satir, C: d.sutun }); }
     }
     if (v == null) v = 0; // =A1 (A1 boş) Excel'de 0 gösterir
     if (typeof v === 'number' && !Number.isFinite(v)) v = H.SAYI;
