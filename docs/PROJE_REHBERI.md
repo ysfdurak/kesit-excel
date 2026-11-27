@@ -486,13 +486,13 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 ## 9. Bilinen sınırlar ve sonraki adımlar
 
 - **0.5.0 sınırları:** Harita grafiği yok (§5.17); TAHMİN.ETS çalışmaz, Tahmin Sayfası mevsim endeksiyle anlatılır; `A1:.A1000` kırpılmış başvuru işleci yok (TRIMRANGE var); REGEX işlevlerinde PCRE2'ye özgü yapılar yok; NORMİFADEAYIKLA mod 1 sonuçlarını alt alta, mod 2 gruplarını yan yana taşırır **[doğrulanacak]**; REGEXTEST, TRIMRANGE, PERCENTOF ve ISOMITTED'in Türkçe adları bulunamadı, İngilizce adla yazılır **[doğrulanacak]**; ÖZETÖLÇÜT tek değer sütunu alır; GRUPLAÖLÇÜT toplam satırını "Toplam" diye yazar **[doğrulanacak: Türkçe Excel'deki etiket]**; LAMBDA yardımcılarının (MAP, BYROW, SCAN…) Türkçe Excel'de İngilizce kaldığı ikinci el kaynaktan **[doğrulanacak]**; Birleştir (Consolidate) iletişim kutusu yok, eşdeğeri ETOPLA ile öğretiliyor; Hızlı Doldurma desen tahmini yok, ders formül karşılığını öğretiyor.
-- **Yok:** `M2#` taşma başvurusu, mühendislik işlevleri, Power Pivot/DAX (veri modeli dersi kavramsal; DAX Kesit Power BI'da), Gözcü Penceresi, sayfa koruması (anlatılıyor, uygulanmıyor), kitaplar arası başvuru.
+- **Yok:** mühendislik işlevleri, Power Pivot/DAX (veri modeli dersi kavramsal; DAX Kesit Power BI'da), sayfa koruması (anlatılıyor, uygulanmıyor), kitaplar arası başvuru.
 - **Çözücü:** yalnız doğrusal model (Simplex LP + dal-sınır). Doğrusal olmayan modeli reddeder (Excel'de GRG); evrimsel yöntem yok. Dal-sınırda değişken sayısı küçük tutulmalı (ders modelleri ≤ 7 değişken).
 - **Veri Tablosu ve Senaryo:** sonuç panelde gösterilir; kitaba `{=TABLO()}` dizi formülü yazılmaz.
 - **VBA alt kümesi:** Chart/PivotTable nesneleri, UserForm, olay yordamları (Worksheet_Change), sınıf modülleri, dosya/Outlook/`CreateObject` yok; açık hata verir. `MsgBox(…, vbYesNo)` tarayıcıda hep "Evet" döner.
-- **Grafik:** Excel'in görünümü birebir değil; tür, veri ve kararlar aynı. Dilimleyici tarih alanında yok (Excel'de Zaman Çizelgesi). Pivot grafikte sıralama alfabetik; "büyükten küçüğe" için sıralama seçeneği sonraki adım.
+- **Grafik:** Excel'in görünümü birebir değil; tür, veri ve kararlar aynı. Pivot grafikte sıralama alfabetik; "büyükten küçüğe" için sıralama seçeneği sonraki adım.
 - **Bilinçli fark:** `#DÖNGÜ` ve `#FORMÜL` gösterimi; dizi sabitinde her zaman `,`/`;`.
-- **Sonraki:** ders okuma sayfaları (`ders/`, arama motorları için, kardeşlerdeki gibi), Kesit merkez sayfasına (`ysfdurak.github.io`) ve kardeşlerin ekosistem menüsüne bağlantı, gerçek Türkçe Excel'de örneklem testi, `M2#` desteği, sanal ızgara.
+- **Sonraki:** ders okuma sayfaları (`ders/`, arama motorları için, kardeşlerdeki gibi), Kesit merkez sayfasına (`ysfdurak.github.io`) ve kardeşlerin ekosistem menüsüne bağlantı, gerçek Türkçe Excel'de örneklem testi, sanal ızgara, indirilebilir veri kitabına model sayfalarının eklenmesi (Kredi, Bölgeler, Talep, Kayıt… 17 sayfa eksik).
 
 ---
 
