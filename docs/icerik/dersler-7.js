@@ -82,13 +82,13 @@ export const DERSLER_7 = [
     anlatim: [
       '**Dosya > Seçenekler > Eklentiler > Excel Eklentileri > Çözümleyici Araç Takımı**. Sonra Veri > Veri Çözümleme: Tanımlayıcı İstatistik, Histogram, Regresyon, Korelasyon, t-Testi, Hareketli Ortalama.',
       'Tanımlayıcı İstatistik tablosu: ortalama, standart hata, ortanca, mod, standart sapma, varyans, **basıklık**, **çarpıklık**, aralık, en küçük, en büyük, toplam, sayı. Çıktı **değerdir**: veri değişince güncellenmez, araç yeniden çalıştırılır.',
-      'Formül karşılıkları canlıdır: `=ÇARPIKLIK(I2:I241)` (0\'dan büyükse uzun sağ kuyruk: birkaç çok pahalı ürün ortalamayı yukarı çeker), `=BASIKLIK(I2:I241)` (0\'dan büyükse uçlar kalın), `=TRIMMEAN(I2:I241;0,1)` uçlardan toplam %10\'u atıp ortalar.',
+      'Formül karşılıkları canlıdır: `=ÇARPIKLIK(I2:I241)` (0\'dan büyükse uzun sağ kuyruk: birkaç çok pahalı ürün ortalamayı yukarı çeker), `=BASIKLIK(I2:I241)` (0\'dan büyükse uçlar kalın), `=KIRPORTALAMA(I2:I241;0,1)` uçlardan toplam %10\'u atıp ortalar.',
       'Çarpık veride ortalama yerine ortanca ya da kırpılmış ortalama raporlanır; "ortalama sipariş tutarı" birkaç dev siparişle şişebilir.',
     ],
     ornek: { sayfa: 'Satışlar', hucre: 'M2', formul: '=ÇARPIKLIK(I2:I241)', hazirlik: { L2: 'Birim fiyat çarpıklığı' }, aciklama: 'Pozitif çarpıklık: çoğu ürün ucuz, birkaç pahalı ürün sağ kuyruğu uzatıyor.' },
     alistirmalar: [
       { id: 'a1', sayfa: 'Satışlar', hedef: 'M3', hazirlik: { L3: 'Birim fiyat basıklığı' }, soru: 'M3\'e birim fiyatların (I2:I241) **basıklığını** yazın.', cozum: '=BASIKLIK(I2:I241)', gerekli: ['KURT'], ipuclari: ['=BASIKLIK(I2:I241)'] },
-      { id: 'a2', sayfa: 'Satışlar', hedef: 'M4', hazirlik: { L4: 'Kırpılmış ortalama (%10)' }, soru: 'M4\'e birim fiyatların, uçlardan **toplam %10** atılarak hesaplanan ortalamasını yazın.', cozum: '=TRIMMEAN(I2:I241;0,1)', gerekli: ['TRIMMEAN'], ipuclari: ['=TRIMMEAN(I2:I241;0,1): her uçtan %5.'] },
+      { id: 'a2', sayfa: 'Satışlar', hedef: 'M4', hazirlik: { L4: 'Kırpılmış ortalama (%10)' }, soru: 'M4\'e birim fiyatların, uçlardan **toplam %10** atılarak hesaplanan ortalamasını yazın.', cozum: '=KIRPORTALAMA(I2:I241;0,1)', gerekli: ['TRIMMEAN'], ipuclari: ['=KIRPORTALAMA(I2:I241;0,1): her uçtan %5.'] },
       { id: 'a3', tur: 'secmeli', soru: 'Çözümleyici Araç Takımı ile aylık raporda Tanımlayıcı İstatistik tablosu ürettiniz. Ertesi ay veri güncellendi. Ne olur?', secenekler: ['Tablo kendiliğinden güncellenir', 'Tablo sabit değerdir; araç yeniden çalıştırılmalı ya da tablo formüllerle kurulmalı', 'Excel uyarı verir', 'Tablo silinir'], dogru: 1, aciklama: 'Araç takımı çıktısı formül değil değerdir. Tekrarlanan raporda ORTALAMA, ORTANCA, STDSAPMA.S, ÇARPIKLIK gibi formüllerle canlı tablo kurulur.' },
     ],
     sikHata: { yanlis: 'Çarpık veride yalnız ortalamayı raporlamak', dogru: 'Ortanca ya da kırpılmış ortalamayı yanına koymak', neden: 'Birkaç uç değer ortalamayı tipik değerden uzaklaştırır; karar yanlış "tipik" sayıya göre verilir.' },

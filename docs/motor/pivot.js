@@ -6,11 +6,11 @@ import { karsilastir, ayristir, degerlendir, coz, hataMi, H, Bas } from './formu
 import { ISLEVLER, pivotKancaKur } from './islevler.js';
 
 export const OZETLER = {
-  toplam: { tr: 'Toplam', excel: 'TOPLA' },
-  say: { tr: 'Say', excel: 'BAĞ_DEĞ_DOLU_SAY' },
-  ortalama: { tr: 'Ortalama', excel: 'ORTALAMA' },
-  en_buyuk: { tr: 'En Büyük', excel: 'MAK' },
-  en_kucuk: { tr: 'En Küçük', excel: 'MİN' },
+  toplam: { tr: 'Toplam', baslik: 'Toplam', excel: 'TOPLA' },
+  say: { tr: 'Say', baslik: 'Say', excel: 'BAĞ_DEĞ_DOLU_SAY' },
+  ortalama: { tr: 'Ortalama', baslik: 'Ortalama', excel: 'ORTALAMA' },
+  en_buyuk: { tr: 'En Büyük', baslik: 'Mak', excel: 'MAK' },
+  en_kucuk: { tr: 'En Küçük', baslik: 'Min', excel: 'MİN' },
 };
 export const GOSTER = { deger: 'Değer', genelYuzde: 'Genel toplamın %', satirYuzde: 'Satır toplamının %', sutunYuzde: 'Sütun toplamının %' };
 
@@ -107,7 +107,8 @@ export function pivot(tablo, yapi) {
     if (a === undefined && b === undefined) return d.derli ? hesaplanmisDeger(d.derli, rows) : ozetle(rows.map(r => r[d.i]), d.ozet);
     return hesap(r => (a === undefined || norm(anahtar(r, si, yapi.satir)) === norm(a)) && (b === undefined || norm(anahtar(r, ci, yapi.sutun)) === norm(b)), d);
   };
-  const ad = d => d.derli ? 'Toplam / ' + d.alan : OZETLER[d.ozet].tr + ' / ' + d.alan;
+  // Başlık Türkçe Excel'deki gibi: "Toplam Adet", "Mak Birim Fiyat" (gerçek Excel'de denendi, 27.11.2026)
+  const ad = d => d.derli ? 'Toplam ' + d.alan : OZETLER[d.ozet].baslik + ' ' + d.alan;
   const basliklar = [yapi.satir ? (g[yapi.satir] ? yapi.satir + ' (' + { yil: 'yıl', ceyrek: 'çeyrek', ay: 'ay' }[g[yapi.satir]] + ')' : yapi.satir) : ''];
   const sutunlar = []; // { b (sütun değeri | undefined), d }
   if (yapi.sutun) { for (const b of sutunAnah) sutunlar.push({ b, d: vi[0] }); sutunlar.push({ b: undefined, d: vi[0], toplam: true }); }

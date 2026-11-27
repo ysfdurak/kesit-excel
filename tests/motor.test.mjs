@@ -97,3 +97,14 @@ test('dizi sabiti: Türkçe bölge yazımı (\\ sütun, virgüllü ondalık) da 
   assert.equal(hesap(k, '=SÜTUNSAY({1,2,3})'), 3, 'Kesit yazımı bozulmadı');
   assert.equal(hesap(k, '=SATIRSAY({"a\\b";"c"})'), 2, 'tırnak içindeki \\ ayırıcı sayılmaz');
 });
+
+test('Türkçe Excel adları (gerçek Excel LTSC TR ile karşılaştırıldı, 27.11.2026)', () => {
+  const k = kitap();
+  assert.ok(Math.abs(hesap(k, '=Pİ()') - Math.PI) < 1e-12, 'Pİ noktalı İ ile');
+  assert.equal(cevir('=PI()', 'tr', ISLEVLER), '=Pİ()');
+  assert.equal(cevir('=RANK(1,A1:A3)', 'tr', ISLEVLER), '=RANK(1;A1:A3)', 'RANK Türkçede de RANK');
+  for (const yok of ['=SIRA(1;A1:A3)', '=SEÇ(1;2;3)', '=MAKEĞER(A1:A3;A1:A3;1)']) assert.equal(hesap(k, yok).kod, '#NAME?', yok + ' Excel\'de #AD?');
+  assert.equal(goster(hesap(k, '=1/0')), '#SAYI/0!');
+  assert.equal(hesap(k, '=ESAYIYSA(#SAYI/0!)'), false);
+  assert.equal(cevir('=TRIMMEAN(A1:A5,0.2)', 'tr', ISLEVLER), '=KIRPORTALAMA(A1:A5;0,2)');
+});

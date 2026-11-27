@@ -23,7 +23,7 @@ const H = [
   ['SIGN', 'mat', 'İŞARET(sayı)', '1, 0 ya da -1.', '=İŞARET(I3-I2)'],
   ['SQRT', 'mat', 'KAREKÖK(sayı)', 'Karekök.', '=KAREKÖK(16)'],
   ['POWER', 'mat', 'KUVVET(sayı; üs)', 'Üs alma; ^ işleciyle aynı.', '=KUVVET(1,1;3)'],
-  ['PI', 'mat', 'PI()', 'π sayısı.', '=PI()'],
+  ['PI', 'mat', 'Pİ()', 'π sayısı. Türkçe Excel\'de adı Pİ (noktalı İ).', '=Pİ()'],
   ['MROUND', 'mat', 'KYUVARLA(sayı; katsayı)', 'En yakın kata yuvarlar (ör. 5\'in katı).', '=KYUVARLA(I2;50)'],
   ['CEILING.MATH', 'mat', 'TAVANAYUVARLA.MATEMATİK(sayı; [anlam]; [mod])', 'Yukarıdaki kata yuvarlar (koli, palet hesabı).', '=TAVANAYUVARLA.MATEMATİK(H2/12)'],
   ['FLOOR.MATH', 'mat', 'TABANAYUVARLA.MATEMATİK(sayı; [anlam]; [mod])', 'Aşağıdaki kata yuvarlar.', '=TABANAYUVARLA.MATEMATİK(I2;100)'],
@@ -32,7 +32,7 @@ const H = [
   ['LARGE', 'ist', 'BÜYÜK(dizi; k)', 'k\'ıncı en büyük değer.', '=BÜYÜK(I2:I241;3)'],
   ['SMALL', 'ist', 'KÜÇÜK(dizi; k)', 'k\'ıncı en küçük değer.', '=KÜÇÜK(I2:I241;1)'],
   ['RANK.EQ', 'ist', 'RANK.EŞİT(sayı; başvuru; [sıra])', 'Listedeki sırası; 0 ya da boş büyükten küçüğe.', '=RANK.EŞİT(I2;$I$2:$I$241)'],
-  ['RANK', 'ist', 'SIRA(sayı; başvuru; [sıra])', 'Eski adı; RANK.EŞİT ile aynı.', '=SIRA(I2;$I$2:$I$241)'],
+  ['RANK', 'ist', 'RANK(sayı; başvuru; [sıra])', 'Eski adı; RANK.EŞİT ile aynı. Türkçe Excel\'de de adı RANK (SIRA değil).', '=RANK(I2;$I$2:$I$241)'],
   ['STDEV.S', 'ist', 'STDSAPMA.S(sayı1; …)', 'Örneklem standart sapması.', '=STDSAPMA.S(I2:I241)'],
   ['VAR.S', 'ist', 'VAR.S(sayı1; …)', 'Örneklem varyansı.', '=VAR.S(I2:I241)'],
   ['PERCENTILE.INC', 'ist', 'YÜZDEBİRLİK.DHL(dizi; k)', 'k yüzdelik değeri (0–1).', '=YÜZDEBİRLİK.DHL(I2:I241;0,9)'],
@@ -196,7 +196,7 @@ const H = [
   ['FORMULATEXT', 'ara', 'FORMÜLMETNİ(başvuru)', 'Hücredeki formülü metin olarak verir; formül yoksa #YOK. Denetim ve eğitim sayfaları için.', '=EĞERHATA(FORMÜLMETNİ(A1);"formül yok")'],
   ['SKEW', 'ist', 'ÇARPIKLIK(sayı1; …)', 'Dağılımın çarpıklığı: 0\'dan büyükse uzun sağ kuyruk (birkaç çok büyük değer).', '=ÇARPIKLIK({1;2;3;10})'],
   ['KURT', 'ist', 'BASIKLIK(sayı1; …)', 'Basıklık: 0\'dan büyükse uçlar normal dağılımdan kalın (uç değer çok).', '=BASIKLIK({1;2;3;4;20})'],
-  ['TRIMMEAN', 'ist', 'TRIMMEAN(dizi; yüzde)', 'Uçlardan toplam yüzde kadar veriyi (her uçtan yarısı) atıp ortalar; uç değerlere dayanıklı ortalama.', '=TRIMMEAN({4;5;6;7;2;3;4;5;1;2;3};0,2)'],
+  ['TRIMMEAN', 'ist', 'KIRPORTALAMA(dizi; yüzde)', 'Uçlardan toplam yüzde kadar veriyi (her uçtan yarısı) atıp ortalar; uç değerlere dayanıklı ortalama.', '=KIRPORTALAMA({4;5;6;7;2;3;4;5;1;2;3};0,2)'],
 ];
 
 export const ISLEV_BILGI = H.map(([en, kat, soz, aciklama, ornek]) => ({ en, tr: EN_TR[en] || en, kategori: kat, kategoriAd: KATEGORILER[kat], sozdizimi: soz, aciklama, ornek }));

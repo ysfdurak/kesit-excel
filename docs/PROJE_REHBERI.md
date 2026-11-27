@@ -85,7 +85,7 @@
 ## 5. Kod turu
 
 ### 5.1 `motor/formul.js` (ayrıştırıcı ve değerlendirici)
-- **`Hata`, `H`, `HATA_TR`**: Excel hatası bir değerdir (atılmaz, yayılır). İç kod İngilizce (`#DIV/0!`), gösterim Türkçe (`#BÖL/0!`).
+- **`Hata`, `H`, `HATA_TR`**: Excel hatası bir değerdir (atılmaz, yayılır). İç kod İngilizce (`#DIV/0!`), gösterim Türkçe (`#SAYI/0!`).
 - **`Dizi`**: 2B değer; `al(r,c)` yayma (broadcasting) kuralını uygular: 1 satırlık dizi her satıra, 1 sütunluk her sütuna uyar. `=H2:H241*I2:I241` bu yüzden çalışır.
 - **`TR_EN`**: Türkçe → İngilizce işlev adları. Tersini `EN_TR` üretir. `islevAdi` `_xlfn.` önekini ve `İ→I` farkını da çözer.
 - **`kaydir(formul, dr, dc)`**: Aşağı doldurmanın kalbi. Göreli başvuruları kaydırır, `$` olanları tutar, tablo dışına düşeni `#BAŞV!` yapar. Belirteç konumlarıyla çalıştığı için dizgi içindeki `"A1"` metnine dokunmaz.
@@ -94,7 +94,7 @@
 > ⚠️ **Şöyle daha iyi olur:** `formul.js` 400 satırı geçti ve `TR_EN` tablosu da içinde. Tabloyu `motor/adlar.js`'e taşımak hem okunurluğu artırır hem de MCP'nin yalnız adlara ihtiyaç duyduğu yerlerde daha küçük bir içe aktarma sağlar.
 
 ### 5.2 `motor/islevler.js` (185 işlev)
-- `tanim(ad, fn, { tembel })`: `tembel` işlevler (EĞER, EĞERHATA, ÇOKEĞER, ELEMAN, LET, SATIR) bağımsız değişkenleri **değerlendirilmemiş** AST olarak alır. Böylece `=EĞER(A1=0;0;1/A1)` hiç `#BÖL/0!` üretmez ve LET ad tanımlayabilir.
+- `tanim(ad, fn, { tembel })`: `tembel` işlevler (EĞER, EĞERHATA, ÇOKEĞER, ELEMAN, LET, SATIR) bağımsız değişkenleri **değerlendirilmemiş** AST olarak alır. Böylece `=EĞER(A1=0;0;1/A1)` hiç `#SAYI/0!` üretmez ve LET ad tanımlayabilir.
 - `yay(fn)`: tek değerli bir işlevi diziye yayar: `=SOLDAN(A2:A5;2)` dört sonuç taşırır (Excel 365 davranışı).
 - **Ölçüt** (`olcut`): `">1000"`, `"<>"`, `""`, `"E*"`, `"~*"`. Sayı ölçütü yalnız sayılarla, metin ölçütü yalnız metinlerle eşleşir (Excel gibi: `"5"` metni sayı 5'e eşit sayılmaz).
 - **Yuvarlama** (`yuvarlaYon`): `2,675` ikili kayan noktada `2,67499…` olduğu için `Math.round(x*100)/100` yanlış sonuç verir. Kaydırma ondalık gösterimle yapılır (`'2.675e2'`), sonra 15 anlamlı basamağa indirilir.
@@ -250,14 +250,35 @@ Ortam: Windows, Excel **Office LTSC** (2021 sınıfı), menüler **İngilizce**,
 | `dd.mm.yyyy` | 01.01.2024 | **00.mm.2024** (Türkçe ayarda d dakika) | ⚠ ders metnine not |
 | Dizi sabiti sütun ayırıcı | `,` | **`\`** (`{1\2\3}`) | ⚠ motor `\` yazımını da kabul ediyor |
 | TRIMRANGE, TEXTBEFORE, REGEX, PERCENTOF, LAMBDA ailesi, GRUPLAÖLÇÜT | var | #NAME? (bu sürümde yok) | sınanamadı |
-| Veri kitabı `kesit-excel-veri.xlsx` (indirilen dosya) | 29 sayfa, 16 Excel Tablosu | Korumalı görünümde açıldı, **onarım uyarısı yok**; 29 sayfa, 16 tablo; tek hata hücresi `Denetim!D11` (#BÖL/0!, dersin bilerek koyduğu hata) | ✓ |
+| Veri kitabı `kesit-excel-veri.xlsx` (indirilen dosya) | 29 sayfa, 16 Excel Tablosu | Korumalı görünümde açıldı, **onarım uyarısı yok**; 29 sayfa, 16 tablo; tek hata hücresi `Denetim!D11` (#DIV/0!, dersin bilerek koyduğu hata) | ✓ |
 | Kitapta Kredi!B6 · `TOPLA(Satışlar[Adet])` · Fiyat!B10 | 106.285,35 · 371 · 47.000 | aynı | ✓ |
 | `KesitMakro.bas` (VBA > File > Import File) | 1254 kod sayfası | içeri alındı; MsgBox'ta "Satışlar sayfasındasınız" Türkçe harfleri doğru | ✓ |
 | 5 örnek makro tam veride | 240 satır, 31 iptal, Elektronik 39 / Giyim 47 / Kitap 118 / Spor 37, L toplamı 210.964,25 | aynı; Formül yazdır'daki FormulaLocal `EĞER` İngilizce menüde #NAME? (yukarıdaki satır) | ✓ |
 
 **Ders:** Kural "her şey Türkçe" değil: **ayırıcılar ve tarih harfleri Windows bölge ayarını, işlev ve renk adları ile özet tablo etiketleri Excel'in menü dilini izler.** Kesit Türkçe menülü Excel'i varsayıyordu; İngilizce menülü ama Türkçe bölgeli Excel (Türkiye'de şirket bilgisayarlarında yaygın) iki tarafı karıştırıyor.
 
-> 🧪 **Hâlâ sınanmayanlar:** Türkçe menülü Excel'de Türkçe işlev adları (ör. TRIMMEAN'ın Türkçe adı) ve Excel 365 işlevleri (GRUPLAÖLÇÜT "Toplam" satırı, NORMİFADE…). Türkçe arayüzlü web Excel bunun için yeterli.
+### 7.y Türkçe menülü Excel'de örneklem (27.11.2026, aynı bilgisayar)
+
+Microsoft'un Office dil paketi (tr-tr, 64 bit) kuruldu, Excel'in görüntüleme dili Türkçe yapıldı, sınamadan sonra yine İngilizceye alındı. Yöntem: bir makro Kesit'in Türkçe–İngilizce ad tablosundaki (`TR_EN`) **191 adın** her birini İngilizce yazımla (`.Formula`) hücreye yazdı ve Excel'in Türkçe karşılığını (`.FormulaLocal`) okuyup Kesit'in adıyla karşılaştırdı. Ardından Türkçe adlar doğrudan (`FormulaLocal`) yazıldı; hata metinleri, renk adları ve özet tablo başlıkları okundu.
+
+| Konu | Kesit (önce) | Türkçe Excel | Sonuç |
+| --- | --- | --- | --- |
+| 191 ad, LTSC'de bulunanlar | 166 ad | 166'sı **birebir aynı** (EĞER, DÜŞEYARA, ÇAPRAZARA, ETARİHLİ, TOPLA.ÇARPIM…) | ✓ |
+| Tabloda olmayan `TRIMMEAN` | TRIMMEAN (İngilizce kalıyordu) | **KIRPORTALAMA** | ⚠ eklendi, Ders 21.5 ve işlev rehberi Türkçe adla |
+| `PI` | PI() | **Pİ()** (noktalı İ); PI() yazınca da çalışır | ⚠ Kesit artık Pİ gösterir |
+| `RANK` | SIRA() | **RANK()**; `=SIRA(...)` → #AD? | ⚠ düzeltildi |
+| Kesit'in fazladan kabul ettiği adlar | SEÇ, MAKEĞER, MİNEĞER, ORTALAMAEĞER, YAZIMDÜZENİ | hepsi #AD? ya da yazılamıyor (doğrusu ELEMAN, ÇOKEĞERMAK, ÇOKEĞERMİN, EĞERORTALAMA, YAZIM.DÜZENİ) | ⚠ kaldırıldı: Kesit de #AD? verir |
+| Sıfıra bölme hatası | #BÖL/0! | **#SAYI/0!** (`#BÖL/0!` formüle yazılamıyor) | ⚠ motor, 6 ders metni ve testler düzeltildi |
+| Diğer hatalar | #YOK, #SAYI!, #BAŞV!, #DEĞER!, #AD?, DOĞRU/YANLIŞ | aynı | ✓ |
+| Renk adları | Kırmızı, Mavi, Yeşil, Macenta… | `[Kırmızı] [Mavi] [Yeşil] [Pembe] [Siyah] [Beyaz] [Camgöbeği] [Sarı] [Renk10]`; magenta = **Pembe** | ⚠ Pembe eklendi, ders notu genişletildi |
+| Özet tablo başlıkları | `Toplam / Adet`, `En Büyük / Birim Fiyat` | **Toplam Adet**, Say Adet, Ortalama Birim Fiyat, **Mak** Birim Fiyat, **Min** Birim Fiyat; Satır Etiketleri, Genel Toplam, (boş) | ⚠ başlıklar Excel gibi yapıldı |
+| Excel 365'e özgü 18 işlev (ÖNCEKİMETİN, GRUPLAÖLÇÜT, SÜTUNA, AL, DÜŞEYYIĞ, NORMİFADE…) ve LAMBDA ailesi | var | bu sürümde yok | sınanamadı |
+
+**Ders:** Ad tablosunu elle yazmak yerine Excel'in kendisine sordurmak (191 ad, 10 saniye) altı hatayı birden buldu; bunların ikisi (`SIRA`, `#BÖL/0!`) ders metninde de vardı ve öğrenciye yanlış ad öğretiyordu. "Kolay anlaşılsın" diye eklenen takma adlar (SEÇ, MAKEĞER) Excel'de çalışmadığı için zararlıydı. Yeni testler: `motor.test.mjs` "Türkçe Excel adları", `model.test.mjs` "pivot başlıkları".
+
+> 🧪 **Hâlâ sınanmayanlar:** Excel 365'e özgü 18 işlevin Türkçe adları ve LAMBDA ailesi. Türkçe arayüzlü web Excel'de (excel.cloud.microsoft) aynı makro çalışmaz ama `=FORMÜLMETNİ` ile tek tek bakılabilir.
+
+> 💡 **Şöyle daha iyi olur:** `npm test` yalnız 3 test dosyasını çalıştırıyordu (model, görsel ve modern testleri CI'da hiç koşmuyordu). Artık `tests/*.test.mjs` hepsini çalıştırıyor: 155 test.
 
 > 🧪 **Burada bir test daha yapalım (sizin bilgisayarda):** Kredi, Üretim ve Vardiya sayfalarını gerçek Excel'e kopyalayıp Hedef Ara ve Çözücü'yü (Simplex LP, "Kısıtlanmamış değişkenleri negatif olmayan yap" açık) çalıştırın. Beklenen: taksit 106.285,35; Üretim 185.500 (tamsayı); Vardiya 23.
 
@@ -353,7 +374,7 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 
 **ÇARPIKLIK, BASIKLIK, TRIMMEAN.** Ortak `momentler()` yardımcısı n, ortalama ve örneklem standart sapmasını verir; formüller Excel'in örneklem düzeltmeli tanımıdır (BASIKLIK'ta `-3(n-1)²/((n-2)(n-3))` terimi). TRIMMEAN her uçtan `taban(n·p/2)` değer atar; Microsoft'un örneği (3,7778) ve LibreOffice ile aynı.
 
-> 💡 **Şöyle daha iyi olur:** TRIMMEAN'ın Türkçe adı Microsoft'un Türkçe işlev listesinde doğrulanamadı; bu yüzden İngilizce adla bırakıldı. Excel'in Türkçe sürümünde adı görülürse `TR_EN`'e eklenmeli. **Burada bir test daha yapalım:** Türkçe Excel'de `=KIRPORTALAMA(…)` yazıp tanınıp tanınmadığını deneyin.
+> ✅ **0.6.4'te çözüldü:** TRIMMEAN'ın Türkçe adı gerçek Türkçe Excel'de **KIRPORTALAMA** çıktı (§7.y); `TR_EN`'e eklendi, ders ve işlev rehberi Türkçe adı kullanıyor.
 
 **Neden çoğu ders seçmeli?** Şifreleme, Belge Denetçisi, yazdırma ve PowerPoint bağlantısı tarayıcıdaki ızgarada taklit edilemez; taklit etmek "yaptım sandım" yanılgısı yaratır. Bunlar karar soruları olarak sorulur (hangi koruma gerçekten korur?), uygulanabilen her şey (seri, köprü, birim biçimi, istatistik, renk kuralını sayma) ise denetlenen alıştırmadır.
 
@@ -402,7 +423,7 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 | Ders 4.3, `=ÇOKET` yaz, Tab | `=ÇOKETOPLA(` | aynı | ✓ |
 | H2'ye tık, Shift+H241 | `H2:H241` eklenir, söz dizimi "toplam_aralığı" vurgulu | aynı | ✓ |
 | Doğru formül, Denetle | "Doğru… gizli denemede" | aynı | ✓ |
-| Ders 1.3, `=I2/N1` aşağı doldur, Denetle | #BÖL/0! açıklaması + ipucu | aynı | ✓ |
+| Ders 1.3, `=I2/N1` aşağı doldur, Denetle | #SAYI/0! açıklaması + ipucu | aynı | ✓ |
 | Pivot Şehir × Adet, ilk hücre | Eşdeğer ÇOKETOPLA | aynı | ✓ |
 | Bayi: 3 adım, Denetle | "Doğru" + M kodu | aynı | ✓ |
 | 390 px, Ders 4.2 | Hedef M2 ilk ekranda görünür | düzeltmeden sonra görünür | ✓ |
@@ -426,7 +447,7 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 |---|---|---|---|
 | 20 yeni ders sayfası, 1350 px | Konsol hatası 0 | aynı | ✓ |
 | 15.3 a1: Liste kuralı `Web;Mobil;Mağaza`, Geçersiz verileri işaretle | `web` ve boşluklu kayıt halkalı, "Doğru" | aynı | ✓ |
-| 15.6: Denetim sayfası, D11'de Etkileyenleri izle + Formülü değerlendir | D3 ve D8 vurgulu; adım adım `#BÖL/0!` | aynı | ✓ |
+| 15.6: Denetim sayfası, D11'de Etkileyenleri izle + Formülü değerlendir | D3 ve D8 vurgulu; adım adım `#SAYI/0!` | aynı | ✓ |
 | 16.4: Hedef Ara, B10=0, B4 değişsin | Başa baş ücret, "Doğru" | aynı | ✓ |
 | 16.6: Çözücü, tamsayı kısıtı olmadan | LP sonucu, "tamsayı kısıtı eksik" | aynı | ✓ |
 | 17.1: hesaplanmış alan, çift tık ayrıntı | Şişkin ciro, ayrıntı tablosu | aynı | ✓ |
@@ -453,7 +474,7 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 | Aynı, Üst satır + Sol sütun | 7 satır, "Doğru" | aynı | ✓ |
 | 20.8 örnek: Oca, sonra Mar | KPI 371 → 183, "Oca 24 – Mar 24", 3 ay seçili | aynı | ✓ |
 | 20.8 a1: başlık, Zaman Çizelgesi, Kanal, KPI, grafik | "Doğru" | aynı | ✓ |
-| 15.6: D11 Gözcüye ekle | D11, =D3/D8, #BÖL/0! | aynı | ✓ |
+| 15.6: D11 Gözcüye ekle | D11, =D3/D8, #SAYI/0! | aynı | ✓ |
 | 18.1 a3: KDVLİ isteğe bağlı oran | "Doğru" | aynı | ✓ |
 | 18.9 a3: e-posta maskeleme | A***@Gmail.com, "Doğru" | aynı | ✓ |
 | 20.8 × 390 px | Yatay taşma 0 | ilk ölçümde 425 px; düzeltildi | ✓ |
@@ -699,7 +720,7 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 
 <details><summary>1. `kaydir('=C2*$D$1', 3, 0)` ne döner?</summary>`=C5*$D$1`: göreli C2 üç satır kayar, mutlak $D$1 kalmaz.</details>
 <details><summary>2. Varyantta neden yalnız satır karıştırmak yetmez?</summary>Sayma ve toplama sırasız işlemlerdir; karıştırma cevabı değiştirmez. Değerler yeniden örneklenmeli, satır sayısı da değişmeli.</details>
-<details><summary>3. `EĞER` neden "tembel" işlev?</summary>Seçilmeyen dal hiç hesaplanmamalı: `=EĞER(A1=0;0;1/A1)` A1=0 iken #BÖL/0! üretmemeli.</details>
+<details><summary>3. `EĞER` neden "tembel" işlev?</summary>Seçilmeyen dal hiç hesaplanmamalı: `=EĞER(A1=0;0;1/A1)` A1=0 iken #SAYI/0! üretmemeli.</details>
 <details><summary>4. `2,675`'i iki basamağa yuvarlarken `Math.round(x*100)/100` neden yanlış?</summary>2,675 ikili kayan noktada 2,67499… saklanır; 267,499… aşağı yuvarlanır. Kaydırma ondalık gösterimle yapılmalı.</details>
 <details><summary>5. Pivot ile "Toplam" yerine "Say" ne zaman seçilir?</summary>Kimlik numaraları (Sipariş No) ve metin alanlarda; toplamları anlamsızdır.</details>
 <details><summary>7. VBA'da `-2^2` kaç, Excel formülünde kaç?</summary>VBA'da -4 (üs önce), Excel formülünde 4 (tekli eksi önce).</details>
@@ -748,7 +769,7 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 1. Ana sayfa (20 sn): "Türkçe Excel, Kesit verisi, cevap gizli bir kopyada da denetleniyor."
 2. Ders 4.3 (90 sn): `=ÇOKET` yaz, öneri; hücreye tıklayarak aralık; söz dizimi vurgusu; Denetle.
 3. Aynı derste sonucu elle yaz (`=31`), Denetle → "gizli denemede tutmadı" (40 sn).
-4. Ders 1.3 (40 sn): `$` unutulmuş formül, aşağı doldur, #BÖL/0! ve ipucu.
+4. Ders 1.3 (40 sn): `$` unutulmuş formül, aşağı doldur, #SAYI/0! ve ipucu.
 5. Özet tablo (40 sn): Şehir × Adet, hücreye tıkla → eşdeğer ÇOKETOPLA.
 6. Power Query (40 sn): Bayi raporu, üç adım, M kodu.
 7. MCP (30 sn): Claude'a "bu formülü İngilizceye çevir" ve "şu formülüm doğru mu".
@@ -770,3 +791,4 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 - **2026-11-27 · 0.6.1** Genel kullanıcı gözüyle üçüncü tur (§8.x): Dersler sayfasında arama, seviye süzgeci ve katlanır modüller (telefonda 16.381 → 4.392 px), Sık hatalar ve mülakatta arama, üst "Ara" düğmesi ders de buluyor, seviye testi başlık hatası, telefonda sol kenar gölgesi, masaüstü kahraman şeridi, ana sayfa seviye kartları.
 - **2026-11-27 · 0.6.2** Veri kitabı derslerle eşitlendi (§5.19): 17 model sayfası, başlıklı sayfalar Excel Tablosu, model formülleri İngilizce yazımla; LibreOffice'te 14 deneme formülü ve 35 model hücresi Kesit'le aynı. Veri sayfasında kitap indirme kartı; model sayfalarında "undefined" kaynak ve boş açıklama düzeltildi. Rehberde "Bilinen sınırlar" güncellendi.
 - **2026-11-27 · 0.6.3** Gerçek Excel'de örneklem (§7.x, İngilizce menülü, Türkçe bölgeli Office LTSC): 27 konu: 20'si aynı, 6'sında ders metni ya da motor düzeltildi, 1'i bu Excel sürümünde sınanamadı. Düzeltilenler: dizi sabitinde `\` sütun ayırıcı ve virgüllü ondalık (motor), `#.##0.` ölçekleme ders metni, `{"Web";"Mobil"}` örneği ve ayırıcı açıklaması, FormulaLocal makro yorumu, biçim dersine "hangi dil?" notu ([Red], gg.aa), Çözücü dersine %1 tamsayı toleransı ve birden çok en iyi çözüm notu.
+- **2026-11-27 · 0.6.4** Türkçe menülü Excel'de örneklem (§7.y, Office dil paketiyle): 191 işlev adı Excel'e sorduruldu. Düzeltilenler: `Pİ`, `RANK` (SIRA değil), `KIRPORTALAMA` (TRIMMEAN), Excel'de olmayan 5 takma ad kaldırıldı, `#SAYI/0!` (önce #BÖL/0!), renk `[Pembe]`, özet tablo başlıkları ("Toplam Adet", "Mak …"). `npm test` artık tüm test dosyalarını çalıştırıyor (155 test).

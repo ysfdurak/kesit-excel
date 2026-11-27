@@ -58,7 +58,7 @@ test('formül denetimi: etkileyen, etkilenen, adım adım', () => {
   assert.ok(etkilenenler(k, 'Denetim', 4, 5).some(x => x.r === 7 && x.c === 5));
   const a = formulAdimlari(k, 'Denetim', 4, 5);
   assert.equal(a[0].metin, '=TOPLA(B4:C4)'); assert.equal(a[a.length - 1].metin, '=499000');
-  const e = formulAdimlari(k, 'Denetim', 11, 4); assert.equal(e[e.length - 1].metin, '=#BÖL/0!');
+  const e = formulAdimlari(k, 'Denetim', 11, 4); assert.equal(e[e.length - 1].metin, '=#SAYI/0!');
 });
 test('Hedef Ara, Veri Tablosu, Senaryo', () => {
   const k = kitapKur({ sayfa: 'Fiyat' }, SAYFALAR); k.hesapla();
@@ -98,4 +98,11 @@ test('işlev rehberindeki her örnek motorda hatasız', async () => {
   const { ISLEV_BILGI } = await import('../docs/icerik/islev-bilgi.js');
   const k = kitapKur({ sayfa: 'Satışlar' }, SAYFALAR); k.hesapla();
   for (const b of ISLEV_BILGI) { if (b.en === 'GETPIVOTDATA') continue; const v = k.formulDegerlendir('Satışlar', 2, 20, b.ornek); assert.ok(!(v && v.kod), b.tr + ' ' + b.ornek + ' → ' + (v && v.kod)); }
+});
+
+test('pivot başlıkları Türkçe Excel gibi (gerçek Excel LTSC TR, 27.11.2026)', () => {
+  const p = pivot(SAYFALAR['Satışlar'], { satir: 'Şehir', degerler: [{ alan: 'Adet', ozet: 'toplam' }, { alan: 'Birim Fiyat', ozet: 'ortalama' }, { alan: 'Birim Fiyat', ozet: 'en_buyuk' }, { alan: 'Birim Fiyat', ozet: 'en_kucuk' }], filtreler: [] });
+  assert.deepEqual(p.basliklar.slice(1), ['Toplam Adet', 'Ortalama Birim Fiyat', 'Mak Birim Fiyat', 'Min Birim Fiyat']);
+  assert.equal(p.satirlar.at(-1)[0], 'Genel Toplam');
+  assert.ok(p.satirlar.some(r => r[0] === '(boş)'), 'boş şehir (boş) etiketiyle');
 });

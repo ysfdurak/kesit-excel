@@ -9,7 +9,7 @@ export const H = {
   NA: new Hata('#N/A'), DEGER: new Hata('#VALUE!'), BOL0: new Hata('#DIV/0!'), AD: new Hata('#NAME?'), BASV: new Hata('#REF!'),
   SAYI: new Hata('#NUM!'), TASMA: new Hata('#SPILL!'), HESAP: new Hata('#CALC!'), BOS: new Hata('#NULL!'), DONGU: new Hata('#CIRC'),
 };
-export const HATA_TR = { '#N/A': '#YOK', '#VALUE!': '#DEĞER!', '#DIV/0!': '#BÖL/0!', '#NAME?': '#AD?', '#REF!': '#BAŞV!', '#NUM!': '#SAYI!', '#SPILL!': '#TAŞMA!', '#CALC!': '#HESAP!', '#NULL!': '#BOŞ!', '#CIRC': '#DÖNGÜ' };
+export const HATA_TR = { '#N/A': '#YOK', '#VALUE!': '#DEĞER!', '#DIV/0!': '#SAYI/0!', '#NAME?': '#AD?', '#REF!': '#BAŞV!', '#NUM!': '#SAYI!', '#SPILL!': '#TAŞMA!', '#CALC!': '#HESAP!', '#NULL!': '#BOŞ!', '#CIRC': '#DÖNGÜ' };
 const TR_HATA = Object.fromEntries(Object.entries(HATA_TR).map(([e, t]) => [t, e]));
 export const hataMi = v => v instanceof Hata;
 
@@ -51,17 +51,17 @@ export function alanCoz(a) {
 export const TR_EN = {
   'TOPLA': 'SUM', 'ORTALAMA': 'AVERAGE', 'MAK': 'MAX', 'MİN': 'MIN', 'BAĞ_DEĞ_SAY': 'COUNT', 'BAĞ_DEĞ_DOLU_SAY': 'COUNTA', 'BOŞLUKSAY': 'COUNTBLANK',
   'YUVARLA': 'ROUND', 'YUKARIYUVARLA': 'ROUNDUP', 'AŞAĞIYUVARLA': 'ROUNDDOWN', 'TAMSAYI': 'INT', 'MOD': 'MOD', 'MUTLAK': 'ABS', 'KAREKÖK': 'SQRT',
-  'KUVVET': 'POWER', 'ÇARPIM': 'PRODUCT', 'ORTANCA': 'MEDIAN', 'ENÇOK_OLAN.TEK': 'MODE.SNGL', 'BÜYÜK': 'LARGE', 'KÜÇÜK': 'SMALL', 'RANK.EŞİT': 'RANK.EQ', 'SIRA': 'RANK',
+  'KUVVET': 'POWER', 'ÇARPIM': 'PRODUCT', 'ORTANCA': 'MEDIAN', 'ENÇOK_OLAN.TEK': 'MODE.SNGL', 'BÜYÜK': 'LARGE', 'KÜÇÜK': 'SMALL', 'RANK.EŞİT': 'RANK.EQ', 'RANK': 'RANK',
   'TOPLA.ÇARPIM': 'SUMPRODUCT', 'ALTTOPLAM': 'SUBTOTAL', 'TAVANAYUVARLA.MATEMATİK': 'CEILING.MATH', 'TABANAYUVARLA.MATEMATİK': 'FLOOR.MATH', 'KYUVARLA': 'MROUND', 'NSAT': 'TRUNC',
-  'İŞARET': 'SIGN', 'STDSAPMA.S': 'STDEV.S', 'VAR.S': 'VAR.S', 'YÜZDEBİRLİK.DHL': 'PERCENTILE.INC', 'DÖRTTEBİRLİK.DHL': 'QUARTILE.INC', 'PI': 'PI',
+  'İŞARET': 'SIGN', 'STDSAPMA.S': 'STDEV.S', 'VAR.S': 'VAR.S', 'YÜZDEBİRLİK.DHL': 'PERCENTILE.INC', 'DÖRTTEBİRLİK.DHL': 'QUARTILE.INC', 'Pİ': 'PI', 'KIRPORTALAMA': 'TRIMMEAN',
   'EĞER': 'IF', 'ÇOKEĞER': 'IFS', 'VE': 'AND', 'YADA': 'OR', 'DEĞİL': 'NOT', 'ÖZELVEYA': 'XOR', 'EĞERHATA': 'IFERROR', 'EĞERYOKSA': 'IFNA', 'İLKEŞLEŞEN': 'SWITCH',
   'DOĞRU': 'TRUE', 'YANLIŞ': 'FALSE', 'EBOŞSA': 'ISBLANK', 'ESAYIYSA': 'ISNUMBER', 'EMETİNSE': 'ISTEXT', 'EHATALIYSA': 'ISERROR', 'EYOKSA': 'ISNA', 'ÇİFTMİ': 'ISEVEN', 'TEKMİ': 'ISODD',
-  'EĞERSAY': 'COUNTIF', 'ÇOKEĞERSAY': 'COUNTIFS', 'ETOPLA': 'SUMIF', 'ÇOKETOPLA': 'SUMIFS', 'EĞERORTALAMA': 'AVERAGEIF', 'ORTALAMAEĞER': 'AVERAGEIF', 'ÇOKEĞERORTALAMA': 'AVERAGEIFS',
-  'MAKEĞER': 'MAXIFS', 'MİNEĞER': 'MINIFS', 'ÇOKEĞERMAK': 'MAXIFS', 'ÇOKEĞERMİN': 'MINIFS',
-  'DÜŞEYARA': 'VLOOKUP', 'YATAYARA': 'HLOOKUP', 'İNDİS': 'INDEX', 'KAÇINCI': 'MATCH', 'ÇAPRAZARA': 'XLOOKUP', 'ÇAPRAZEŞLEŞTİR': 'XMATCH', 'ELEMAN': 'CHOOSE', 'SEÇ': 'CHOOSE',
+  'EĞERSAY': 'COUNTIF', 'ÇOKEĞERSAY': 'COUNTIFS', 'ETOPLA': 'SUMIF', 'ÇOKETOPLA': 'SUMIFS', 'EĞERORTALAMA': 'AVERAGEIF', 'ÇOKEĞERORTALAMA': 'AVERAGEIFS',
+  'ÇOKEĞERMAK': 'MAXIFS', 'ÇOKEĞERMİN': 'MINIFS',
+  'DÜŞEYARA': 'VLOOKUP', 'YATAYARA': 'HLOOKUP', 'İNDİS': 'INDEX', 'KAÇINCI': 'MATCH', 'ÇAPRAZARA': 'XLOOKUP', 'ÇAPRAZEŞLEŞTİR': 'XMATCH', 'ELEMAN': 'CHOOSE',
   'SATIR': 'ROW', 'SÜTUN': 'COLUMN', 'SATIRSAY': 'ROWS', 'SÜTUNSAY': 'COLUMNS',
   'SOLDAN': 'LEFT', 'SAĞDAN': 'RIGHT', 'PARÇAAL': 'MID', 'UZUNLUK': 'LEN', 'BUL': 'FIND', 'MBUL': 'SEARCH', 'KIRP': 'TRIM', 'TEMİZ': 'CLEAN', 'BÜYÜKHARF': 'UPPER',
-  'KÜÇÜKHARF': 'LOWER', 'YAZIM.DÜZENİ': 'PROPER', 'YAZIMDÜZENİ': 'PROPER', 'YERİNEKOY': 'SUBSTITUTE', 'DEĞİŞTİR': 'REPLACE', 'YİNELE': 'REPT', 'BİRLEŞTİR': 'CONCATENATE',
+  'KÜÇÜKHARF': 'LOWER', 'YAZIM.DÜZENİ': 'PROPER', 'YERİNEKOY': 'SUBSTITUTE', 'DEĞİŞTİR': 'REPLACE', 'YİNELE': 'REPT', 'BİRLEŞTİR': 'CONCATENATE',
   'ARALIKBİRLEŞTİR': 'CONCAT', 'METİNBİRLEŞTİR': 'TEXTJOIN', 'METNEÇEVİR': 'TEXT', 'SAYIYAÇEVİR': 'VALUE', 'SAYIDEĞERİ': 'NUMBERVALUE', 'ÖZDEŞ': 'EXACT', 'ÖNCEKİMETİN': 'TEXTBEFORE',
   'SONRAKİMETİN': 'TEXTAFTER', 'METİNBÖL': 'TEXTSPLIT', 'DAMGA': 'CHAR', 'KOD': 'CODE',
   'TARİH': 'DATE', 'YIL': 'YEAR', 'AY': 'MONTH', 'GÜN': 'DAY', 'BUGÜN': 'TODAY', 'ŞİMDİ': 'NOW', 'ZAMAN': 'TIME', 'SAAT': 'HOUR', 'DAKİKA': 'MINUTE', 'SANİYE': 'SECOND',
@@ -158,7 +158,7 @@ export function belirtec(f, yazim = yazimBul(f)) {
       out.push({ t: 'str', v, bas: i, son: j + 1 }); i = j + 1; continue;
     }
     if (ch === '#') {
-      const m = /^#(?:YOK|N\/A|DEĞER!|VALUE!|BÖL\/0!|DIV\/0!|AD\?|NAME\?|BAŞV!|REF!|SAYI!|NUM!|TAŞMA!|SPILL!|HESAP!|CALC!|BOŞ!|NULL!)/i.exec(s.slice(i));
+      const m = /^#(?:YOK|N\/A|DEĞER!|VALUE!|SAYI\/0!|DIV\/0!|AD\?|NAME\?|BAŞV!|REF!|SAYI!|NUM!|TAŞMA!|SPILL!|HESAP!|CALC!|BOŞ!|NULL!)/i.exec(s.slice(i));
       if (!m) throw new Error('Tanınmayan hata değeri');
       const k = trBuyuk(m[0]); out.push({ t: 'err', v: TR_HATA[k] || k.toUpperCase(), bas: i, son: i + m[0].length }); i += m[0].length; continue;
     }

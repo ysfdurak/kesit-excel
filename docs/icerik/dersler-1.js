@@ -52,9 +52,9 @@ export const DERSLER_1 = [
     ornek: { sayfa: 'Satışlar', hucre: 'L2', formul: '=H2*I2*$N$1', aciklama: 'N1\'deki oran (1,2) tüm satırlarda aynı kalır; H2 ve I2 her satırda kayar.', hazirlik: { N1: 1.2, M1: 'KDV çarpanı' } },
     alistirmalar: [
       { id: 'a1', soru: 'N1 hücresinde KDV çarpanı (1,2) var. L sütununa KDV dahil satır tutarını yazın: Adet × Birim Fiyat × N1. L2\'den L241\'e doldurun.', sayfa: 'Satışlar', hedef: 'L2:L241', cozum: '=H2*I2*$N$1', hazirlik: { N1: 1.2, M1: 'KDV çarpanı' }, ipuclari: ['N1 hiçbir satırda değişmemeli.', 'F4 ile N1\'i $N$1 yapın.'] },
-      { id: 'a2', soru: 'N1\'de dolar kuru (32,5) var. L sütununa birim fiyatın dolar karşılığını yazın (I ÷ kur), L2:L241.', sayfa: 'Satışlar', hedef: 'L2:L241', cozum: '=I2/$N$1', hazirlik: { N1: 32.5, M1: 'USD kuru' }, ipuclari: ['Bölen hücre sabit kalmalı.', 'Kur hücresine $ koymazsanız L3 boş bir hücreye (N2) böler: #BÖL/0!.'] },
+      { id: 'a2', soru: 'N1\'de dolar kuru (32,5) var. L sütununa birim fiyatın dolar karşılığını yazın (I ÷ kur), L2:L241.', sayfa: 'Satışlar', hedef: 'L2:L241', cozum: '=I2/$N$1', hazirlik: { N1: 32.5, M1: 'USD kuru' }, ipuclari: ['Bölen hücre sabit kalmalı.', 'Kur hücresine $ koymazsanız L3 boş bir hücreye (N2) böler: #SAYI/0!.'] },
     ],
-    sikHata: { yanlis: '=I2/N1 formülünü aşağı kopyalamak', dogru: '=I2/$N$1', neden: 'Kopyalanınca N1 → N2, N3… olur; boş hücreye bölmek #BÖL/0! verir.' },
+    sikHata: { yanlis: '=I2/N1 formülünü aşağı kopyalamak', dogru: '=I2/$N$1', neden: 'Kopyalanınca N1 → N2, N3… olur; boş hücreye bölmek #SAYI/0! verir.' },
     mulakat: { soru: 'Karma başvuruya (A$1) ne zaman ihtiyaç duyarsınız?', cevap: 'Bir formülü hem sağa hem aşağı kopyalarken: örneğin satırlarda ürünler, sütunlarda aylar olan bir çarpım tablosunda fiyat sütunu ($B2) ve ay başlığı satırı (C$1) sabitlenir. Böylece tek formül tüm tabloyu doldurur.' },
   },
   {
@@ -134,18 +134,18 @@ export const DERSLER_1 = [
   },
   {
     id: 'm2-d4', modul: 'm2', baslik: 'Hata değerleri ve EĞERHATA', sure: 9,
-    ozet: '#BÖL/0!, #YOK, #DEĞER!, #BAŞV!, #AD? Her biri ayrı bir şey söyler. Gizlemeden önce okuyun.',
+    ozet: '#SAYI/0!, #YOK, #DEĞER!, #BAŞV!, #AD? Her biri ayrı bir şey söyler. Gizlemeden önce okuyun.',
     hedefler: ['Beş temel hata değerinin nedenini tanımak', 'EĞERHATA ve EĞERYOKSA ile hatayı karşılamak', 'Hatayı gizlemenin riskini bilmek'],
     anlatim: [
-      '**#BÖL/0!** sıfıra ya da boş hücreye bölmedir. **#YOK** aranan değerin bulunamamasıdır (DÜŞEYARA, KAÇINCI). **#DEĞER!** yanlış türdür: metinle toplama gibi. **#BAŞV!** silinmiş ya da tablonun dışına düşen başvurudur. **#AD?** Excel\'in tanımadığı bir addır: yanlış yazılmış işlev ya da tırnaksız metin.',
+      '**#SAYI/0!** sıfıra ya da boş hücreye bölmedir. **#YOK** aranan değerin bulunamamasıdır (DÜŞEYARA, KAÇINCI). **#DEĞER!** yanlış türdür: metinle toplama gibi. **#BAŞV!** silinmiş ya da tablonun dışına düşen başvurudur. **#AD?** Excel\'in tanımadığı bir addır: yanlış yazılmış işlev ya da tırnaksız metin.',
       'Hata zincirleme yayılır: bir hücredeki #YOK onu kullanan TOPLA\'yı da #YOK yapar. Bu iyi bir şeydir; sorunu saklamaz.',
       '**EĞERHATA(değer; hata_ise)** herhangi bir hatayı yakalayıp yerine başka değer koyar. Sapma oranında hedef 0 ise "—" yazdırmak meşrudur. Ama her şeyi EĞERHATA ile sarmak gerçek yazım hatalarını da gizler: işlev adını yanlış yazsanız bile sonuç "—" olur.',
       'Daha güvenlisi **EĞERYOKSA**: yalnız #YOK\'u karşılar. Aramalarda "bulunamadı" demek için onu kullanın; diğer hatalar görünür kalsın.',
     ],
-    ornek: { sayfa: 'Bütçe', hucre: 'E2', formul: '=EĞERHATA((D2-C2)/C2;"—")', aciklama: 'Hedef 0 olsaydı #BÖL/0! yerine — görünür.' },
+    ornek: { sayfa: 'Bütçe', hucre: 'E2', formul: '=EĞERHATA((D2-C2)/C2;"—")', aciklama: 'Hedef 0 olsaydı #SAYI/0! yerine — görünür.' },
     alistirmalar: [
       { id: 'a1', soru: 'Bütçe sayfasında E sütununa gerçekleşme oranını (Gerçekleşen ÷ Hedef) yazın; hata olursa 0 göstersin. E2:E43.', sayfa: 'Bütçe', hedef: 'E2:E43', cozum: '=EĞERHATA(D2/C2;0)', gerekli: ['IFERROR'], ipuclari: ['=EĞERHATA(hesap; hata_ise).'] },
-      { id: 'a2', soru: 'Satışlar sayfasında N1\'de bir durum adı var ("Kayıp"). M2\'ye bu durumdaki satırların ortalama birim fiyatını EĞERORTALAMA ile yazın. Böyle bir durum yoksa ortalama #BÖL/0! verir; o zaman 0 görünsün.', sayfa: 'Satışlar', hedef: 'M2', cozum: '=EĞERHATA(EĞERORTALAMA(K2:K241;N1;I2:I241);0)', hazirlik: { N1: 'Kayıp', M1: 'Durum' }, gerekli: ['IFERROR', 'AVERAGEIF'], varyantsiz: true, ipuclari: ['EĞERORTALAMA(K2:K241; N1; I2:I241) eşleşen satır yoksa sıfıra böler.', 'Dışına EĞERHATA(…; 0) yazın. N1\'e "İptal" yazıp sonucun değiştiğini görün.'] },
+      { id: 'a2', soru: 'Satışlar sayfasında N1\'de bir durum adı var ("Kayıp"). M2\'ye bu durumdaki satırların ortalama birim fiyatını EĞERORTALAMA ile yazın. Böyle bir durum yoksa ortalama #SAYI/0! verir; o zaman 0 görünsün.', sayfa: 'Satışlar', hedef: 'M2', cozum: '=EĞERHATA(EĞERORTALAMA(K2:K241;N1;I2:I241);0)', hazirlik: { N1: 'Kayıp', M1: 'Durum' }, gerekli: ['IFERROR', 'AVERAGEIF'], varyantsiz: true, ipuclari: ['EĞERORTALAMA(K2:K241; N1; I2:I241) eşleşen satır yoksa sıfıra böler.', 'Dışına EĞERHATA(…; 0) yazın. N1\'e "İptal" yazıp sonucun değiştiğini görün.'] },
     ],
     sikHata: { yanlis: 'Tüm formülleri =EĞERHATA(…;"") ile sarmak', dogru: 'Beklenen hatayı karşılamak (EĞERYOKSA) ya da nedenini düzeltmek', neden: 'Yazım hataları ve bozuk başvurular da boş görünür; rapor sessizce yanlış olur.' },
     mulakat: { soru: 'EĞERHATA ile EĞERYOKSA arasındaki fark nedir, hangisini tercih edersiniz?', cevap: 'EĞERHATA her hatayı, EĞERYOKSA yalnız #YOK\'u yakalar. Aramalarda "bulunamadı" durumu beklenen tek hatadır; onu EĞERYOKSA ile karşılarım. Böylece yanlış sütun numarası (#BAŞV!) ya da tür hatası (#DEĞER!) gizlenmez.' },

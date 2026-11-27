@@ -33,7 +33,7 @@ Canlı: **https://ysfdurak.github.io/kesit-excel/** · Kesit ailesi: [SQL](https
 
 ```bash
 npm ci --prefix mcp      # yalnız MCP testi için
-npm test                 # motor + dersler + MCP
+npm test                 # tüm testler (motor, dersler, MCP, model, görsel, modern)
 python3 tools/lo_karsilastir.py   # LibreOffice ve openpyxl gerekir
 ```
 

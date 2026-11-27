@@ -28,7 +28,7 @@ test('MCP: hesapla, çevir, işlev bilgisi, alıştırma getir/denetle; korumala
     assert.equal(t.tasma.boyut, '7 satır × 1 sütun'); assert.equal(t.tasma.ilk50[0][0], 'Elektronik');
     // kendi verisi + hata açıklaması
     const v = JSON.parse((await call('formul_hesapla', { veri: [['Ad', 'Tutar'], ['a', '1.250,50'], ['b', '980']], formul: '=TOPLA(B2:B3)/0' })).text);
-    assert.equal(v.sonuc.hata, '#BÖL/0!'); assert.match(v.sonuc.aciklama, /sıfıra/);
+    assert.equal(v.sonuc.hata, '#SAYI/0!'); assert.match(v.sonuc.aciklama, /sıfıra/);
     const v2 = JSON.parse((await call('formul_hesapla', { veri: [['Ad', 'Tutar'], ['a', '1.250,50'], ['b', '980']], formul: '=TOPLA(B2:B3)' })).text);
     assert.equal(v2.sonuc, 2230.5);
     // CSV: izinli klasörde okunur, dışarısı reddedilir

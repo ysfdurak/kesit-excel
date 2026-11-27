@@ -7,7 +7,7 @@ import { bicimle } from './tarih.js';
 const RENKLER = {
   'SİYAH': '#000000', 'BLACK': '#000000', 'BEYAZ': '#ffffff', 'WHITE': '#ffffff', 'KIRMIZI': '#c00000', 'RED': '#c00000',
   'YEŞİL': '#008a17', 'GREEN': '#008a17', 'MAVİ': '#1f5fbf', 'BLUE': '#1f5fbf', 'SARI': '#b08800', 'YELLOW': '#b08800',
-  'CAMGÖBEĞİ': '#008b8b', 'CYAN': '#008b8b', 'MACENTA': '#a0207a', 'MAGENTA': '#a0207a',
+  'CAMGÖBEĞİ': '#008b8b', 'CYAN': '#008b8b', 'PEMBE': '#a0207a', 'MACENTA': '#a0207a', 'MAGENTA': '#a0207a',
 };
 const trB = s => String(s).toLocaleUpperCase('tr');
 
