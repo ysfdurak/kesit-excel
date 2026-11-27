@@ -189,3 +189,7 @@ svg.grafik path:hover,svg.grafik rect:hover,svg.grafik circle:hover{filter:brigh
 .secmeli{border:0;padding:0;margin:8px 0;display:flex;flex-direction:column;gap:6px}.secenek{display:flex;gap:8px;align-items:flex-start;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer}.secenek:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
 .veri-onizleme{margin:6px 0 10px}.veri-onizleme summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:600}
 .dilim-bas h4{flex:1;margin:0}
+.atolye-gecis{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.atolye-gecis a.cip{text-decoration:none;color:var(--ink)}.atolye-gecis .cip.secili{background:var(--accent-soft);border-color:var(--accent);font-weight:600}
+.dilim-kutu{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:8px 0;background:var(--surface)}.dilim-kutu summary{cursor:pointer;font-weight:600;min-height:28px}
+@media (max-width:600px){.vba-kod{min-height:0;height:150px;font-size:13px}}
+.kpi small{padding-right:30px}

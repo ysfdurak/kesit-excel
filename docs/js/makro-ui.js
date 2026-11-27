@@ -20,7 +20,7 @@ export class MakroAlani {
   // s: { kitapYap: () => Kitap, sayfa, satirSayisi, sutunSayisi, bicimler, kod, girdiler, kaydedici: bool, sonSatir, onDegis(kod) }
   constructor(s) {
     this.s = s; this.el = h('div.makro'); this.kayit = null; this.id = 'mk' + Math.random().toString(36).slice(2, 7);
-    this.kod = h('textarea.vba-kod', { id: this.id + 'kod', spellcheck: false, wrap: 'off', autocapitalize: 'off', autocomplete: 'off', 'aria-describedby': this.id + 'not', rows: 12 });
+    this.kod = h('textarea.vba-kod', { id: this.id + 'kod', spellcheck: false, wrap: 'off', autocapitalize: 'off', autocomplete: 'off', 'aria-describedby': this.id + 'not', rows: 9 });
     this.kod.value = s.kod || 'Sub Merhaba()\n    MsgBox "Merhaba Excel"\nEnd Sub\n';
     let kacis = false;
     this.kod.addEventListener('keydown', e => {
@@ -49,9 +49,10 @@ export class MakroAlani {
     const alt = h('div.btn-row', {},
       h('button.btn.tiny', { type: 'button', on: { click: () => this.basIndir() } }, '.bas indir (Excel\'e aktar)'),
       h('a.btn.tiny', { href: 'indir/kesit-excel-veri.xlsx', download: 'kesit-excel-veri.xlsx' }, 'Veri kitabı (.xlsx)'));
-    yerlestir(this.el, h('label', { for: this.id + 'kod' }, h('b', {}, 'VBA kodu')), this.kod,
+    // Çalıştır düğmesi düzenleyicinin hemen altında: telefonda ilk ekranda görünsün
+    yerlestir(this.el, h('label', { for: this.id + 'kod' }, h('b', {}, 'VBA kodu')), this.kod, ust,
       h('p.small-note.muted', { id: this.id + 'not' }, 'Ctrl+Enter çalıştırır. Tab dört boşluk girinti ekler; düzenleyiciden çıkmak için önce Esc, sonra Tab.'),
-      ust, this.cikti, kaydedici, h('h4', {}, 'Çalışma sayfası: ' + s.sayfa), this.izKap, alt);
+      this.cikti, kaydedici, h('h4', {}, 'Çalışma sayfası: ' + s.sayfa), this.izKap, alt);
     this.altlariYenile();
   }
   kitapYenile() {

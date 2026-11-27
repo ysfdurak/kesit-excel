@@ -21,7 +21,8 @@ function git() {
   const ders = yol === 'ders' ? DERSLER.find(d => d.id === a) : null;
   document.title = (ders ? ders.baslik : r[0]) + ' · Kesit Excel';
   const crumb = document.getElementById('crumb'); temizle(crumb).append('Öğrenme alanı ', h('span', {}, '/ ' + (ders ? ders.baslik : r[0])));
-  for (const el of document.querySelectorAll('[data-page]')) el.classList.toggle('active', el.dataset.page === r[2]);
+  const ATOLYE = new Set(['atolye', 'pivot', 'sorgu', 'gorsel', 'makro']);
+  for (const el of document.querySelectorAll('[data-page]')) el.classList.toggle('active', el.dataset.page === r[2] || (el.closest('.mobile-tabs') && el.dataset.page === 'atolye' && ATOLYE.has(r[2])));
   document.getElementById('sidebar').classList.remove('open'); document.getElementById('menu')?.setAttribute('aria-expanded', 'false');
   if (yol !== 'ders' || !b) window.scrollTo(0, 0); else setTimeout(() => document.getElementById('b-' + b)?.scrollIntoView({ block: 'start' }), 0);
   main.focus({ preventScroll: true });

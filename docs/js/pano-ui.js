@@ -20,6 +20,7 @@ export class PanoAlani {
   tarihMi(a) { const i = this.t.basliklar.indexOf(a); return i >= 0 && /gg|aa|yyyy/.test((this.t.bicim || [])[i] || ''); }
   sayisalMi(a) { const i = this.t.basliklar.indexOf(a); return i >= 0 && this.t.satirlar.some(r => typeof r[i] === 'number') && !this.tarihMi(a); }
   degerleri(a) { const i = this.t.basliklar.indexOf(a); return [...new Set(this.t.satirlar.map(r => r[i]).filter(v => v != null))].sort((x, y) => typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'tr')); }
+  dar() { return (this.el.clientWidth || innerWidth) < 600; }
   degisti() { this.ciz(); if (this.s.onDegis) this.s.onDegis(this.pano); }
   sec(etiket, deger, ops, degis, bos) {
     const i = this.id + Math.random().toString(36).slice(2, 6);
@@ -49,7 +50,12 @@ export class PanoAlani {
     // --- Dilimleyiciler
     const dilimler = p.dilimler.map((d, di) => h('div.dilimleyici', { role: 'group', 'aria-label': d.alan + ' dilimleyicisi' },
       h('div.dilim-bas', {}, h('b', {}, d.alan), h('button.btn.tiny', { type: 'button', on: { click: () => { d.degerler = []; this.degisti(); } } }, 'Tümü'), h('button.btn.tiny', { type: 'button', 'aria-label': d.alan + ' dilimleyicisini kaldır', on: { click: () => { p.dilimler.splice(di, 1); this.degisti(); } } }, '✕')),
-      h('div.dilim-dug', {}, this.degerleri(d.alan).slice(0, 30).map(v => { d.degerler = d.degerler || []; const on = d.degerler.includes(v); return h('button', { type: 'button', sinif: 'dilim' + (on ? ' secili' : ''), 'aria-pressed': String(on), on: { click: () => { d.degerler = on ? d.degerler.filter(x => x !== v) : [...d.degerler, v]; this.degisti(); } } }, String(v)); }))));
+      h('div.dilim-dug', {}, this.degerleri(d.alan).slice(0, 30).map(v => { d.degerler = d.degerler || []; const on = d.degerler.includes(v); return h('button', { type: 'button', sinif: 'dilim' + (on ? ' secili' : ''), 'aria-pressed': String(on), on: { click: e => {
+        // Özet tablo atölyesiyle aynı: tık tek seçer, Ctrl+tık ekler; dokunmatikte her dokunuş açar/kapatır
+        const coklu = e.ctrlKey || e.metaKey || matchMedia('(pointer: coarse)').matches;
+        d.degerler = coklu ? (on ? d.degerler.filter(x => x !== v) : [...d.degerler, v]) : (on && d.degerler.length === 1 ? [] : [v]);
+        this.degisti();
+      } } }, String(v)); }))));
     // --- KPI kutuları
     const kpi = p.kpi.map((k, ki) => {
       const tum = panoKpi(this.t, k, []), suz = panoKpi(this.t, k, filtreler), oran = tum ? suz / tum : null;
@@ -71,8 +77,9 @@ export class PanoAlani {
     const aktif = filtreler.filter(f => f.degerler.length);
     yerlestir(temizle(this.el), duzen,
       h('section.pano', { 'aria-label': p.baslik || 'Pano' }, p.baslik ? h('h3', {}, p.baslik) : null,
-        dilimler.length ? h('div.dilimleyiciler', {}, dilimler) : null,
-        h('p.small-note.muted', { 'aria-live': 'polite' }, aktif.length ? 'Filtre: ' + aktif.map(f => f.alan + ' = ' + f.degerler.join(', ')).join('; ') : 'Filtre yok: bütün kayıtlar.'),
+        // Telefonda dilimleyiciler ilk ekranı kaplıyordu; yönetici önce KPI'yı görmeli. Dar ekranda açılır bölüm, kapalı başlar.
+        dilimler.length ? (this.dar() ? h('details.dilim-kutu', { open: !!this.dilimAcik, on: { toggle: e => { this.dilimAcik = e.target.open; } } }, h('summary', {}, `Dilimleyiciler (${dilimler.length})` + (aktif.length ? ' · ' + aktif.length + ' filtre açık' : '')), h('div.dilimleyiciler', {}, dilimler)) : h('div.dilimleyiciler', {}, dilimler)) : null,
+        h('p.small-note.muted', { 'aria-live': 'polite' }, aktif.length ? 'Filtre: ' + aktif.map(f => f.alan + ' = ' + f.degerler.join(', ')).join('; ') : 'Filtre yok: bütün kayıtlar.' + (dilimler.length && !this.dar() ? ' Tık bir değer seçer, Ctrl+tık ekler.' : '')),
         kpi.length ? h('div.kpi-sira', {}, kpi) : null,
         kartlar.length ? h('div.pano-izgara', { sinif: kartlar.length === 1 ? 'tek' : '' }, kartlar) : h('p.muted', {}, 'Henüz grafik yok. "Panoyu düzenle" bölümünden grafik ekleyin.')));
   }

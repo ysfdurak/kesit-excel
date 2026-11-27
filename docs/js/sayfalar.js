@@ -27,6 +27,8 @@ const alistirmaYonergesi = d => {
   if (t.size === 1 && t.has('secmeli')) return 'Bir seçenek işaretleyip Denetle\'ye basın.';
   return 'Formülü hedef hücreye (yeşil çerçeve) yazın, Yaz\'a basın, sonra Denetle. Alan hedeflerinde ilk hücreye yazmanız yeter: denetçi formülü alanın tamamına kopyalayıp dener.';
 };
+const ATOLYELER = [['atolye', 'Formül'], ['pivot', 'Özet tablo'], ['sorgu', 'Power Query'], ['gorsel', 'Görselleştirme'], ['makro', 'Makro (VBA)']];
+const atolyeGecis = aktif => h('nav.atolye-gecis', { 'aria-label': 'Atölyeler' }, ATOLYELER.map(([k, a]) => k === aktif ? h('span.cip.secili', { 'aria-current': 'page' }, a) : h('a.cip', { href: '#' + k }, a)));
 const ALISTIRMA_SAYISI = DERSLER.reduce((n, d) => n + d.alistirmalar.length, 0);
 const modulBul = id => MODULLER.find(m => m.id === id);
 const modulDersleri = m => DERSLER.filter(d => d.modul === m);
@@ -199,7 +201,7 @@ export function atolyeSayfasi(main, ilkFormul) {
     if (ilkFormul) { const hedef = { r: 2, c: C + 1 }; iz.sec(hedef.r, hedef.c, true); iz.giris.value = ilkFormul; iz.uygula(); ilkFormul = null; }
   };
   ad.addEventListener('change', kur);
-  yerlestir(main, baslikBlok('ATÖLYE', 'Formül atölyesi', 'Serbest çalışma alanı. Bütün sayfalar burada; değişiklikler kaydedilmez, sayfa yenilenince veri sıfırlanır. Başka sayfaya başvurmak için Ürünler!B2 gibi yazın.'),
+  yerlestir(main, atolyeGecis('atolye'), baslikBlok('ATÖLYE', 'Formül atölyesi', 'Serbest çalışma alanı. Bütün sayfalar burada; değişiklikler kaydedilmez, sayfa yenilenince veri sıfırlanır. Başka sayfaya başvurmak için Ürünler!B2 gibi yazın.'),
     h('div.filters', {}, h('label', { for: 'at-sayfa' }, 'Sayfa '), ad, h('button.btn.tiny', { type: 'button', on: { click: kur } }, 'Sıfırla')), alan);
   kur();
 }
@@ -207,14 +209,14 @@ export function pivotSayfasi(main) {
   const ad = h('select', { id: 'pv-sayfa' }, Object.entries(SAYFALAR).filter(([, t]) => t.basliklar && !t.ham).map(([s]) => h('option', { value: s }, s)));
   const alan = h('div'); const kur = () => { const p = new PivotAlani({ tablo: SAYFALAR[ad.value], sayfaAd: ad.value }); yerlestir(temizle(alan), p.el); };
   ad.addEventListener('change', kur);
-  yerlestir(main, baslikBlok('ATÖLYE', 'Özet tablo atölyesi', 'Satır, sütun, değer ve filtre seçin. Her sayının hangi formülle aynı olduğunu tıklayınca görürsünüz.'), h('div.filters', {}, h('label', { for: 'pv-sayfa' }, 'Kaynak '), ad), alan);
+  yerlestir(main, atolyeGecis('pivot'), baslikBlok('ATÖLYE', 'Özet tablo atölyesi', 'Satır, sütun, değer ve filtre seçin. Her sayının hangi formülle aynı olduğunu tıklayınca görürsünüz.'), h('div.filters', {}, h('label', { for: 'pv-sayfa' }, 'Kaynak '), ad), alan);
   kur();
 }
 export function sorguSayfasi(main) {
   const ad = h('select', { id: 'pq-sayfa' }, Object.keys(SAYFALAR).map(s => h('option', { value: s }, s)));
   const alan = h('div'); const kur = () => { const q = new SorguAlani({ kaynakAd: ad.value, kaynak: SAYFALAR[ad.value], kaynaklar: SAYFALAR }); yerlestir(temizle(alan), q.el); };
   ad.addEventListener('change', kur);
-  yerlestir(main, baslikBlok('ATÖLYE', 'Power Query atölyesi', 'Bir kaynak seçin, adım ekleyin. Her adımın sonucunu ve Power Query\'nin yazacağı M kodunu görürsünüz. Bayi ve Müşteri ham sayfaları temizlik için hazırlandı.'),
+  yerlestir(main, atolyeGecis('sorgu'), baslikBlok('ATÖLYE', 'Power Query atölyesi', 'Bir kaynak seçin, adım ekleyin. Her adımın sonucunu ve Power Query\'nin yazacağı M kodunu görürsünüz. Bayi ve Müşteri ham sayfaları temizlik için hazırlandı.'),
     h('div.filters', {}, h('label', { for: 'pq-sayfa' }, 'Kaynak '), ad), alan);
   ad.value = 'Bayi'; kur();
 }
@@ -380,8 +382,9 @@ export function gorselSayfasi(main, sekme = 'grafik') {
     }
   };
   ad.addEventListener('change', kur);
-  const sekmeler = h('div.sekmeler', { role: 'tablist', 'aria-label': 'Görselleştirme araçları' }, GORSEL_SEKME.map(([k, a]) => h('button', { type: 'button', role: 'tab', id: 'gr-tab-' + k, 'aria-selected': String(k === sekme), 'aria-controls': 'gr-panel', on: { click: () => { location.hash = '#gorsel/' + k; } } }, a)));
-  yerlestir(main, baslikBlok('ATÖLYE', 'Görselleştirme atölyesi', 'Grafik kurun, özet tablodan grafik çıkarın, koşullu biçimle tabloyu okunur yapın, dilimleyicili pano hazırlayın. Grafikleri SVG ya da PNG olarak indirebilirsiniz.'),
+  const sekmeler = h('div.sekmeler', { role: 'tablist', 'aria-label': 'Görselleştirme araçları' }, GORSEL_SEKME.map(([k, a], i) => h('button', { type: 'button', role: 'tab', id: 'gr-tab-' + k, tabindex: k === sekme ? '0' : '-1', 'aria-selected': String(k === sekme), 'aria-controls': 'gr-panel',
+    on: { click: () => { location.hash = '#gorsel/' + k; }, keydown: e => { const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (!d) return; e.preventDefault(); const y = GORSEL_SEKME[(i + d + GORSEL_SEKME.length) % GORSEL_SEKME.length][0]; location.hash = '#gorsel/' + y; setTimeout(() => document.getElementById('gr-tab-' + y)?.focus(), 50); } } }, a)));
+  yerlestir(main, atolyeGecis('gorsel'), baslikBlok('ATÖLYE', 'Görselleştirme atölyesi', 'Grafik kurun, özet tablodan grafik çıkarın, koşullu biçimle tabloyu okunur yapın, dilimleyicili pano hazırlayın. Grafikleri SVG ya da PNG olarak indirebilirsiniz.'),
     sekmeler, h('div.filters', {}, h('label', { for: 'gr-sayfa' }, 'Kaynak '), ad), alan);
   kur();
 }
@@ -402,7 +405,7 @@ export function makroSayfasi(main) {
   const kur = (kod) => { const s = ad.value, { R, C } = boyut(s); const m = new MakroAlani({ kitapYap: () => kitapKur({}, s), sayfa: s, satirSayisi: R, sutunSayisi: C + 5, bicimler: bicimler(s), kod: kod ?? ORNEK_MAKROLAR[ornek.value], kaydedici: true }); yerlestir(temizle(alan), m.el); };
   ad.addEventListener('change', () => kur(alan.querySelector('textarea')?.value));
   ornek.addEventListener('change', () => kur());
-  yerlestir(main, baslikBlok('ATÖLYE', 'Makro atölyesi (VBA)', 'VBA kodunu yazın ve tarayıcıda çalıştırın. Kesit, Excel VBA\'nın sık kullanılan bölümünü taklit eder; aynı kodu .bas dosyası olarak indirip gerçek Excel\'de deneyebilirsiniz.'),
+  yerlestir(main, atolyeGecis('makro'), baslikBlok('ATÖLYE', 'Makro atölyesi (VBA)', 'VBA kodunu yazın ve tarayıcıda çalıştırın. Kesit, Excel VBA\'nın sık kullanılan bölümünü taklit eder; aynı kodu .bas dosyası olarak indirip gerçek Excel\'de deneyebilirsiniz.'),
     h('div.filters', {}, h('label', { for: 'mk-ornek' }, 'Örnek makro '), ornek, h('label', { for: 'mk-sayfa' }, ' Sayfa '), ad), alan,
     h('details.callout', {}, h('summary', {}, 'Gerçek Excel\'de denemek için'), h('ol', {},
       h('li', {}, 'Veri kitabını (.xlsx) indirip açın, Dosya > Farklı Kaydet ile "Excel Makro İçerebilen Çalışma Kitabı (.xlsm)" olarak kaydedin.'),

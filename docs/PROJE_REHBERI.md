@@ -251,6 +251,21 @@ kod ─► belirteçler ─► ayrıştırıcı (Sub/Function → deyim ağacı)
 
 **Ders:** Hedef hücrenin görünmemesi gibi sorunları birim testleri yakalamaz; telefonda görevle gezmek gerekir.
 
+**0.2.0 turu (görselleştirme ve makro eklendikten sonra):** 21 sayfa × 390/1350 px ölçüldü; konsol hatası ve yatay taşma 0.
+
+| Rol | Bulgu (ölçüm) | Karar |
+|---|---|---|
+| Yönetici (390 px, Pano) | İlk ekranı iki dilimleyicinin 15 düğmesi kaplıyor, KPI kutuları ekranın altında | Dar ekranda dilimleyiciler açılır bölümde ("Dilimleyiciler (2) · 1 filtre açık"), KPI'lar ilk ekranda |
+| Günlük kullanıcı (390 px, Makro) | "Çalıştır" ilk ekranda yok: düzenleyici 250 px, düğme altında | Düğme satırı düzenleyicinin hemen altına, telefonda düzenleyici 150 px |
+| İlk kez gelen (390 px) | Alt sekmedeki "Atölye" yalnız Formül atölyesine gidiyor; diğer dört atölyeye yalnız ☰ menüden ulaşılıyor ve sekme vurgusu kayboluyor | Her atölyenin başında beş atölye arasında geçiş satırı; bütün atölyelerde "Atölye" sekmesi vurgulu |
+| Tasarımcı | Kenar menüsünde "Uygula ve hazırlan" grubu 9 kalem: atölyeler ile başvuru sayfaları karışık | İki grup: Atölyeler (5) ve Başvuru ve hazırlık (4); adresler aynı |
+| Alan uzmanı (Excel eğitmeni) | Pano dilimleyicisi her tıkta ekliyor, özet tablodaki dilimleyici ise Excel gibi tek seçiyor: aynı uygulamada iki davranış | İkisi de Excel gibi: tık tek seçer, Ctrl+tık ekler, dokunmatikte her dokunuş açar/kapatır |
+| Erişilebilirlik | Görselleştirme sekmeleri `role="tab"` ama ok tuşlarıyla geçilmiyor | Sol/sağ ok ile sekme değişir, odak yeni sekmeye geçer |
+| Tasarımcı | KPI başlığı "Kayıt sayısı · Sipariş No" kaldır düğmesinin altına giriyor | Başlığa sağ boşluk |
+| Herkes | Kenar menüsü altında sürüm "0.1" yazıyordu | 0.2 |
+
+> 💡 **Şöyle daha iyi olur:** İşlev rehberi telefonda 27.800 px (131 işlev alt alta) ve Mülakat sayfası 11.900 px, içinde hiç kontrol yok. Bir içindekiler listesi ya da kategori sekmeleri ikisini de kısaltır. Bu tur yalnız yeni ekranlara baktı; bu iki sayfa ayrı bir iş olarak bekliyor.
+
 > 💡 **Şöyle daha iyi olur:** Alıştırma ızgarası 240 satırın hepsini çiziyor (yaklaşık 3.400 hücre). Telefonda akıcı, ama 8 alıştırmalı bir derste 25.000 hücreye çıkar. Görünür satırları çizen sanal bir ızgara ya da "ilk 50 satır + daha fazla göster" daha hafif olur.
 
 ---
@@ -264,6 +279,26 @@ kod ─► belirteçler ─► ayrıştırıcı (Sub/Function → deyim ağacı)
 - **Sonraki:** ders okuma sayfaları (`ders/`, arama motorları için, kardeşlerdeki gibi), Kesit merkez sayfasına (`ysfdurak.github.io`) ve kardeşlerin ekosistem menüsüne bağlantı, gerçek Türkçe Excel'de örneklem testi, `M2#` desteği, sanal ızgara.
 
 ---
+
+### Muadil müfredatlarla karşılaştırma (Kasım 2026)
+
+Kaynaklar: Microsoft MO-211 (Excel Expert) beceri listesi, Macquarie/Coursera "Excel Skills for Business: Advanced", Leila Gharani "Visually Effective Excel Dashboards", Maven Analytics "Power Query, Power Pivot & DAX", IIENSTITU ve Yenibiriş ileri Excel programları. Kesit'te **olmayan** ve birden çok kaynakta geçen konular:
+
+| Öncelik | Konu | Hangi kaynakta | Motor/arayüz işi |
+|---|---|---|---|
+| Yüksek | Veri doğrulama (açılır liste, bağımlı liste) | MO-211, Gharani, IIENSTITU, DataCamp | Izgarada liste ve kural denetimi |
+| Yüksek | Özel sayı biçimleri | MO-211 | METNEÇEVİR biçimleyicisi yeniden kullanılır |
+| Yüksek | Excel Tablosu (Ctrl+T), yapılandırılmış başvuru, adlandırılmış aralık | Macquarie, Gharani, DataCamp | Formül motorunda ad ve `Tablo[Sütun]` çözümleme |
+| Yüksek | Durum çözümlemesi: Hedef Ara, Senaryo Yöneticisi, Veri Tablosu, Çözücü | MO-211, IIENSTITU | Sayısal çözücü; Çözücü için küçük doğrusal programlama |
+| Yüksek | Finans işlevleri: DEVRESEL_ÖDEME (PMT), TAKSİT_SAYISI (NPER), NBD, İÇ_VERİM_ORANI, kredi ödeme planı, amortisman | MO-211, Macquarie | İşlev eklemek + LibreOffice vakaları |
+| Orta | Formül denetimi: etkileyenleri/etkilenenleri izle, Gözcü Penceresi, Formülü Değerlendir | MO-211 | Ayrıştırıcıdan bağımlılık grafiği (hazır) |
+| Orta | Pivot: hesaplanmış alan, ayrıntıya inme, ÖZETVERİAL | MO-211, Gharani | Pivot motoru + işlev |
+| Orta | Pano teknikleri: form denetimleri (açılan kutu, onay kutusu, kaydırma çubuğu), dinamik grafik aralığı, dinamik başlık, ilk/son N, hedef–gerçek sapma grafiği | Gharani, Coursera dashboard | Izgarada denetim simülasyonu, KAYDIR/DOLAYLI |
+| Orta | Koruma (sayfa, aralık, kitap yapısı), hesaplama seçenekleri, kitaplar arası başvuru, makroyu kitaplar arası kopyalama | MO-211 | Çoğu kavramsal; çoktan seçmeli + kısa uygulama |
+| Orta | Veri modeli ve Power Pivot: ilişki, ölçü, basit DAX | Maven, Macquarie, Yenibiriş | Kesit Power BI'a köprü ders; tam DAX orada |
+| Düşük | Hızlı Doldurma, seri doldurma, S_SAYI_ÜRET (RANDARRAY), Birleştir (Consolidate), gruplama/anahat, güneş patlaması grafiği, LAMBDA, gelişmiş filtre | MO-211, çeşitli | Tek tek küçük |
+
+> 💡 **Şöyle daha iyi olur:** Bu tablo öneridir, karar değil. Kullanıcı seçince modül olarak eklenecek; her biri önce motoru, sonra dersi, sonra gizli kopya kuralını ("bu türde hile ne olur?") gerektirir.
 
 ## 10. Mülakat soruları
 
@@ -349,3 +384,4 @@ C: Excel formülü her hücre için göreli başvuru kurallarıyla kaydırır. B
 
 - **2026-11-27 · 0.1.0** İlk sürüm. Motor (131 işlev, LibreOffice 177/177), 48 ders, 99 alıştırma, pivot ve Power Query atölyeleri, MCP (5 araç). Güvenlik taraması temiz, ölçüm yok (`soz`). Kullanıcı gözüyle inceleme: hedef hücreye kaydırma, mobil ders listesi, formül çubuğu, klavye erişimi, kenar çizgileri, arife metni, iki alıştırma. Bulunan ve düzeltilen hatalar: üs birleşmesi (sağdan → soldan), `0,9` yazım tespiti, `ifade` gölgelenmesi, `append` dizileri, `[hidden]` ezilmesi, varyantın sayma sorularındaki açığı, boş şehir.
 - **2026-11-27 · 0.2.0** Görselleştirme ve makro: Modül 13 (7 ders: grafik seçimi, 15 tür, pivot grafik ve dilimleyici, koşullu biçim, veri çubuğu/renk ölçeği/simge/mini grafik, kötü grafiği düzeltme, pano vakası) ve Modül 14 (6 ders: kaydedici, Range ve son satır, If/Select Case, biçim, Function ve WorksheetFunction, Office Scripts ve güvenlik). Yeni motorlar `grafik.js`, `kosullu.js`, `vba.js`; atölyeler Görselleştirme (4 sekme) ve Makro; MCP `grafik_ciz`, `makro_calistir`. Makro varyantı uzayan kopya. Veri kitabı `docs/indir/kesit-excel-veri.xlsx`. 61 ders, 124 alıştırma, 79 test, LibreOffice 177/177, tarama temiz.
+- **2026-11-27 · 0.2.0 (inceleme)** Muadil müfredatlarla karşılaştırma (§9) ve kullanıcı gözüyle ikinci tur (§8): telefonda pano KPI'ları ve makro Çalıştır düğmesi ilk ekranda, atölyeler arası geçiş satırı, menü iki gruba ayrıldı, dilimleyici davranışı tekleştirildi, sekmelerde ok tuşları.
