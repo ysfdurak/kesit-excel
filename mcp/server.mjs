@@ -21,7 +21,7 @@ import { DERSLER, MODULLER } from '../docs/icerik/dersler.js';
 import { SAYFALAR } from '../docs/icerik/sayfalar.js';
 import { ROLLER } from '../docs/icerik/ekler.js';
 
-const SURUM = '0.6.1';
+const SURUM = '0.6.2';
 const ROOTS = (process.argv.slice(2).filter(a => !a.startsWith('--')).length ? process.argv.slice(2).filter(a => !a.startsWith('--')) : [os.homedir()]).map(r => path.resolve(r));
 const inside = real => ROOTS.some(r => real === r || real.startsWith(r.endsWith(path.sep) ? r : r + path.sep));
 const MAKS_CSV = 5 * 1024 * 1024, MAKS_HUCRE = 200000;

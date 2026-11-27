@@ -1,5 +1,10 @@
 # Sürüm notları
 
+## 0.6.2 (Kasım 2026): veri kitabı derslerle eşit
+
+- **Veri kitabı (.xlsx):** 12 sayfadan 28 sayfaya; ders model sayfaları (Kredi, Yatırım, Üretim, Vardiya, Denetim, Bölgeler, Talep, Ocak/Şubat/Mart…) eklendi, başlıklı sayfalar Excel Tablosu (Satışlar[Adet] gerçek Excel'de çalışır). LibreOffice'te sonuçlar Kesit'le aynı.
+- **Veri sayfası:** kitabı indirme kartı; model sayfalarında görünen "undefined" kaynak ve boş açıklama düzeltildi.
+
 ## 0.6.1 (Kasım 2026): bulmayı kolaylaştırma
 
 - **Dersler:** arama kutusu, Temel/Orta/İleri süzgeci, katlanır modüller (ilk bitmemiş modül açık); telefonda sayfa 16.381 px'ten 4.392 px'e indi.

@@ -16,7 +16,7 @@ Ayrıntılı ve eğitim amaçlı belge: [docs/PROJE_REHBERI.md](docs/PROJE_REHBE
 | `docs/js/` | Arayüz: `izgara.js` (formül çubuğu), `pivot-ui.js` (dilimleyici ve pivot grafik), `sorgu-ui.js`, `grafik-ui.js` (grafik alanı, ipucu, SVG/PNG), `kosullu-ui.js`, `pano-ui.js`, `makro-ui.js` (düzenleyici, kaydedici, .bas), `model-ui.js` (Veri Doğrulama, Özel Biçim, Hedef Ara, Veri Tablosu, Senaryo, Çözücü kutuları), `sayfalar.js` (görünümler), `app.js` (yönlendirme), `durum.js` (ilerleme) |
 | `mcp/` | Yerel MCP sunucusu |
 | `tests/` | `node --test` testleri ve `vakalar.json` (LibreOffice karşılaştırma vakaları) |
-| `tools/` | `veri_hazirla.py` (Kesit verisinden sayfalar), `lo_karsilastir.py` + `motor_hesapla.mjs` (LibreOffice karşılaştırması), `kitap_olustur.py` (gerçek Excel için `docs/indir/kesit-excel-veri.xlsx`) |
+| `tools/` | `veri_hazirla.py` (Kesit verisinden sayfalar), `lo_karsilastir.py` + `motor_hesapla.mjs` (LibreOffice karşılaştırması), `kitap_olustur.py` + `modeller_dok.mjs` (gerçek Excel için `docs/indir/kesit-excel-veri.xlsx`) |
 
 ## Sık yapılan işler
 - **Yeni ders:** `docs/icerik/dersler-N.js`'e bir nesne ekle (id `mX-dY`), `npm test`. Test çözümün denetçiden geçtiğini, örneğin hata vermediğini ve sabit cevabın gizli denemede yakalandığını kontrol eder. Yakalanmıyorsa soruyu, cevabı veriye bağlı olacak şekilde değiştir ya da (gerçekten sabit bir sonuçsa) `varyantsiz: true` yaz.
@@ -24,7 +24,7 @@ Ayrıntılı ve eğitim amaçlı belge: [docs/PROJE_REHBERI.md](docs/PROJE_REHBE
 - **Veriyi yenilemek:** `git clone https://github.com/ysfdurak/kesit-python /tmp/kp` ve `python3 tools/veri_hazirla.py /tmp/kp/data`. Seçim sabit tohumla yapılır; satırlar değişirse ders testleri hangi alıştırmanın etkilendiğini söyler.
 - **Önbellek sürümü:** dosya eklenince ya da çıkarılınca `docs/sw.js` içinde `CORE` listesini ve `CACHE` adını güncelle.
 - **Yeni grafik/koşullu biçim/makro alıştırması:** `tur: 'grafik' | 'pivotGrafik' | 'kosullu' | 'pano' | 'makro' | 'secmeli'`. Grafikte `cozum: { kaynak, secenek }` ve `kural` (izinli türler, yığın, sıfırdan başlama…); başlangıç ayarı (`kaynak`, `secenek`) çözüm olmamalı, test bunu yakalar. Makroda `cozum` VBA kodu, `okunan` aralık, gerekirse `stilKontrol`, `ciktiKontrol`; sabit son satırlı bir `yanlis` sürüm ekleyin, test gizli kopyada yakalandığını doğrular.
-- **Veri kitabı:** sayfalar değişince `python3 tools/kitap_olustur.py` (`.xlsx` yeniden üretilir).
+- **Veri kitabı:** sayfalar ya da model sayfaları (`modeller.js`) değişince `python3 tools/kitap_olustur.py` (`.xlsx` yeniden üretilir: 28 sayfa, başlıklı sayfalar Excel Tablosu, model formülleri İngilizce yazımla).
 - **Durum çözümlemesi alıştırması:** `tur: 'hedefAra' | 'veriTablosu' | 'cozucu'` ve `cozum` (aynı biçimde model). Çözücü alıştırmasında çözüm modeli LP gevşetmesiyle aynı sonucu veriyorsa tamsayı kısıtı öğretilemez; test bunu yakalar, katsayıları değiştirin.
 - **Model sayfası (ham) formül alıştırması:** gizli kopya yoktur; sabit sonucu yakalamak için `durumlar: [{}, { B3: 1200000 }]` ile girdileri değiştirin. Test, sabit sonucun bir durumda yakalandığını doğrular.
 - **Gelişmiş Filtre alıştırması:** `tur: 'gelismisFiltre'`, `bolge` (öğrencinin yazabileceği ölçüt alanı, ör. `M1:O4`), `cozum: { liste, olcut, benzersiz, hucreler }`. Test ölçütsüz ve boş satırlı ölçüt alanının geçmediğini doğrular.

@@ -1,5 +1,5 @@
 /* Kesit Excel service worker: önce ağ, ağ yoksa son kopya. */
-const CACHE = 'kesit-excel-v0-6-1';
+const CACHE = 'kesit-excel-v0-6-2';
 const CORE = ['./', 'index.html', 'css/kesit.css', 'vendor/fonts.css', 'manifest.webmanifest', 'favicon.svg', 'sw-kaydet.js',
   'js/app.js', 'js/yardim.js', 'js/durum.js', 'js/izgara.js', 'js/pivot-ui.js', 'js/sorgu-ui.js', 'js/sayfalar.js', 'js/en.js', 'js/grafik-ui.js', 'js/kosullu-ui.js', 'js/makro-ui.js', 'js/pano-ui.js', 'js/model-ui.js',
   'motor/formul.js', 'motor/islevler.js', 'motor/kitap.js', 'motor/tarih.js', 'motor/pivot.js', 'motor/sorgu.js', 'motor/denetci.js', 'motor/grafik.js', 'motor/kosullu.js', 'motor/vba.js', 'motor/bicim.js', 'motor/dogrulama.js', 'motor/senaryo.js', 'motor/veriaraclari.js',

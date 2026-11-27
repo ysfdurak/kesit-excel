@@ -364,11 +364,34 @@ let sifirlaZaman = 0;
 function confirmIki() { if (Date.now() - sifirlaZaman < 4000) return true; sifirlaZaman = Date.now(); bildir('Sıfırlamak için düğmeye 4 saniye içinde bir kez daha basın.'); return false; }
 
 /* ---------------------------------------------------------------- veri ve hakkında */
+// Ders model sayfaları elle kurulmuştur; Kesit ortak verisinden gelmez (icerik/modeller.js)
+const MODEL_ACIKLAMA = {
+  'Kredi': 'Forklift kredisi: tutar, faiz, vade → taksit. Hedef Ara, Veri Tablosu, Senaryo ve ödeme planı (Modül 16).',
+  'Yatırım': 'Forklift satın al mı, kirala mı: nakit akışları, iskonto oranı, amortisman (NBD, İVO; Modül 16).',
+  'Fiyat': 'Depo hizmeti kâr modeli: başabaş ve kâr hedefi (Hedef Ara; Modül 16).',
+  'Üretim': 'Ürün karması: kaynak kısıtları ve birim kâr (Çözücü, doğrusal; Modül 16).',
+  'Vardiya': 'Haftalık forklift operatörü planı: 5 gün çalış, 2 gün izin; en az kişiyle talebi karşıla (Çözücü; Modül 16).',
+  'Denetim': 'Bilerek hatalı bütçe özeti: formül denetimi ve Gözcü Penceresi ile hatanın kaynağını bulun (Modül 15).',
+  'Listeler': 'Bağımlı açılır liste için kategori → ürün listeleri (veri doğrulama; Modül 15).',
+  'Kayıt': 'Sipariş giriş formu; bazı satırlar bilerek kurala uymuyor (veri doğrulama; Modül 15).',
+  'İadeler': 'İade nedenleri ve adetleri, sırasız (Pareto grafiği; Modül 20).',
+  'Ocak': 'Ocak kategori özeti (3B başvuru ve Birleştir; Modül 19).',
+  'Şubat': 'Şubat kategori özeti (3B başvuru ve Birleştir; Modül 19).',
+  'Mart': 'Mart kategori özeti; satır sırası bilerek farklı (Birleştir tuzağı; Modül 19).',
+  'Çeyrek': 'Üç ayın toplanacağı özet sayfası (3B başvuru; Modül 19).',
+  'Görevler': 'Depo taşıma projesi görevleri: başlangıç, süre, sorumlu (Gantt ve özel sıralama; Modül 19–20).',
+  'Bölgeler': 'Bölge depolarının günlük sevki, hedefi ve bantları (madde grafiği, ilerleme halkası; Modül 20).',
+  'Vardiyalar': 'İki vardiyanın kalite ölçüleri (kelebek grafiği; Modül 20).',
+  'Talep': 'Aylık sipariş talebi ve personel (eğim, korelasyon, mevsim endeksiyle tahmin; Modül 18).',
+};
+
 export function veriSayfasi(main) {
   const csv = t => { const q = v => v == null ? '' : /[;"\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v); return [t.basliklar, ...t.satirlar].filter(Boolean).map(r => r.map(q).join(';')).join('\r\n'); };
   const indir = (ad, t) => { const b = new Blob(['﻿' + csv(t)], { type: 'text/csv;charset=utf-8' }); const u = URL.createObjectURL(b); const a = h('a', { href: u, download: ad.toLocaleLowerCase('tr').replace(/\s+/g, '-') + '.csv' }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 1000); };
   yerlestir(main, baslikBlok('VERİ', 'Kesit verileriyle', 'Dersler Kesit ailesinin ortak veri setlerinden alınmış sayfalarla çalışır: Anadolu Market (Kesit SQL), Pusula İK, Lezzet Kurye ve kirli veri tabloları. Kişiler ve şirketler kurgusaldır. Tarihler Excel seri sayısıdır.'),
-    Object.entries(SAYFALAR).map(([ad, t]) => h('section.article.veri-kart', {}, h('h3', {}, ad, h('small.muted', {}, ' · ' + t.kaynak)), h('p', {}, t.aciklama),
+    h('section.article.veri-kart', {}, h('h3', {}, 'Bütün sayfalar tek Excel kitabında'), h('p', {}, `${Object.keys(SAYFALAR).length} sayfa: Kesit verileri ve ders model sayfaları. Başlıklı sayfalar Excel Tablosudur, Satışlar[Adet] gibi başvurular gerçek Excel'de de çalışır. Dersleri ve makroları kendi Excel'inizde denemek için.`),
+      h('a.btn.primary', { href: 'indir/kesit-excel-veri.xlsx', download: 'kesit-excel-veri.xlsx' }, 'Veri kitabını indir (.xlsx)')),
+    Object.entries(SAYFALAR).map(([ad, t]) => h('section.article.veri-kart', {}, h('h3', {}, ad, h('small.muted', {}, ' · ' + (t.kaynak || 'Ders modeli'))), h('p', {}, t.aciklama || MODEL_ACIKLAMA[ad] || ''),
       h('p.small-note', {}, `${t.satirlar.length} satır${t.basliklar ? ' · Sütunlar: ' + t.basliklar.join(', ') : ' · başlık satırı yok (ham)'}`),
       h('button.btn.tiny', { type: 'button', on: { click: () => indir(ad, t) } }, 'CSV indir (; ayırıcılı, Türkçe Excel için)'))));
 }

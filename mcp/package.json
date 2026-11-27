@@ -1,6 +1,6 @@
 {
   "name": "kesit-excel-mcp",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
   "description": "Kesit Excel formül motoru ve alıştırmaları için yerel stdio MCP sunucusu",
   "type": "module",

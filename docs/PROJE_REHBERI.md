@@ -319,6 +319,19 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 
 **Neden çoğu ders seçmeli?** Şifreleme, Belge Denetçisi, yazdırma ve PowerPoint bağlantısı tarayıcıdaki ızgarada taklit edilemez; taklit etmek "yaptım sandım" yanılgısı yaratır. Bunlar karar soruları olarak sorulur (hangi koruma gerçekten korur?), uygulanabilen her şey (seri, köprü, birim biçimi, istatistik, renk kuralını sayma) ise denetlenen alıştırmadır.
 
+
+### 5.19 Veri kitabı: gerçek Excel'de aynı sayfalar (0.6.2)
+
+`tools/kitap_olustur.py` önce yalnız Kesit ortak verisini (12 sayfa) yazıyordu; 0.3–0.6'da eklenen 17 model sayfası (Kredi, Bölgeler, Talep…) kitapta yoktu ve başlıklı sayfalar Excel Tablosu değildi. Yani `=TOPLA(Satışlar[Adet])` gibi ders çözümleri gerçek Excel'de #AD? verirdi.
+
+- **Model sayfaları:** `tools/modeller_dok.mjs` `modeller.js`'i okuyup formülleri motorun kendi çevirmeniyle (`cevir(…, 'en')`) İngilizce yazıma çevirir: `.xlsx` formülü her zaman İngilizce saklar, Türkçe Excel açarken Türkçe gösterir.
+- **Tablolar:** başlıklı her sayfa, Kesit'teki adla (`motor/kitap.js → tablo()`: sayfa adı, boşluk yerine `_`) bir Excel Tablosu olur.
+- **Doğrulama:** kitap LibreOffice'te yeniden hesaplatıldı; 14 deneme formülü (Tablo başvurusu, 3B başvuru, model sayfaları, NBD) ve model sayfalarındaki 35 formül hücresinin hepsi Kesit'le aynı.
+
+> 💡 **Ders:** "İndir" düğmesi teknik olarak çalışıyordu; eksik, dosyanın derslerle uyuşmamasıydı. Bunu bir test değil, "bu dosyayla dersi gerçek Excel'de yapabilir miyim?" sorusu buldu. Sayfa eklendiğinde kitabı yeniden üretmek NASIL.md'de iş adımı olarak yazılı.
+
+> 🧪 **Burada bir test daha yapalım (sizin bilgisayarda):** Kitabı Türkçe Excel'de açın; Kredi!B6'da `=DEVRESEL_ÖDEME(B4/12;B5;-B3)` görünmeli ve 106.285 vermeli; boş bir hücreye `=TOPLA(Satışlar[Adet])` yazın: 371.
+
 ---
 
 ## 6. Sunucu ve yayın
@@ -492,7 +505,7 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 - **VBA alt kümesi:** Chart/PivotTable nesneleri, UserForm, olay yordamları (Worksheet_Change), sınıf modülleri, dosya/Outlook/`CreateObject` yok; açık hata verir. `MsgBox(…, vbYesNo)` tarayıcıda hep "Evet" döner.
 - **Grafik:** Excel'in görünümü birebir değil; tür, veri ve kararlar aynı. Pivot grafikte sıralama alfabetik; "büyükten küçüğe" için sıralama seçeneği sonraki adım.
 - **Bilinçli fark:** `#DÖNGÜ` ve `#FORMÜL` gösterimi; dizi sabitinde her zaman `,`/`;`.
-- **Sonraki:** ders okuma sayfaları (`ders/`, arama motorları için, kardeşlerdeki gibi), Kesit merkez sayfasına (`ysfdurak.github.io`) ve kardeşlerin ekosistem menüsüne bağlantı, gerçek Türkçe Excel'de örneklem testi, sanal ızgara, indirilebilir veri kitabına model sayfalarının eklenmesi (Kredi, Bölgeler, Talep, Kayıt… 17 sayfa eksik).
+- **Sonraki:** ders okuma sayfaları (`ders/`, arama motorları için, kardeşlerdeki gibi), Kesit merkez sayfasına (`ysfdurak.github.io`) ve kardeşlerin ekosistem menüsüne bağlantı, gerçek Türkçe Excel'de örneklem testi, sanal ızgara.
 
 ---
 
@@ -717,3 +730,4 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 - **2026-11-27 · 0.5.0** Eksiklerin tamamlanması: Ders 18.8 (mevsim endeksi), 18.9 (düzenli ifadeler), 18.10 (M2#, TRIMRANGE, PERCENTOF), 20.8 (Zaman Çizelgesi); 18.1'e isteğe bağlı parametreli LAMBDA, 19.3'e Birleştir alıştırması; 15.6'ya Gözcü Penceresi. Motor: `#` taşma başvurusu, ISOMITTED, REGEXTEST/NORMİFADEAYIKLA/NORMİFADEDEĞİŞTİR, PERCENTOF, TRIMRANGE (185 işlev), Birleştir. 104 ders, 231 alıştırma, 145 test. Bulunan hatalar: isteğe bağlı parametrenin tref `ozel: 'veri'` alanı yüzünden tanınmaması, Ürün ham sayfasında başlık satırının unutulması (alıştırma 1. satırdan başlıyordu), Zaman Çizelgesi'nin telefonda kabı genişletmesi.
 - **2026-11-27 · 0.6.0** Türkçe kurslarla üçüncü karşılaştırma (§9.x): Modül 21 Ofis pratikleri, güvenlik ve paylaşım (7 ders: gezinme ve Git > Özel, renge göre filtre, KÖPRÜ ve içindekiler, not ve birimli biçim, tanımlayıcı istatistik ve Araç Takımı, şifreleme ve Belge Denetçisi, yazdırma ve PowerPoint). Motor: HYPERLINK, FORMULATEXT, SKEW, KURT, TRIMMEAN (190 işlev). 111 ders, 250 alıştırma, 21 soruluk seviye testi, 152 test, LibreOffice 266/266. Bulunan hata: FORMÜLMETNİ rehber örneğinin boş hücrede #YOK vermesi.
 - **2026-11-27 · 0.6.1** Genel kullanıcı gözüyle üçüncü tur (§8.x): Dersler sayfasında arama, seviye süzgeci ve katlanır modüller (telefonda 16.381 → 4.392 px), Sık hatalar ve mülakatta arama, üst "Ara" düğmesi ders de buluyor, seviye testi başlık hatası, telefonda sol kenar gölgesi, masaüstü kahraman şeridi, ana sayfa seviye kartları.
+- **2026-11-27 · 0.6.2** Veri kitabı derslerle eşitlendi (§5.19): 17 model sayfası, başlıklı sayfalar Excel Tablosu, model formülleri İngilizce yazımla; LibreOffice'te 14 deneme formülü ve 35 model hücresi Kesit'le aynı. Veri sayfasında kitap indirme kartı; model sayfalarında "undefined" kaynak ve boş açıklama düzeltildi. Rehberde "Bilinen sınırlar" güncellendi.

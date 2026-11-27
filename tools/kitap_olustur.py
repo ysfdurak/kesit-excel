@@ -1,16 +1,20 @@
 """Kesit Excel veri setlerinden gerçek Excel'de makro denemek için .xlsx kitabı üretir.
 
 Kullanım: python3 tools/kitap_olustur.py  →  docs/indir/kesit-excel-veri.xlsx
-Kaynak: docs/icerik/veri.js (tools/veri_hazirla.py üretir). Tarihler Excel seri sayısı olarak yazılır, biçim
+Kaynak: docs/icerik/veri.js (tools/veri_hazirla.py üretir) ve docs/icerik/modeller.js (ders model sayfaları;
+formüller tools/modeller_dok.mjs ile İngilizce yazıma çevrilir, Excel dosyası formülü İngilizce saklar).
+Başlıklı her sayfa, Kesit'teki gibi sayfa adıyla bir Excel Tablosu olur (Satışlar[Adet] gibi başvurular çalışsın). Tarihler Excel seri sayısı olarak yazılır, biçim
 Excel'in İngilizce biçim koduyla verilir (Türkçe Excel ekranda gg.aa.yyyy olarak gösterir).
 """
 import json
 import pathlib
 import re
+import subprocess
 
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.table import Table, TableStyleInfo
 
 KOK = pathlib.Path(__file__).resolve().parent.parent
 KAYNAK = KOK / "docs" / "icerik" / "veri.js"
@@ -26,7 +30,14 @@ BICIM = {
     "#.##0,00": "#,##0.00",
     "#.##0": "#,##0",
     "0%": "0%",
+    "aaa yyyy": "mmm yyyy",
+    "%0,0": "0.0%",
 }
+
+
+def modeller():
+    cikti = subprocess.run(["node", str(KOK / "tools" / "modeller_dok.mjs")], capture_output=True, text=True, check=True).stdout
+    return json.loads(cikti)
 
 
 def oku():
@@ -51,7 +62,9 @@ def main():
     bilgi.title = "Oku beni"
     satirlar = [
         ["Kesit Excel · veri kitabı"],
-        ["Bu kitap, Kesit Excel makro atölyesindeki sayfaların aynısıdır. Makroları gerçek Excel'de denemek için:"],
+        ["Bu kitap, Kesit Excel'deki veri ve model sayfalarının aynısıdır: dersleri ve makroları gerçek Excel'de denemek için."],
+        ["Başlıklı sayfalar Excel Tablosudur (Satışlar[Adet] gibi başvurular çalışır). Model sayfaları (Kredi, Bölgeler, Talep…) Modül 15–21 içindir."],
+        ["Makroları denemek için:"],
         ["1. Dosya > Farklı Kaydet > Excel Makro İçerebilen Çalışma Kitabı (.xlsm)."],
         ["2. Alt+F11 > Dosya > Dosya Al ile Kesit'ten indirdiğiniz KesitMakro.bas dosyasını içeri alın."],
         ["3. İlgili sayfaya geçin, Alt+F8 ile makroyu seçip Çalıştır deyin."],
@@ -63,10 +76,10 @@ def main():
     bilgi.column_dimensions["A"].width = 100
 
     baslik_dolgu = PatternFill("solid", fgColor="E2F1E8")
-    for anahtar in adlar:
-        t = tablolar[anahtar]
-        ws = wb.create_sheet(adlar[anahtar][:31])
-        basliklar = t.get("basliklar")
+    kaynaklar = [(adlar[a], tablolar[a]) for a in adlar] + list(modeller().items())
+    for ad, t in kaynaklar:
+        ws = wb.create_sheet(ad[:31])
+        basliklar = None if t.get("ham") else t.get("basliklar")
         bicim = t.get("bicim") or []
         bas = 1
         if basliklar:
@@ -86,11 +99,17 @@ def main():
                     ws.cell(row=i, column=j).number_format = kod
             uz = max([len(str(ws.cell(row=i, column=j).value or "")) for i in range(1, min(ws.max_row, 60) + 1)] + [8])
             ws.column_dimensions[get_column_letter(j)].width = min(40, uz + 3 if not kod else max(uz + 3, 13))
-        if basliklar:
+        if basliklar and t["satirlar"]:
+            # Kesit'teki tablo adı: sayfa adı, boşluk yerine alt çizgi (motor/kitap.js → tablo())
+            tablo = Table(displayName=re.sub(r"\s+", "_", ad), ref=f"A1:{get_column_letter(len(basliklar))}{len(t['satirlar']) + 1}")
+            tablo.tableStyleInfo = TableStyleInfo(name="TableStyleLight9", showRowStripes=True)
+            ws.add_table(tablo)
+            ws.freeze_panes = "A2"
+        elif basliklar:
             ws.freeze_panes = "A2"
     HEDEF.parent.mkdir(parents=True, exist_ok=True)
     wb.save(HEDEF)
-    print(f"{HEDEF.relative_to(KOK)} yazıldı: {len(tablolar)} sayfa")
+    print(f"{HEDEF.relative_to(KOK)} yazıldı: {len(wb.sheetnames) - 1} sayfa")
 
 
 if __name__ == "__main__":
