@@ -108,3 +108,11 @@ test('Türkçe Excel adları (gerçek Excel LTSC TR ile karşılaştırıldı, 2
   assert.equal(hesap(k, '=ESAYIYSA(#SAYI/0!)'), false);
   assert.equal(cevir('=TRIMMEAN(A1:A5,0.2)', 'tr', ISLEVLER), '=KIRPORTALAMA(A1:A5;0,2)');
 });
+
+test('Excel 365 Türkçe adları (Türkçe web Excel, 27.11.2026)', () => {
+  assert.equal(cevir('=REGEXTEST(A1,"a")', 'tr', ISLEVLER), '=NORMİFADESINA(A1;"a")');
+  assert.equal(cevir('=MAKEARRAY(2,2,LAMBDA(r,c,r))', 'tr', ISLEVLER), '=DİZİOLUŞTUR(2;2;LAMBDA(r;c;r))');
+  assert.equal(cevir('=TRIMRANGE(A1:A9)', 'tr', ISLEVLER), '=KIRPARALIĞI(A1:A9)');
+  assert.equal(cevir('=PERCENTOF(1,4)', 'tr', ISLEVLER), '=PERCENTOF(1;4)', 'Türkçede de İngilizce adla');
+  assert.equal(cevir('=WRAPCOLS(A1:A4,2)', 'tr', ISLEVLER), '=SÜTUNSAR(A1:A4;2)', 'SÜTUNKAYDIR değil');
+});

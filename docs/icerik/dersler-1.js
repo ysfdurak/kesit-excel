@@ -269,7 +269,7 @@ export const DERSLER_1 = [
     anlatim: [
       '**=ÇOKETOPLA(toplam_aralığı; aralık1; ölçüt1; aralık2; ölçüt2; …)**. ETOPLA\'nın tersine **toplam aralığı en baştadır**. Elektronik ve Web: =ÇOKETOPLA(H2:H241;F2:F241;"Elektronik";E2:E241;"Web").',
       'Tüm koşullar **VE** ile birleşir: satır hepsini sağlamalıdır. **ÇOKEĞERSAY** aynı mantıkla sayar, toplam aralığı yoktur: =ÇOKEĞERSAY(F2:F241;"Kitap";K2:K241;"Teslim edildi").',
-      'YADA gerekiyorsa (Web ya da Mobil) iki ÇOKETOPLA toplanır ya da ölçüt dizisi kullanılır: =TOPLA(ÇOKETOPLA(H2:H241;E2:E241;{"Web";"Mobil"})). Dizi sabitinde **;** satır ayırır ve her Excel\'de aynıdır. Sütun ayırıcı bölge ayarına bağlıdır: İngilizce ayarda virgül {"Web","Mobil"}, Türkçe ayarda ters bölü {"Web"\\"Mobil"}. Bu yüzden tek boyutlu listelerde ; kullanın; Kesit iki sütun yazımını da kabul eder.',
+      'YADA gerekiyorsa (Web ya da Mobil) iki ÇOKETOPLA toplanır ya da ölçüt dizisi kullanılır: =TOPLA(ÇOKETOPLA(H2:H241;E2:E241;{"Web";"Mobil"})). Dizi sabitinin ayırıcıları Excel\'e göre değişir: masaüstü Excel\'de **;** satır ayırır (sütun: İngilizce ayarda virgül, Türkçe ayarda ters bölü `\\`); Türkçe **web Excel**\'de ise tersine **;** sütun, `\\` satır ayırır. Bu örnekte yön önemli değil (iki toplam yine toplanır); yönün önemli olduğu yerde `=SATIRSAY({1;2;3})` yazıp kendi Excel\'inizde deneyin. Kesit masaüstü yazımını izler.',
       'Aralık boyları farklıysa ÇOKETOPLA #DEĞER! verir. Bu iyi bir şeydir: ETOPLA\'daki sessiz kaymayı engeller.',
     ],
     ornek: { sayfa: 'Satışlar', hucre: 'M2', formul: '=ÇOKETOPLA(H2:H241;F2:F241;"Elektronik";E2:E241;"Web")', aciklama: 'Web kanalından satılan Elektronik adedi.' },
