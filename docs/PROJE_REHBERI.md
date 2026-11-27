@@ -9,11 +9,11 @@
 
 | | |
 |---|---|
-| **Ne** | Tarayıcıda çalışan Türkçe Excel eğitimi: kendi formül motoru (185 işlev, LAMBDA ve düzenli ifadeler dahil), 104 ders, 231 denetlenen alıştırma; özet tablo, Power Query, görselleştirme (grafik, pivot grafik, koşullu biçim, pano), VBA makro, kitap tasarımı (Tablo, ad, veri doğrulama, özel biçim, formül denetimi) ve durum çözümlemesi (finans, Hedef Ara, Veri Tablosu, Senaryo, Çözücü), modern formüller (LAMBDA, GRUPLAÖLÇÜT, tahmin), veri araçları (Gelişmiş Filtre, 3B başvuru) ve pano grafikleri (madde, ibre, Pareto, Gantt); yerel MCP sunucusu (8 araç) |
+| **Ne** | Tarayıcıda çalışan Türkçe Excel eğitimi: kendi formül motoru (202 işlev, LAMBDA, düzenli ifadeler ve veritabanı işlevleri dahil), 152 ders, 492 denetlenen alıştırma, her ders için indirilebilir Excel kitabı; özet tablo, Power Query, görselleştirme (grafik, pivot grafik, koşullu biçim, pano), VBA makro, kitap tasarımı (Tablo, ad, veri doğrulama, özel biçim, formül denetimi) ve durum çözümlemesi (finans, Hedef Ara, Veri Tablosu, Senaryo, Çözücü), modern formüller (LAMBDA, GRUPLAÖLÇÜT, tahmin), veri araçları (Gelişmiş Filtre, 3B başvuru) ve pano grafikleri (madde, ibre, Pareto, Gantt); yerel MCP sunucusu (8 araç) |
 | **Kimin için** | Excel'i işte kullanacak herkes; özellikle veri analisti, BI, operasyon/planlama, finans, BT iş analisti ve ofis rolleri. Kesit ailesinin (SQL, Power BI, Python, İstatistik) beşinci üyesi |
 | **Canlı** | https://ysfdurak.github.io/kesit-excel/ (27.11.2026'dan beri; kök adres `docs/`'a yönlendirir) |
 | **Depo** | `ysfdurak/kesit-excel` |
-| **Durum** | 0.6.6 · depo açık (27.11.2026), CI yeşil; testler 156, LibreOffice 266/266, güvenlik taraması temiz; gerçek Excel'de (LTSC İngilizce/Türkçe menü ve Türkçe web Excel 365) örneklendi (§7.x–7.z). yayında |
+| **Durum** | 0.7.0 · depo açık, CI yeşil; testler 203, LibreOffice 284/284, güvenlik taraması temiz; gerçek Excel'de (LTSC İngilizce/Türkçe menü ve Türkçe web Excel 365) örneklem yapıldı (§7.x–7.z); 0.7.0 içeriği gerçek Excel'de henüz denenmedi (§5.20) |
 | **Sunucu** | Yok (GitHub Pages). VPS gerekmiyor; gerekçe §6 |
 
 **Tek cümle:** "Excel formülünü ezberletmek yerine Kesit verisinde yazdırıyor; cevabı gördüğünüz tabloda ve sayıları değiştirilmiş gizli bir kopyada denetleyip hatanın nedenini söylüyor."
@@ -93,7 +93,7 @@
 
 > ⚠️ **Şöyle daha iyi olur:** `formul.js` 400 satırı geçti ve `TR_EN` tablosu da içinde. Tabloyu `motor/adlar.js`'e taşımak hem okunurluğu artırır hem de MCP'nin yalnız adlara ihtiyaç duyduğu yerlerde daha küçük bir içe aktarma sağlar.
 
-### 5.2 `motor/islevler.js` (185 işlev)
+### 5.2 `motor/islevler.js` (202 işlev)
 - `tanim(ad, fn, { tembel })`: `tembel` işlevler (EĞER, EĞERHATA, ÇOKEĞER, ELEMAN, LET, SATIR) bağımsız değişkenleri **değerlendirilmemiş** AST olarak alır. Böylece `=EĞER(A1=0;0;1/A1)` hiç `#SAYI/0!` üretmez ve LET ad tanımlayabilir.
 - `yay(fn)`: tek değerli bir işlevi diziye yayar: `=SOLDAN(A2:A5;2)` dört sonuç taşırır (Excel 365 davranışı).
 - **Ölçüt** (`olcut`): `">1000"`, `"<>"`, `""`, `"E*"`, `"~*"`. Sayı ölçütü yalnız sayılarla, metin ölçütü yalnız metinlerle eşleşir (Excel gibi: `"5"` metni sayı 5'e eşit sayılmaz).
@@ -408,6 +408,55 @@ Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yaz
 > 💡 **Ders:** "İndir" düğmesi teknik olarak çalışıyordu; eksik, dosyanın derslerle uyuşmamasıydı. Bunu bir test değil, "bu dosyayla dersi gerçek Excel'de yapabilir miyim?" sorusu buldu. Sayfa eklendiğinde kitabı yeniden üretmek NASIL.md'de iş adımı olarak yazılı.
 
 > 🧪 **Burada bir test daha yapalım (sizin bilgisayarda):** Kitabı Türkçe Excel'de açın; Kredi!B6'da `=DEVRESEL_ÖDEME(B4/12;B5;-B3)` görünmeli ve 106.285 vermeli; boş bir hücreye `=TOPLA(Satışlar[Adet])` yazın: 371.
+
+### 5.20 İçerik güçlendirme, veritabanı işlevleri ve Excel'de çalışma kitabı (0.7.0)
+
+Kullanıcı içeriğe baktı ve üç şey söyledi: temel seviye için içerik az, veritabanı işlevleri (VSEÇTOPLA ailesi) yok, alıştırmalar gerçek Excel'e indirilebilmeli. Karar: hem derinlik hem konu hem alıştırma artacak; indirme ders başına ve tek kitap olarak.
+
+**Ne eklendi?**
+
+| | Önce | Sonra |
+|---|---|---|
+| Ders | 111 (temel/orta modülde 4'er) | 152 (temel/orta 1–9. modülde 8'er) |
+| Alıştırma | 250 (temel/orta derste 2'şer) | 492 (temel/orta derste en az 4) |
+| Modül | 21 | 22 (Veritabanı işlevleri, 5 ders) |
+| İşlev | 190 | 202 |
+
+- **Yeni dersler** `icerik/dersler-8.js` (Modül 1–4), `dersler-9.js` (5–9), `dersler-10.js` (22). Konu seçimi tekrarı önlemek için var olan ders başlıkları ve alıştırmaları listelenerek yapıldı (ör. karışık başvuru, ORTANCA, İLKEŞLEŞEN, iki yönlü arama, ISO hafta, DÜŞEYYIĞ, eşleme tablosuyla temizlik).
+- **Var olan derslere alıştırma** `icerik/ek-alistirmalar.js`: kimlikler `e1, e2`; `dersler.js` bunları dersin sonuna ekler. Ayrı dosya tutmanın nedeni: eski ders dosyalarına dokunmadan geri alınabilir ve gözden geçirilebilir olması.
+- **Sıralama:** dersler artık dosya sırasına değil modül ve ders numarasına göre sıralanır (`dersler.js` → `_sira`); yoksa 1.4'ten sonra 2.1 gelir, 1.5 en sona düşerdi.
+
+**Veritabanı işlevleri** (`motor/islevler.js` → `vtSec`): VSEÇTOPLA, VSEÇORT, VSEÇSAY, VSEÇSAYDOLU, VSEÇMAK, VSEÇMİN, VSEÇÇARP, VAL, VSEÇSTDSAPMA(S), VSEÇVAR(S). Türkçe adlar Microsoft'un Türkçe işlev sayfalarından alındı. Ölçüt alanı Gelişmiş Filtre ile aynı kuralla çalışır: aynı satır VE, alt satır YA DA, düz metin "ile başlar". LibreOffice iki noktada Excel'den farklı (düz metni tam eşleşme sayar; VAL birden çok kayıtta #DEĞER! verir), bu iki vaka `vakalar.json`'da "elle" listesinde. Formüllü (başlıksız) ölçüt desteklenmez.
+
+**Yol üstünde bulunan iki motor hatası** (testler geçiyordu, içerik yazarken çıktı):
+
+1. **İki yönlü doldurma denetlenmiyordu.** `denetci.js → yerlestir` aralık hedefinde formülü yalnız ilk sütunda aşağı dolduruyordu. N2:R21 gibi bir tablonun yalnız N sütunu denetleniyordu; `$` yanlış konmuş bir formül geçebilirdi. Çözüm: alıştırmaya `ikiYon: true`; denetçi sağa da doldurur. Taşan formüllerde kullanılmaz (sağdaki hücreler taşmayı engellerdi).
+2. **METNEÇEVİR sayı kodları.** `=METNEÇEVİR(176;"00000")` "176" veriyordu (Excel: 00176); Türkçe `#.##0` binlik kodu 1234567'yi "1234567,000" gösteriyordu; `#.##0.` ölçeklemesi ve `[Kırmızı]` renk kodu da çalışmıyordu. `tarih.js → sayiBicim` düzeltildi, `motor.test.mjs`'e vaka eklendi. (Hücre biçimlendirmede kullanılan `bicim.js` zaten doğruydu; iki ayrı biçimlendirici vardı.)
+
+> 💡 **Ders:** "Çözüm kendisiyle karşılaştırılınca hep geçer." Testler her alıştırmanın çözümünün denetçiden geçtiğini sınıyordu; ama çözüm ile öğrenci aynı hatayı yapınca (ikisinin de yalnız ilk sütunu denetleniyor, ikisinde de "176" çıkıyor) test yeşil kalır. Bu yüzden yeni alıştırmaların çözümleri ayrıca hesaplatılıp ilk değerlerine gözle bakıldı (`node tools/cozum_kontrol.mjs "^m9"` ile). Böylece "veride hiç ihlal olmadığı için hep boş dönen kontrol" gibi işe yaramaz alıştırmalar da yakalandı; o derslerde veriye bilinçli hatalı kayıtlar eklendi (`hazirlik` ile, ders metninde de söyleniyor).
+
+**Excel'de çalışma kitabı** (`js/xlsx-yaz.js`, `js/alistirma-kitabi.js`):
+
+```
+dersKitabi(ders)                 tumKitap(DERSLER)
+  Görevler (soru, hedef, ipucu)    Görevler (492 alıştırma, hazırlık metni)
+  Alıştırma 1..n (hazırlıklı)      bütün veri sayfaları (Excel Tablosu)
+  başvurulan veri sayfaları        Çözümler
+  Çözümler (TR, EN, beklenen)
+        │
+        ▼
+xlsxDosyalari → XML parçaları → zip (CompressionStream 'deflate-raw', yoksa STORE) → Blob → indirme
+```
+
+- **Neden tarayıcıda?** 152 dersin dosyasını önceden üretip depoya koymak ~5 MB eder ve içerik her değişince yeniden üretilmesi unutulur. Tarayıcıda üretilen dosya her zaman dersle aynıdır; modül ilk tıklamada yüklenir (`import()`), açılışı yavaşlatmaz. Bir ders kitabı ~50 KB, tek kitap ~170 KB; üretim 100 ms'nin altında.
+- **.xlsx nedir?** Bir zip: `[Content_Types].xml`, `xl/workbook.xml` (sayfa listesi, tanımlı adlar), `xl/worksheets/sheetN.xml` (hücreler), `xl/styles.xml`, `xl/tables/tableN.xml`. Formül `<f>` içinde **İngilizce** yazımla saklanır, Türkçe Excel açınca Türkçe gösterir. Excel 2010 sonrası işlevler `_xlfn.` önekiyle saklanır (önek yoksa #AD?). `fullCalcOnLoad` ile Excel açılışta hesaplar; dosyada önbellek değer yok.
+- **Kararlar:** hazırlıkta taşan bir formül (BENZERSİZ) varsa dosyaya yazılmaz, Görevler'de "M2'ye önce … yazın" yönergesine çevrilir: dinamik dizi formülü dosyada ayrı bir meta veri ister, düz yazılırsa Excel `@` ekleyip tek değer gösterir. Yapılandırılmış başvurulu alıştırmalar (`Satışlar[Adet]`) kopya sayfada değil tablolu asıl sayfada çözülür. LAMBDA adları dosyaya yazılmaz, Ad Yöneticisi yönergesi verilir. Çalışma sayfalarındaki formüllerde METNEÇEVİR kodu Türkçe kalır (kitap Türkçe Excel içindir); Çözümler'in İngilizce sütununda kod da çevrilir ("gg.aa.yyyy" → "dd.mm.yyyy").
+- **Doğrulama:** 152 kitabın her alıştırma sayfasına İngilizce çözüm yazılıp LibreOffice'te hesaplatıldı: 248'i "beklenen" ile aynı; kalan 19 fark LibreOffice'e özgü (İngilizce ay adı, Türkçe İ, 365 işlevleri yok, örtük kesişim). Bu sırada bir üretici hatası bulundu ve düzeltildi: başlık satırı olan "ham" sayfalar (Hedef, Ürün ham) başlıksız yazılıyor, veri bir satır kayıyordu. Aynı hata 0.6.2'deki **veri kitabında** da vardı (`tools/kitap_olustur.py`), o da düzeltildi.
+- **Test:** `tests/kitap.test.mjs` (her dersin kitabı üretiliyor, sayfa adları geçerli, zip açılıyor, tanımlı ad ve tablo var, taşan hazırlık yönergeye dönüşüyor, İngilizce çözümde Türkçe ad ve `_xlfn` kalmıyor).
+
+> 🧪 **Burada bir test daha yapalım (sizin bilgisayarda):** (1) Herhangi bir dersin kitabını indirip Türkçe Excel'de açın: "Onar" uyarısı çıkmamalı, sarı hücreye çözümü yazınca Çözümler'deki beklenen sonuç gelmeli. (2) Veritabanı işlevlerinin Türkçe adlarını Excel'de bir kez yazın: VSEÇTOPLA, VSEÇSAY, VAL; özellikle **VSEÇSTDSAPMAS** ve **VSEÇVARS** (Microsoft sayfasında başlık olarak görüldü ama Excel'e sorulmadı) **[doğrulanacak]**. (3) Ders 22.4'te ölçüt hücresine ="=Kitap" yazınca tam eşleşme olduğunu görün.
+
+> ⚠️ **Şöyle daha iyi olur:** Modül 10–21 (ileri) dersleri hâlâ 2–3 alıştırmalı olanlar var; araç alıştırmaları (pivot, grafik, Çözücü) daha pahalı yazıldığı için bu turda yalnız kavram soruları eklendi. Bir sonraki turda ileri modüllere de dördüncü alıştırma eklenebilir.
 
 ---
 
@@ -734,6 +783,12 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 
 ---
 
+**S: Bir eğitim uygulamasında alıştırma çözümlerinin doğruluğunu nasıl sınadınız; "çözüm kendisiyle karşılaştırılır" sorununu nasıl aştınız?**
+C: Testler her alıştırmanın çözümünün denetçiden geçtiğini sınıyor, ama çözüm ile öğrenci aynı yerden yanlış hesaplanırsa test yeşil kalır. Üç katman ekledim: (1) her çözüm hesaplatılıp ilk değerleri gözle incelendi, hep boş ya da hep aynı dönen kontrolleri yakaladım; (2) gizli varyant: sayıları değiştirilmiş kopyada da doğru olmalı; (3) indirilen Excel kitabında İngilizce çözümler LibreOffice'te hesaplatılıp motorun "beklenen" değeriyle karşılaştırıldı (248 aynı, farklar LibreOffice'e özgü). Bu süreçte iki gerçek hata çıktı: iki yönlü doldurulan tablolarda yalnız ilk sütun denetleniyordu, METNEÇEVİR "00000" kodunu uygulamıyordu.
+
+**S: .xlsx dosyasını neden kütüphane kullanmadan yazdınız?**
+C: Site dış kaynak yüklemiyor (CSP `default-src 'self'`) ve gereken alt küme küçük: metin, sayı, formül, birkaç stil, tablo, tanımlı ad. .xlsx bir zip içinde XML; zip başlıkları ve CRC32 yaklaşık 60 satır, sıkıştırmayı tarayıcının CompressionStream'i yapıyor. Böylece 100 KB'lık bir kütüphane yerine 150 satırlık, test edilen bir modül oldu. Sınırı: dinamik dizi formülünü dosyaya yazmıyoruz (meta veri ister), onu yönergeye çeviriyoruz.
+
 ## 11. Kendini test et
 
 <details><summary>1. `kaydir('=C2*$D$1', 3, 0)` ne döner?</summary>`=C5*$D$1`: göreli C2 üç satır kayar, mutlak $D$1 kalmaz.</details>
@@ -743,6 +798,8 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 <details><summary>5. Pivot ile "Toplam" yerine "Say" ne zaman seçilir?</summary>Kimlik numaraları (Sipariş No) ve metin alanlarda; toplamları anlamsızdır.</details>
 <details><summary>7. VBA'da `-2^2` kaç, Excel formülünde kaç?</summary>VBA'da -4 (üs önce), Excel formülünde 4 (tekli eksi önce).</details>
 <details><summary>8. `RGB(255, 255, 0)` hangi tamsayı?</summary>65535: kırmızı + yeşil×256 + mavi×65536 = 255 + 65280.</details>
+<details><summary>VSEÇTOPLA'nın ölçüt alanında "K" yazınca neden Kitap ve Kozmetik birlikte gelir?</summary>Veritabanı işlevleri ve Gelişmiş Filtre'de düz metin ölçütü "ile başlar" demektir. Tam eşleşme için hücreye ="=Kitap" yazılır.</details>
+<details><summary>.xlsx'e yazılan formülde XLOOKUP neden `_xlfn.XLOOKUP` diye saklanır?</summary>Excel 2010 sonrası eklenen işlevler dosyada önekle saklanır; önek olmazsa Excel adı tanımaz ve #AD? gösterir. Kullanıcıya gösterilen İngilizce yazımda önek kaldırılır.</details>
 <details><summary>9. Grafik neden telefonda minicik yazıyla çıkıyordu?</summary>Öğe sayfaya eklenmeden önce genişliği 0 okunuyordu; 700 px'e çizilip ölçeklendi. Genişlik ana alandan tahmin edildi.</details>
 <details><summary>10. SVG'de çift `class` özniteliği neden bütün grafiği bozar?</summary>SVG XML olarak ayrıştırılıyor; XML'de çift öznitelik ayrıştırma hatasıdır, tarayıcı grafik yerine hata belgesi döndürür.</details>
 <details><summary>11. `[@Adet]` hangi hücreyi gösterir?</summary>Formülün yazıldığı satırdaki Adet hücresini (aynı satır, tek hücre).</details>
@@ -812,3 +869,4 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 - **2026-11-27 · 0.6.4** Türkçe menülü Excel'de örneklem (§7.y, Office dil paketiyle): 191 işlev adı Excel'e sorduruldu. Düzeltilenler: `Pİ`, `RANK` (SIRA değil), `KIRPORTALAMA` (TRIMMEAN), Excel'de olmayan 5 takma ad kaldırıldı, `#SAYI/0!` (önce #BÖL/0!), renk `[Pembe]`, özet tablo başlıkları ("Toplam Adet", "Mak …"). `npm test` artık tüm test dosyalarını çalıştırıyor (155 test).
 - **2026-11-27 · depo** `ysfdurak/kesit-excel` açıldı, `main` gönderildi, Test iş akışı yeşil. ysfdurak.com PR #88 (yalnız kesit-excel: güvenlik taraması + ölçüm kararı `soz`); PR #84 diğer dört projeye indirildi. Aynı gün kullanıcının GitHub oturumuyla tarayıcıdan: Pages (main, kök) açıldı; `main` dal koruması (PR zorunlu, onay gerekmez, `test` denetimi zorunlu), birleşince dal silme, depo açıklaması ve web sitesi. Canlı örneklem: yönlendirme çalışıyor, CSP var, dış kaynak yok, konsol temiz, veri kitabı 200 (87.774 bayt), son sürüm (ATLANMIŞ) yayında.
 - **2026-11-27 · 0.6.5** Türkçe web Excel'de 365 işlevleri (§7.z): NORMİFADESINA (REGEXTEST), DİZİOLUŞTUR (MAKEARRAY), KIRPARALIĞI (TRIMRANGE) düzeltildi; 27 ad doğrulandı; dizi sabiti ayırıcılarının masaüstü ile web Excel'de tersine olduğu ders metnine yazıldı. Aynı gün: ATLANMIŞ (ISOMITTED) bulundu, GRUPLAÖLÇÜT Toplam satırı doğrulandı, NORMİFADEAYIKLA mod 1 yan yana taşıyacak şekilde düzeltildi (0.6.6; elle vaka ROWS → COLUMNS, LibreOffice 266/266).
+- **2026-11-27 · 0.7.0** İçerik güçlendirme (§5.20): 41 yeni ders (Modül 1–9'a 4'er, yeni Modül 22 Veritabanı işlevleri 5 ders), var olan derslere 78 alıştırma; toplam 152 ders, 492 alıştırma. Motor: VSEÇTOPLA ailesi (12 işlev), METNEÇEVİR sıfır doldurma ve Türkçe binlik düzeltmesi, denetçide iki yönlü doldurma (`ikiYon`). Her dersin altında Excel kitabı ve tek alıştırma kitabı (tarayıcıda üretilir). Veri kitabında başlıklı ham sayfaların kayması düzeltildi. Testler 203, LibreOffice 284/284.
