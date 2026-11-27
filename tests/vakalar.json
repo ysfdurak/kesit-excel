@@ -73,7 +73,24 @@
     45839,
     "Ege"
    ]
-  ]
+  ],
+  "ek": {
+   "L1": "Kategori",
+   "L2": "Elektronik",
+   "M1": "Kategori",
+   "M2": "Moda",
+   "M3": "Kirtasiye",
+   "N1": "Kategori",
+   "N2": "Elektronik",
+   "O1": "Fiyat",
+   "O2": ">1000",
+   "P1": "Bolge",
+   "P2": "Ege",
+   "Q1": "Urun",
+   "Q2": "Saat",
+   "R1": "Urun",
+   "R2": "K"
+  }
  },
  "lo": [
   "=SUM(C2:C9)",
@@ -282,7 +299,23 @@
   "=SKEW(C2:C9)",
   "=KURT(C2:C9)",
   "=TRIMMEAN(C2:C9,0.25)",
-  "=HYPERLINK(\"#A1\",\"Git\")"
+  "=HYPERLINK(\"#A1\",\"Git\")",
+  "=DSUM(A1:F9,\"Fiyat\",L1:L2)",
+  "=DSUM(A1:F9,4,M1:M3)",
+  "=DSUM(A1:F9,\"Adet\",N1:O2)",
+  "=DAVERAGE(A1:F9,\"Fiyat\",P1:P2)",
+  "=DCOUNT(A1:F9,\"Adet\",P1:P2)",
+  "=DCOUNTA(A1:F9,\"Adet\",P1:P2)",
+  "=DCOUNT(A1:F9,,L1:L2)",
+  "=DMAX(A1:F9,\"Fiyat\",M1:M3)",
+  "=DMIN(A1:F9,\"Fiyat\",L1:L2)",
+  "=DPRODUCT(A1:F9,\"Adet\",L1:L2)",
+  "=DGET(A1:F9,\"Fiyat\",Q1:Q2)",
+  "=DSTDEV(A1:F9,\"Fiyat\",L1:L2)",
+  "=DSTDEVP(A1:F9,\"Fiyat\",L1:L2)",
+  "=DVAR(A1:F9,\"Adet\",M1:M3)",
+  "=DVARP(A1:F9,\"Adet\",M1:M3)",
+  "=DSUM(A1:F9,\"Yok\",L1:L2)"
  ],
  "elle": [
   [
@@ -520,7 +553,15 @@
   [
    "=LAMBDA(a,[b],IF(ISOMITTED(b),a,a*b))(5)",
    5
+  ],
+  [
+   "=DGET(A1:F9,\"Fiyat\",L1:L2)",
+   "#NUM!"
+  ],
+  [
+   "=DSUM(A1:F9,\"Fiyat\",R1:R2)",
+   1324.5
   ]
  ],
- "not": "elle: LibreOffice 24.2'de olmayan işlevler ve Kesit'in bilinçli olarak Türkçe Excel'e göre davrandığı yerler (BÜYÜKHARF'te İ, METNEÇEVİR'de Türkçe sayı biçimi, dinamik dizide örtük kesişim yok). RATE(10;-1000;5000;10000) çözümsüzdür: Excel 20 denemede yakınsamazsa #SAYI! verir (Microsoft belgesi), LibreOffice 24.2 #YOK verdiği için elle listesinde. 0.4.0: LAMBDA yardımcıları, GROUPBY/PIVOTBY ve dizi biçimlendirme işlevleri LibreOffice 24.2'de yok; değerler Microsoft örnekleriyle elle doğrulandı. AGGREGATE dizi biçimi (14–19) ve farklı uzunluklu EĞİM Excel belgesine göre (LO #DEĞER! verir)."
+ "not": "elle: LibreOffice 24.2'de olmayan işlevler ve Kesit'in bilinçli olarak Türkçe Excel'e göre davrandığı yerler (BÜYÜKHARF'te İ, METNEÇEVİR'de Türkçe sayı biçimi, dinamik dizide örtük kesişim yok). RATE(10;-1000;5000;10000) çözümsüzdür: Excel 20 denemede yakınsamazsa #SAYI! verir (Microsoft belgesi), LibreOffice 24.2 #YOK verdiği için elle listesinde. 0.4.0: LAMBDA yardımcıları, GROUPBY/PIVOTBY ve dizi biçimlendirme işlevleri LibreOffice 24.2'de yok; değerler Microsoft örnekleriyle elle doğrulandı. AGGREGATE dizi biçimi (14–19) ve farklı uzunluklu EĞİM Excel belgesine göre (LO #DEĞER! verir). Veritabanı işlevleri: Excel düz metin ölçütünü \"ile başlar\" sayar ve VAL birden çok kayıtta #SAYI! verir; LibreOffice varsayılan ayarda tam eşleşme arar ve #DEĞER! verir, bu iki vaka elle listesinde."
 }

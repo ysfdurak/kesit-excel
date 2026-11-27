@@ -28,6 +28,7 @@ def lo_hesapla(formuller):
     ws.append(V["veri"]["basliklar"])
     for s in V["veri"]["satirlar"]: ws.append(s)
     for r in range(2, len(V["veri"]["satirlar"]) + 2): ws.cell(r, 5).number_format = "dd.mm.yyyy"
+    for a, v in V["veri"].get("ek", {}).items(): ws[a] = v  # veritabanı işlevlerinin ölçüt alanları
     for i, f in enumerate(formuller): ws.cell(i + 1, 10, onek(f))
     with tempfile.TemporaryDirectory() as d:
         g = pathlib.Path(d) / "girdi.xlsx"; wb.save(g)

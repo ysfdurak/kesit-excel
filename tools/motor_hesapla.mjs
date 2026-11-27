@@ -5,6 +5,7 @@ import { hataMi } from '../docs/motor/formul.js';
 const V = JSON.parse(readFileSync(new URL('../tests/vakalar.json', import.meta.url)));
 const k = new Kitap({ bugun: 45900 });
 k.tablo('Veri', V.veri.basliklar, V.veri.satirlar);
+for (const [a, v] of Object.entries(V.veri.ek || {})) k.yaz('Veri', a, v); // ölçüt alanları
 const tum = [...V.lo, ...V.elle.map(x => x[0])];
 tum.forEach((f, i) => k.yaz('Veri', { r: 1 + i, c: 10 }, f)); // J sütunu
 k.hesapla();

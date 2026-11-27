@@ -225,6 +225,49 @@ tanim('AVERAGEIF', olcutYay((a, b) => { const m = kosulDizileri([a[0], a[1]], b,
 const cokKosul = tur => olcutYay((a, b) => { const m = kosulDizileri(a, b, 1); if (hataMi(m)) return m; const t = diziyeCevir(a[0], b); if (t.satir !== m.R || t.sutun !== m.C) return H.DEGER; return kosulTopla(t, m, tur); }, ciftIdx(1));
 tanim('SUMIFS', cokKosul('sum')); tanim('AVERAGEIFS', cokKosul('avg')); tanim('MAXIFS', cokKosul('max')); tanim('MINIFS', cokKosul('min'));
 
+/* ---------------------------------------------------------------- veritabanı işlevleri (VSEÇTOPLA ailesi)
+   Veritabanı: başlık satırı + kayıtlar. Alan: başlık adı ya da 1'den başlayan sütun numarası.
+   Ölçüt: Gelişmiş Filtre ile aynı (ilk satır başlıklar; aynı satır VE, alt alta satırlar YA DA; düz metin "ile başlar").
+   Excel'deki formüllü (başlıksız, =C6>1000 gibi) ölçüt desteklenmez. */
+function vtKosul(v) {
+  if (typeof v !== 'string') return olcut(v);
+  if (/^(<>|>=|<=|<|>|=)/.test(v)) return olcut(v);
+  return olcut('=' + v + '*');
+}
+function vtSec(a, b, alanGerekli = true) {
+  const vt = diziyeCevir(a[0], b), ol = diziyeCevir(a[2], b);
+  for (const x of tumHucreler(vt)) if (hataMi(x)) return x;
+  if (vt.satir < 1 || ol.satir < 2) return H.DEGER;
+  const bas = vt.v[0].map(x => trB(x ?? ''));
+  let alan = -1;
+  const ak = a[1] == null ? null : deger(a[1], b);
+  if (hataMi(ak)) return ak;
+  if (ak == null || ak === '') { if (alanGerekli) return H.DEGER; }
+  else if (typeof ak === 'number') { alan = Math.trunc(ak) - 1; if (alan < 0 || alan >= vt.sutun) return H.DEGER; }
+  else { alan = bas.indexOf(trB(ak)); if (alan < 0) return H.DEGER; }
+  const sut = ol.v[0].map(h => (h == null || h === '') ? -1 : bas.indexOf(trB(h)));
+  const gruplar = ol.v.slice(1).map(s => s.map((v, j) => (v == null || v === '' || sut[j] < 0) ? null : { s: sut[j], f: vtKosul(v) }).filter(Boolean));
+  const kayitlar = vt.v.slice(1).filter(s => gruplar.some(g => g.every(k => k.f(s[k.s]))));
+  return { kayitlar, alan, degerler: alan < 0 ? null : kayitlar.map(s => s[alan]) };
+}
+const vtSayilar = x => x.degerler.filter(v => typeof v === 'number');
+function vtIslev(ad, hesap, alanGerekli = true) {
+  tanim(ad, (a, b) => { const x = vtSec(a, b, alanGerekli); if (hataMi(x)) return x; const h = x.degerler && x.degerler.find(hataMi); if (h) return h; return hesap(x); });
+}
+vtIslev('DSUM', x => vtSayilar(x).reduce((t, v) => t + v, 0));
+vtIslev('DAVERAGE', x => { const n = vtSayilar(x); return n.length ? n.reduce((t, v) => t + v, 0) / n.length : H.BOL0; });
+vtIslev('DCOUNT', x => x.degerler ? vtSayilar(x).length : x.kayitlar.length, false);
+vtIslev('DCOUNTA', x => x.degerler ? x.degerler.filter(v => !bos(v)).length : x.kayitlar.length, false);
+vtIslev('DMAX', x => { const n = vtSayilar(x); return n.length ? Math.max(...n) : 0; });
+vtIslev('DMIN', x => { const n = vtSayilar(x); return n.length ? Math.min(...n) : 0; });
+vtIslev('DPRODUCT', x => { const n = vtSayilar(x); return n.length ? n.reduce((t, v) => t * v, 1) : 0; });
+vtIslev('DGET', x => x.degerler.length === 0 ? H.DEGER : x.degerler.length > 1 ? H.SAYI : x.degerler[0]);
+const vtVar = (n, orn) => { const o = n.reduce((t, v) => t + v, 0) / n.length; return n.reduce((t, v) => t + (v - o) ** 2, 0) / (n.length - (orn ? 1 : 0)); };
+vtIslev('DSTDEV', x => { const n = vtSayilar(x); return n.length < 2 ? H.BOL0 : Math.sqrt(vtVar(n, true)); });
+vtIslev('DSTDEVP', x => { const n = vtSayilar(x); return n.length < 1 ? H.BOL0 : Math.sqrt(vtVar(n, false)); });
+vtIslev('DVAR', x => { const n = vtSayilar(x); return n.length < 2 ? H.BOL0 : vtVar(n, true); });
+vtIslev('DVARP', x => { const n = vtSayilar(x); return n.length < 1 ? H.BOL0 : vtVar(n, false); });
+
 /* ---------------------------------------------------------------- arama */
 function esitMi(aranan, v, joker) {
   if (typeof aranan === 'string' && typeof v === 'string') return joker && /[*?]/.test(aranan) ? jokerRe(trK(aranan)).test(trK(v)) : trK(aranan) === trK(v);

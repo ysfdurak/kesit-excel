@@ -2,7 +2,7 @@
 // Türkçe adlar formul.js'deki EN_TR tablosundan gelir; söz diziminde Türkçe Excel'in ; ayırıcısı kullanılır.
 import { EN_TR } from '../motor/formul.js';
 
-export const KATEGORILER = { mat: 'Matematik', ist: 'İstatistik', mantik: 'Mantık', kosul: 'Koşullu özet', ara: 'Arama ve başvuru', metin: 'Metin', tarih: 'Tarih ve saat', dizi: 'Dinamik dizi', lambda: 'LAMBDA ve yardımcıları', bilgi: 'Bilgi', finans: 'Finans' };
+export const KATEGORILER = { mat: 'Matematik', ist: 'İstatistik', mantik: 'Mantık', kosul: 'Koşullu özet', ara: 'Arama ve başvuru', metin: 'Metin', tarih: 'Tarih ve saat', dizi: 'Dinamik dizi', lambda: 'LAMBDA ve yardımcıları', bilgi: 'Bilgi', finans: 'Finans', vt: 'Veritabanı' };
 
 const H = [
   ['SUM', 'mat', 'TOPLA(sayı1; [sayı2]; …)', 'Sayıları toplar. Aralıktaki metin ve boş hücreleri atlar.', '=TOPLA(H2:H241)'],
@@ -61,6 +61,18 @@ const H = [
   ['COUNTIFS', 'kosul', 'ÇOKEĞERSAY(aralık1; ölçüt1; [aralık2; ölçüt2]; …)', 'Tüm ölçütleri sağlayan satır sayısı.', '=ÇOKEĞERSAY(F2:F241;"Giyim";E2:E241;"Web")'],
   ['SUMIF', 'kosul', 'ETOPLA(aralık; ölçüt; [toplam_aralığı])', 'Ölçütü sağlayan satırların toplamı. Dikkat: toplam aralığı en sonda.', '=ETOPLA(F2:F241;"Giyim";H2:H241)'],
   ['AVERAGEIF', 'kosul', 'EĞERORTALAMA(aralık; ölçüt; [ortalama_aralığı])', 'Ölçütü sağlayanların ortalaması.', '=EĞERORTALAMA(F2:F241;"Spor";I2:I241)'],
+  ['DSUM', 'vt', 'VSEÇTOPLA(veritabanı; alan; ölçüt)', 'Ölçüt alanına uyan kayıtlarda bir alanın toplamı. Ölçüt alanının ilk satırı başlıklardır; aynı satır VE, alt satır YA DA.', '=VSEÇTOPLA(A1:K241;"Adet";N1:N2)'],
+  ['DAVERAGE', 'vt', 'VSEÇORT(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda alanın ortalaması.', '=VSEÇORT(A1:K241;"Birim Fiyat";N1:N2)'],
+  ['DCOUNT', 'vt', 'VSEÇSAY(veritabanı; [alan]; ölçüt)', 'Ölçüte uyan kayıtlarda alanda sayı olan hücreleri sayar. Alan boş bırakılırsa uyan kayıtları sayar.', '=VSEÇSAY(A1:K241;"Adet";N1:N2)'],
+  ['DCOUNTA', 'vt', 'VSEÇSAYDOLU(veritabanı; [alan]; ölçüt)', 'Ölçüte uyan kayıtlarda alanda boş olmayan hücreleri sayar (metin dahil).', '=VSEÇSAYDOLU(A1:K241;"Şehir";N1:N2)'],
+  ['DMAX', 'vt', 'VSEÇMAK(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda alanın en büyük değeri.', '=VSEÇMAK(A1:K241;"Birim Fiyat";N1:N2)'],
+  ['DMIN', 'vt', 'VSEÇMİN(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda alanın en küçük değeri.', '=VSEÇMİN(A1:K241;"Birim Fiyat";N1:N2)'],
+  ['DPRODUCT', 'vt', 'VSEÇÇARP(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda alanın değerlerini çarpar.', '=VSEÇÇARP(A1:K241;"Adet";N1:N2)'],
+  ['DGET', 'vt', 'VAL(veritabanı; alan; ölçüt)', 'Ölçüte uyan TEK kaydın alan değerini getirir. Hiç kayıt yoksa #DEĞER!, birden çoksa #SAYI!.', '=VAL(A1:K241;"Müşteri";N1:N2)'],
+  ['DSTDEV', 'vt', 'VSEÇSTDSAPMA(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda örnek standart sapma.', '=VSEÇSTDSAPMA(A1:K241;"Birim Fiyat";N1:N2)'],
+  ['DSTDEVP', 'vt', 'VSEÇSTDSAPMAS(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda popülasyon standart sapması.', '=VSEÇSTDSAPMAS(A1:K241;"Birim Fiyat";N1:N2)'],
+  ['DVAR', 'vt', 'VSEÇVAR(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda örnek varyans.', '=VSEÇVAR(A1:K241;"Birim Fiyat";N1:N2)'],
+  ['DVARP', 'vt', 'VSEÇVARS(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda popülasyon varyansı.', '=VSEÇVARS(A1:K241;"Birim Fiyat";N1:N2)'],
   ['SUMIFS', 'kosul', 'ÇOKETOPLA(toplam_aralığı; aralık1; ölçüt1; …)', 'Çok ölçütlü toplam. Toplam aralığı en başta.', '=ÇOKETOPLA(H2:H241;F2:F241;"Elektronik";E2:E241;"Web")'],
   ['AVERAGEIFS', 'kosul', 'ÇOKEĞERORTALAMA(ortalama_aralığı; aralık1; ölçüt1; …)', 'Çok ölçütlü ortalama.', '=ÇOKEĞERORTALAMA(I2:I241;D2:D241;"İstanbul")'],
   ['MAXIFS', 'kosul', 'ÇOKEĞERMAK(mak_aralığı; aralık1; ölçüt1; …)', 'Ölçütleri sağlayanların en büyüğü.', '=ÇOKEĞERMAK(I2:I241;F2:F241;"Giyim")'],
