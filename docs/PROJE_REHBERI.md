@@ -287,12 +287,14 @@ Kullanıcı Microsoft hesabıyla web Excel'e girdi; boş bir kitapta (OneDrive'd
 | REGEXTEST | REGEXTEST | **NORMİFADESINA** | ⚠ düzeltildi |
 | MAKEARRAY | MAKEARRAY | **DİZİOLUŞTUR** | ⚠ düzeltildi |
 | TRIMRANGE | TRIMRANGE | **KIRPARALIĞI** | ⚠ düzeltildi |
-| ISOMITTED | ISOMITTED | otomatik tamamlamada çıkmadı, `LAMBDA(x;ISOMITTED(x))(1)` #AD? | sınanamadı (Kesit İngilizce adla bırakıldı) |
+| ISOMITTED | ISOMITTED | **ATLANMIŞ** (otomatik tamamlamada çıkmıyor; İşlev ekle aramasında "eksik" ile bulundu); `LAMBDA(x;[y];EĞER(ATLANMIŞ(y);"yok";"var"))(1)` → yok, `(1;2)` → var | ⚠ düzeltildi |
+| GRUPLAÖLÇÜT toplam satırı | a 4 · b 2 · Toplam 6 | aynı, etiket "Toplam" | ✓ |
+| `NORMİFADEAYIKLA("a1b22c333";"[0-9]+";1)` | alt alta 1, 22, 333 | **yan yana** 1 · 22 · 333 | ⚠ motor ve ders metni düzeltildi |
 | Dizi sabiti `{1;2;3}` | 3 satır | web Excel'de **1 satır 3 sütun**; `{1\2\3}` 3 satır | ⚠ ders metni düzeltildi (masaüstü ile web tersine) |
 
 **Ders:** Belge yerine Excel'in kendisine sormak yine kazandırdı: 3 yanlış ad ve bir ayırıcı farkı. Masaüstü (Türkçe bölge) ile web Excel'in dizi sabiti ayırıcıları tersine çıktı; bu yüzden ders artık "yönün önemli olduğu yerde SATIRSAY ile deneyin" diyor.
 
-> 🧪 **Hâlâ sınanmayanlar:** ISOMITTED'ın Türkçe adı (yalnız Ders 18.1'in isteğe bağlı parametre alıştırmasında geçer).
+> ✅ Excel 365 işlev adlarının hepsi gerçek Türkçe Excel'de doğrulandı. Kalan elle denemeler kullanıcıda: Android'de dokunarak bir alıştırma, grafiği PNG indirip sunumda netlik; yayından sonra canlı adres ve güvenlik başlıkları.
 
 > 💡 **Şöyle daha iyi olur:** `npm test` yalnız 3 test dosyasını çalıştırıyordu (model, görsel ve modern testleri CI'da hiç koşmuyordu). Artık `tests/*.test.mjs` hepsini çalıştırıyor: 155 test.
 
@@ -808,4 +810,4 @@ C: Çıktı değerdir, formül değil; veri değişince güncellenmez. Aynı tab
 - **2026-11-27 · 0.6.2** Veri kitabı derslerle eşitlendi (§5.19): 17 model sayfası, başlıklı sayfalar Excel Tablosu, model formülleri İngilizce yazımla; LibreOffice'te 14 deneme formülü ve 35 model hücresi Kesit'le aynı. Veri sayfasında kitap indirme kartı; model sayfalarında "undefined" kaynak ve boş açıklama düzeltildi. Rehberde "Bilinen sınırlar" güncellendi.
 - **2026-11-27 · 0.6.3** Gerçek Excel'de örneklem (§7.x, İngilizce menülü, Türkçe bölgeli Office LTSC): 27 konu: 20'si aynı, 6'sında ders metni ya da motor düzeltildi, 1'i bu Excel sürümünde sınanamadı. Düzeltilenler: dizi sabitinde `\` sütun ayırıcı ve virgüllü ondalık (motor), `#.##0.` ölçekleme ders metni, `{"Web";"Mobil"}` örneği ve ayırıcı açıklaması, FormulaLocal makro yorumu, biçim dersine "hangi dil?" notu ([Red], gg.aa), Çözücü dersine %1 tamsayı toleransı ve birden çok en iyi çözüm notu.
 - **2026-11-27 · 0.6.4** Türkçe menülü Excel'de örneklem (§7.y, Office dil paketiyle): 191 işlev adı Excel'e sorduruldu. Düzeltilenler: `Pİ`, `RANK` (SIRA değil), `KIRPORTALAMA` (TRIMMEAN), Excel'de olmayan 5 takma ad kaldırıldı, `#SAYI/0!` (önce #BÖL/0!), renk `[Pembe]`, özet tablo başlıkları ("Toplam Adet", "Mak …"). `npm test` artık tüm test dosyalarını çalıştırıyor (155 test).
-- **2026-11-27 · 0.6.5** Türkçe web Excel'de 365 işlevleri (§7.z): NORMİFADESINA (REGEXTEST), DİZİOLUŞTUR (MAKEARRAY), KIRPARALIĞI (TRIMRANGE) düzeltildi; 27 ad doğrulandı; dizi sabiti ayırıcılarının masaüstü ile web Excel'de tersine olduğu ders metnine yazıldı. ISOMITTED sınanamadı.
+- **2026-11-27 · 0.6.5** Türkçe web Excel'de 365 işlevleri (§7.z): NORMİFADESINA (REGEXTEST), DİZİOLUŞTUR (MAKEARRAY), KIRPARALIĞI (TRIMRANGE) düzeltildi; 27 ad doğrulandı; dizi sabiti ayırıcılarının masaüstü ile web Excel'de tersine olduğu ders metnine yazıldı. Aynı gün: ATLANMIŞ (ISOMITTED) bulundu, GRUPLAÖLÇÜT Toplam satırı doğrulandı, NORMİFADEAYIKLA mod 1 yan yana taşıyacak şekilde düzeltildi (0.6.6; elle vaka ROWS → COLUMNS, LibreOffice 266/266).

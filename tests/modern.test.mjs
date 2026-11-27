@@ -136,7 +136,7 @@ test('Model sayfaları: Mart sırası farklı, 3B toplam ve etiketli toplam ayr�
 });
 
 test('LAMBDA isteğe bağlı parametre ve ISOMITTED', () => {
-  const f = '=LAMBDA(a;[b];EĞER(ISOMITTED(b);a;a*b))';
+  const f = '=LAMBDA(a;[b];EĞER(ATLANMIŞ(b);a;a*b))';
   assert.deepEqual(tasan(f + '(5)'), [[5]]); assert.deepEqual(tasan(f + '(5;3)'), [[15]]); assert.deepEqual(tasan(f + '(5;)'), [[5]], 'boş bağımsız değişken de atlanmış sayılır');
   assert.deepEqual(tasan('=LAMBDA(a;b;a)(5)'), [['#VALUE!']], 'zorunlu parametre eksik');
   assert.deepEqual(tasan(f + '(1;2;3)'), [['#VALUE!']], 'fazla bağımsız değişken');
@@ -153,7 +153,7 @@ test('Taşma başvurusu (#) ve TRIMRANGE', () => {
 test('Düzenli ifadeler ve PERCENTOF', () => {
   assert.deepEqual(tasan('=REGEXTEST("SP-2024-118";"^[A-Z]{2}-\\d{4}-\\d+$")'), [[true]]);
   assert.deepEqual(tasan('=REGEXTEST("abc";"B")'), [[false]]); assert.deepEqual(tasan('=REGEXTEST("abc";"B";1)'), [[true]], 'büyük/küçük duyarsız');
-  assert.deepEqual(tasan('=NORMİFADEAYIKLA("a1 b22 c333";"\\d+";1)'), [['1'], ['22'], ['333']]);
+  assert.deepEqual(tasan('=NORMİFADEAYIKLA("a1 b22 c333";"\\d+";1)'), [['1', '22', '333']]);
   assert.deepEqual(tasan('=NORMİFADEAYIKLA("SP-2024";"([A-Z]+)-(\\d+)";2)'), [['SP', '2024']]);
   assert.deepEqual(tasan('=NORMİFADEAYIKLA("abc";"\\d")'), [['#N/A']]);
   assert.deepEqual(tasan('=NORMİFADEDEĞİŞTİR("ayse.yilmaz@gmail.com";"(?<=^.)[^@]*";"***")'), [['a***@gmail.com']]);

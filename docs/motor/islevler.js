@@ -862,7 +862,7 @@ tanim('REGEXEXTRACT', (a, b) => {
   const tekil = (m, p, cs) => {
     const re = desen(p, cs, mod === 1 ? 'g' : ''); if (!re) return H.DEGER;
     const t = T(m);
-    if (mod === 1) { const hep = [...t.matchAll(re)].map(x => x[0]); return hep.length ? new Dizi(hep.map(x => [x])) : H.NA; }
+    if (mod === 1) { const hep = [...t.matchAll(re)].map(x => x[0]); return hep.length ? new Dizi([hep]) : H.NA; } // Türkçe web Excel'de denendi: yan yana taşar
     const x = re.exec(t); if (!x) return H.NA;
     if (mod === 2) return x.length > 1 ? new Dizi([x.slice(1).map(g => g ?? '')]) : H.NA;
     return x[0];

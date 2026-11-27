@@ -506,7 +506,7 @@
    "Liam"
   ],
   [
-   "=ROWS(REGEXEXTRACT(\"Liam Small\",\"[A-Z][a-z]+\",1))",
+   "=COLUMNS(REGEXEXTRACT(\"Liam Small\",\"[A-Z][a-z]+\",1))",
    2
   ],
   [

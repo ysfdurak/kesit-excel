@@ -1,6 +1,6 @@
 {
   "name": "kesit-excel",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "private": true,
   "description": "Kesit Excel: tarayıcıda çalışan Türkçe Excel eğitimi (formül motoru, dersler, pivot, Power Query) ve yerel MCP sunucusu",
   "type": "module",
