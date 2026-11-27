@@ -11,8 +11,8 @@ Ayrıntılı ve eğitim amaçlı belge: [docs/PROJE_REHBERI.md](docs/PROJE_REHBE
 ## Klasörler
 | Yol | Ne |
 |---|---|
-| `docs/motor/` | Formül motoru (`formul.js` ayrıştırıcı ve değerlendirici, `islevler.js` 131 işlev, `kitap.js` çalışma kitabı ve taşma, `tarih.js`), `pivot.js`, `sorgu.js` (Power Query adımları + M), `denetci.js` (gizli varyant), `grafik.js` (15 grafik türü, SVG, grafik denetimi), `kosullu.js` (koşullu biçim ve mini grafik), `vba.js` (VBA yorumlayıcısı, R1C1, .bas), `bicim.js` (özel sayı biçimi), `dogrulama.js` (veri doğrulama, formül denetimi), `senaryo.js` (Hedef Ara, Veri Tablosu, Senaryo, Çözücü) |
-| `docs/icerik/` | `dersler-1/2/3/4/5.js` (81 ders; 4: görselleştirme ve makro, 5: kitap tasarımı, senaryo ve finans, ileri pano), `modeller.js` (Kredi, Üretim, Vardiya… model sayfaları, formüller Türkçe), `ekler.js` (roller, seviye testi, mülakat), `islev-bilgi.js`, `veri.js` (**üretilir**), `sayfalar.js` |
+| `docs/motor/` | Formül motoru (`formul.js` ayrıştırıcı ve değerlendirici, `islevler.js` 179 işlev, `kitap.js` çalışma kitabı ve taşma, `tarih.js`), `pivot.js`, `sorgu.js` (Power Query adımları + M), `denetci.js` (gizli varyant), `grafik.js` (15 grafik türü, SVG, grafik denetimi), `kosullu.js` (koşullu biçim ve mini grafik), `vba.js` (VBA yorumlayıcısı, R1C1, .bas), `bicim.js` (özel sayı biçimi), `dogrulama.js` (veri doğrulama, formül denetimi), `senaryo.js` (Hedef Ara, Veri Tablosu, Senaryo, Çözücü), `veriaraclari.js` (Gelişmiş Filtre) |
+| `docs/icerik/` | `dersler-1/2/3/4/5/6.js` (100 ders; 4: görselleştirme ve makro, 5: kitap tasarımı, senaryo ve finans, ileri pano, 6: modern formüller, veri araçları, pano tasarımı), `modeller.js` (Kredi, Üretim, Vardiya… model sayfaları, formüller Türkçe), `ekler.js` (roller, seviye testi, mülakat), `islev-bilgi.js`, `veri.js` (**üretilir**), `sayfalar.js` |
 | `docs/js/` | Arayüz: `izgara.js` (formül çubuğu), `pivot-ui.js` (dilimleyici ve pivot grafik), `sorgu-ui.js`, `grafik-ui.js` (grafik alanı, ipucu, SVG/PNG), `kosullu-ui.js`, `pano-ui.js`, `makro-ui.js` (düzenleyici, kaydedici, .bas), `model-ui.js` (Veri Doğrulama, Özel Biçim, Hedef Ara, Veri Tablosu, Senaryo, Çözücü kutuları), `sayfalar.js` (görünümler), `app.js` (yönlendirme), `durum.js` (ilerleme) |
 | `mcp/` | Yerel MCP sunucusu |
 | `tests/` | `node --test` testleri ve `vakalar.json` (LibreOffice karşılaştırma vakaları) |
@@ -27,4 +27,8 @@ Ayrıntılı ve eğitim amaçlı belge: [docs/PROJE_REHBERI.md](docs/PROJE_REHBE
 - **Veri kitabı:** sayfalar değişince `python3 tools/kitap_olustur.py` (`.xlsx` yeniden üretilir).
 - **Durum çözümlemesi alıştırması:** `tur: 'hedefAra' | 'veriTablosu' | 'cozucu'` ve `cozum` (aynı biçimde model). Çözücü alıştırmasında çözüm modeli LP gevşetmesiyle aynı sonucu veriyorsa tamsayı kısıtı öğretilemez; test bunu yakalar, katsayıları değiştirin.
 - **Model sayfası (ham) formül alıştırması:** gizli kopya yoktur; sabit sonucu yakalamak için `durumlar: [{}, { B3: 1200000 }]` ile girdileri değiştirin. Test, sabit sonucun bir durumda yakalandığını doğrular.
+- **Gelişmiş Filtre alıştırması:** `tur: 'gelismisFiltre'`, `bolge` (öğrencinin yazabileceği ölçüt alanı, ör. `M1:O4`), `cozum: { liste, olcut, benzersiz, hucreler }`. Test ölçütsüz ve boş satırlı ölçüt alanının geçmediğini doğrular.
+- **Adlandırılmış LAMBDA alıştırması:** `tur: 'ad'`, `cozum.tanim` `=LAMBDA(…)` ve `lambdaDeneme: [[100, 60], …]` (denetçi iki LAMBDA'yı bu bağımsız değişkenlerle çağırıp karşılaştırır).
+- **Başka sayfalardan beslenen alıştırma** (3B başvuru gibi): `varyantSayfalar: ['Ocak', 'Şubat', 'Mart']` gizli denemede o sayfaları da karıştırır; böylece ham bir hedef sayfada da elle yazılan sonuç yakalanır.
+- **Yeni grafik türü:** `motor/grafik.js` → `TURLER`'e kayıt (ad, aile, ne), çizim işlevi, `grafikCizHam`'daki `switch`'e bir satır; `tests/modern.test.mjs`'teki tür listesine bir örnek veri. Halka ve yaylar için `yay()` kullanın; tam tur iki yarım yay olarak çizilmeli.
 

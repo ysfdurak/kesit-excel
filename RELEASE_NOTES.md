@@ -1,5 +1,15 @@
 # Sürüm notları
 
+## 0.4.0 (Kasım 2026): modern formüller, veri araçları, pano tasarımı
+
+İleri Excel (Excel Off The Grid, Microsoft Press next-gen formulas, Udemy LAMBDA kursları) ve pano kurslarıyla (Gharani, My Online Training Hub, GoSkills, Udemy 50+ grafik, STL) ikinci karşılaştırmada çıkan eksikler.
+- **Modül 18 · Modern formüller (7 ders):** LAMBDA ve adlandırılmış işlev; BYROW, BYCOL, MAP; SCAN ve REDUCE; GRUPLAÖLÇÜT ve ÖZETÖLÇÜT; SÜTUNA, SATIRSAR, GENİŞLET ve formülle özetlemeyi kaldırma; EĞİM, KORELASYON, TAHMİN.DOĞRUSAL; SIKLIK, TOPLAMA ve uçucu işlevler.
+- **Modül 19 · Veri araçları (5 ders):** Gelişmiş Filtre (VE/YA DA, ile başlar, boş satır tuzağı), benzersiz kayıtlar, 3B başvuru ve Birleştir (sırası farklı Mart sayfasıyla), Hızlı Doldurma ve formül karşılığı, özel sıralama, Alt Toplam ve gruplama.
+- **Modül 20 · Pano tasarımı ve özel grafikler (7 ders):** pano süreci (5 soru, taslak, yerleşim, koruma), madde grafiği ve ilerleme halkası, ibre ve ne zaman kullanılmayacağı, Pareto, Gantt/kelebek/halter, vurgu ve hedef çizgisi, vaka: formülle KPI panosu.
+- **Motor:** LAMBDA (çağrı sözdizimi, Ad Yöneticisi, eta, kapanış), 28 yeni işlev (179), 3B başvuru, Gelişmiş Filtre, 8 grafik türü (24), vurgu ve hedef çizgisi, iki düzeyli kategori.
+- **MCP:** `alistirma_denetle` Gelişmiş Filtre alır; grafik seçeneklerinde vurgu ve hedef çizgisi.
+- 100 ders, 218 alıştırma, 20 soruluk seviye testi; 136 test, LibreOffice 255/255.
+
 ## 0.3.0 (Kasım 2026): kitap tasarımı, senaryo ve finans, ileri pano
 
 Muadil müfredatlarla (Microsoft MO-211, Macquarie/Coursera Advanced, Gharani pano kursu, Maven Power Pivot) karşılaştırmada çıkan eksikler.

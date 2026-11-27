@@ -2,7 +2,7 @@
 // Türkçe adlar formul.js'deki EN_TR tablosundan gelir; söz diziminde Türkçe Excel'in ; ayırıcısı kullanılır.
 import { EN_TR } from '../motor/formul.js';
 
-export const KATEGORILER = { mat: 'Matematik', ist: 'İstatistik', mantik: 'Mantık', kosul: 'Koşullu özet', ara: 'Arama ve başvuru', metin: 'Metin', tarih: 'Tarih ve saat', dizi: 'Dinamik dizi', bilgi: 'Bilgi', finans: 'Finans' };
+export const KATEGORILER = { mat: 'Matematik', ist: 'İstatistik', mantik: 'Mantık', kosul: 'Koşullu özet', ara: 'Arama ve başvuru', metin: 'Metin', tarih: 'Tarih ve saat', dizi: 'Dinamik dizi', lambda: 'LAMBDA ve yardımcıları', bilgi: 'Bilgi', finans: 'Finans' };
 
 const H = [
   ['SUM', 'mat', 'TOPLA(sayı1; [sayı2]; …)', 'Sayıları toplar. Aralıktaki metin ve boş hücreleri atlar.', '=TOPLA(H2:H241)'],
@@ -156,6 +156,36 @@ const H = [
   ['DB', 'finans', 'AZALANBAKİYE(maliyet; hurda; ömür; dönem; [ay])', 'Sabit oranlı azalan bakiye amortismanı.', '=AZALANBAKİYE(2400000;300000;5;1)'],
   ['EFFECT', 'finans', 'ETKİN(nominal_oran; dönem_sayısı_yıl)', 'Nominal yıllık faizin bileşik etkin oranı.', '=ETKİN(0,36;12)'],
   ['NOMINAL', 'finans', 'NOMİNAL(etkin_oran; dönem_sayısı_yıl)', 'Etkin orandan nominal yıllık oran.', '=NOMİNAL(0,426;12)'],
+
+  // LAMBDA ve yardımcıları (Excel 365). Türkçe Excel'de bu adlar İngilizce kalır.
+  ['LAMBDA', 'lambda', 'LAMBDA([parametre1; …]; hesap)', 'Kendi işlevinizi tanımlar. Hücrede (bağımsız değişkenler)(…) ile denenir, Ad Yöneticisi\'nde adlandırılıp her yerde çağrılır.', '=LAMBDA(f;m;(f-m)/f)(250;200)'],
+  ['MAP', 'lambda', 'MAP(dizi1; [dizi2; …]; lambda)', 'Dizilerin her hücresine LAMBDA uygular; aynı boyutta sonuç taşırır.', '=MAP(H2:H6;I2:I6;LAMBDA(a;f;a*f))'],
+  ['BYROW', 'lambda', 'BYROW(dizi; lambda)', 'Her satırı LAMBDA\'ya verir, satır başına bir sonuç taşırır. Kısa yazım: BYROW(alan;TOPLA).', '=BYROW(H2:I5;LAMBDA(s;MAK(s)))'],
+  ['BYCOL', 'lambda', 'BYCOL(dizi; lambda)', 'Her sütunu LAMBDA\'ya verir, sütun başına bir sonuç taşırır.', '=BYCOL(H2:I241;TOPLA)'],
+  ['SCAN', 'lambda', 'SCAN([başlangıç]; dizi; lambda(birikim; değer))', 'Birikimli hesap: her adımın sonucunu taşırır (kümülatif toplam, bakiye).', '=SCAN(0;H2:H7;LAMBDA(t;x;t+x))'],
+  ['REDUCE', 'lambda', 'REDUCE([başlangıç]; dizi; lambda(birikim; değer))', 'SCAN gibi biriktirir ama yalnız son değeri döndürür.', '=REDUCE(0;H2:H7;LAMBDA(t;x;t+x))'],
+  ['MAKEARRAY', 'lambda', 'MAKEARRAY(satır; sütun; lambda(r; c))', 'Satır ve sütun numarasından hesaplanan bir dizi üretir.', '=MAKEARRAY(3;3;LAMBDA(r;c;r*c))'],
+  ['GROUPBY', 'dizi', 'GRUPLAÖLÇÜT(satır_alanı; değerler; işlev; [başlık]; [toplam_derinliği]; [sıralama]; [filtre])', 'Formülle özet tablo: satır alanına göre gruplar, değerleri işlevle özetler, toplam satırı ekler. Yenileme istemez.', '=GRUPLAÖLÇÜT(F2:F241;H2:H241;TOPLA)'],
+  ['PIVOTBY', 'dizi', 'ÖZETÖLÇÜT(satır_alanı; sütun_alanı; değerler; işlev; …)', 'Formülle çapraz özet tablo: satırlarda bir alan, sütunlarda öteki; sağda ve altta toplamlar.', '=ÖZETÖLÇÜT(F2:F241;E2:E241;H2:H241;TOPLA)'],
+  ['TOCOL', 'dizi', 'SÜTUNA(dizi; [yoksay]; [sütuna_göre])', 'Alanı tek sütuna indirir. Yoksay 1 boşları, 2 hataları, 3 ikisini atlar.', '=SÜTUNA(H2:I3;1)'],
+  ['TOROW', 'dizi', 'SATIRA(dizi; [yoksay]; [sütuna_göre])', 'Alanı tek satıra indirir.', '=SATIRA(H2:I3)'],
+  ['WRAPROWS', 'dizi', 'SATIRSAR(vektör; sayı; [dolgu])', 'Tek boyutlu listeyi verilen genişlikte satırlara böler.', '=SATIRSAR(G2:G41;4;"")'],
+  ['WRAPCOLS', 'dizi', 'SÜTUNSAR(vektör; sayı; [dolgu])', 'Tek boyutlu listeyi verilen yükseklikte sütunlara böler.', '=SÜTUNSAR(G2:G41;10;"")'],
+  ['EXPAND', 'dizi', 'GENİŞLET(dizi; satır; [sütun]; [dolgu])', 'Diziyi verilen boyuta tamamlar; boş kalanlara dolgu (yoksa #YOK) yazar.', '=GENİŞLET(H2:I3;4;3;"")'],
+  ['RAND', 'mat', 'S_SAYI_ÜRET()', '0 ile 1 arasında rastgele sayı. Uçucudur: her hesaplamada değişir.', '=S_SAYI_ÜRET()'],
+  ['RANDBETWEEN', 'mat', 'RASTGELEARADA(alt; üst)', 'İki tamsayı arasında rastgele tamsayı. Uçucudur.', '=RASTGELEARADA(1;100)'],
+  ['RANDARRAY', 'dizi', 'RASGDİZİ([satır]; [sütun]; [en_az]; [en_çok]; [tamsayı])', 'Rastgele sayılar dizisi taşırır; örneklem ve karıştırma için (SIRALAÖLÇÜT ile). Uçucudur.', '=RASGDİZİ(5;1;1;100;DOĞRU)'],
+  ['SLOPE', 'ist', 'EĞİM(bilinen_y; bilinen_x)', 'Doğrusal eğilimin eğimi: x bir birim artınca y ortalama ne kadar değişir. Önce y, sonra x.', '=EĞİM({2;4;7};{1;2;3})'],
+  ['INTERCEPT', 'ist', 'KESMENOKTASI(bilinen_y; bilinen_x)', 'Doğrusal eğilimin x = 0\'daki değeri.', '=KESMENOKTASI({2;4;7};{1;2;3})'],
+  ['CORREL', 'ist', 'KORELASYON(dizi1; dizi2)', 'İki değişken arasındaki doğrusal ilişki, −1 ile 1 arası. İlişki neden değildir.', '=KORELASYON({1;2;3;4};{2;4;5;9})'],
+  ['RSQ', 'ist', 'RKARE(bilinen_y; bilinen_x)', 'R²: doğrusal eğilimin y\'deki değişimin ne kadarını açıkladığı (0–1).', '=RKARE({2;4;7};{1;2;3})'],
+  ['FORECAST.LINEAR', 'ist', 'TAHMİN.DOĞRUSAL(x; bilinen_y; bilinen_x)', 'Doğrusal eğilimle verilen x için y tahmini. Mevsimsel seride Tahmin Sayfası (ETS) daha iyidir.', '=TAHMİN.DOĞRUSAL(4;{2;4;7};{1;2;3})'],
+  ['FORECAST', 'ist', 'TAHMİN(x; bilinen_y; bilinen_x)', 'TAHMİN.DOĞRUSAL\'ın eski adı; aynı sonuç.', '=TAHMİN(4;{2;4;7};{1;2;3})'],
+  ['TREND', 'ist', 'EĞİLİM(bilinen_y; [bilinen_x]; [yeni_x]; [sabit])', 'Doğrusal eğilim değerlerini taşırır; yeni x\'ler verilirse onların tahminini.', '=EĞİLİM({2;4;7};{1;2;3};{4;5})'],
+  ['FREQUENCY', 'ist', 'SIKLIK(veri; kovalar)', 'Her kovaya düşen değer sayısı; kova sayısından bir fazla sonuç (son kova üstü) taşırır.', '=SIKLIK({1;5;7;9;12};{5;10})'],
+  ['AGGREGATE', 'ist', 'TOPLAMA(işlev_no; seçenek; alan; [k])', '19 özet işlevi tek çatıda; seçenek 6 hata değerlerini atlar. 1 ORTALAMA, 4 MAK, 9 TOPLA, 14 BÜYÜK.', '=TOPLAMA(9;6;{1;2;3})'],
+  ['STDEV.P', 'ist', 'STDSAPMA.P(sayı1; …)', 'Ana kütlenin standart sapması (verinin tamamı elinizdeyse).', '=STDSAPMA.P({2;4;4;4;5;5;7;9})'],
+  ['NA', 'bilgi', 'YOKSAY()', '#YOK hata değeri üretir. Grafikte boşluk bırakmak ve SÜTUNA(…;2) ile atlanacak hücreleri işaretlemek için.', '=EYOKSA(YOKSAY())'],
 ];
 
 export const ISLEV_BILGI = H.map(([en, kat, soz, aciklama, ornek]) => ({ en, tr: EN_TR[en] || en, kategori: kat, kategoriAd: KATEGORILER[kat], sozdizimi: soz, aciklama, ornek }));

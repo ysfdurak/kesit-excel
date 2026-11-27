@@ -12,7 +12,7 @@ KOK = pathlib.Path(__file__).resolve().parent.parent
 V = json.loads((KOK / "tests/vakalar.json").read_text(encoding="utf-8"))
 
 # openpyxl, Excel 2010 sonrası işlevleri dosyaya önekiyle yazmayı bilmez; yazmazsak LibreOffice #NAME? verir.
-YENI = ["RANK.EQ", "STDEV.S", "VAR.S", "PERCENTILE.INC", "QUARTILE.INC", "CEILING.MATH", "FLOOR.MATH", "MAXIFS", "MINIFS", "IFS",
+YENI = ["FORECAST.LINEAR", "AGGREGATE", "STDEV.P", "RANK.EQ", "STDEV.S", "VAR.S", "PERCENTILE.INC", "QUARTILE.INC", "CEILING.MATH", "FLOOR.MATH", "MAXIFS", "MINIFS", "IFS",
         "XOR", "IFNA", "SWITCH", "TEXTJOIN", "CONCAT", "ISOWEEKNUM", "DAYS"]
 def onek(f):
     return re.sub(r"(?<![A-Za-z_.])(" + "|".join(re.escape(x) for x in YENI) + r")\(", r"_xlfn.\1(", f)

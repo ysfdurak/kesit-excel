@@ -147,7 +147,7 @@ strong,.theory p,.question h3,.feedback p{overflow-wrap:anywhere}
 svg.grafik{display:block;width:100%;height:auto;max-width:760px;font-family:inherit}
 .g-s0{fill:var(--g0)}.g-s1{fill:var(--g1)}.g-s2{fill:var(--g2)}.g-s3{fill:var(--g3)}.g-s4{fill:var(--g4)}.g-s5{fill:var(--g5)}.g-s6{fill:var(--g6)}.g-s7{fill:var(--g7)}
 .g-c0{stroke:var(--g0)}.g-c1{stroke:var(--g1)}.g-c2{stroke:var(--g2)}.g-c3{stroke:var(--g3)}.g-c4{stroke:var(--g4)}.g-c5{stroke:var(--g5)}.g-c6{stroke:var(--g6)}.g-c7{stroke:var(--g7)}
-.g-m{fill:var(--ink)}.g-m2{fill:var(--muted)}.g-iz{stroke:var(--g-iz)}.g-yz{stroke:var(--surface)}.g-eks{stroke:var(--muted)}.g-ic{fill:#fff}
+.g-m{fill:var(--ink)}.g-m2{fill:var(--muted)}.g-iz{stroke:var(--g-iz)}.g-yz{stroke:var(--surface)}.g-eks{stroke:var(--muted)}.g-hedef{stroke:var(--ink)}.g-ic{fill:#fff}
 .g-artis{fill:var(--g-artis)}.g-azalis{fill:var(--g-azalis)}.g-toplam{fill:var(--g-toplam)}
 svg.grafik path:hover,svg.grafik rect:hover,svg.grafik circle:hover{filter:brightness(1.12)}
 .g-kap{position:relative}.g-ipucu{position:absolute;transform:translate(-50%,-100%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:5px 9px;border-radius:6px;pointer-events:none;white-space:pre;z-index:5;max-width:260px;overflow:hidden;text-overflow:ellipsis}

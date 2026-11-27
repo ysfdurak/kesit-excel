@@ -1,0 +1,357 @@
+// Modül 18–20: modern formüller (LAMBDA, dizi, tahmin), veri araçları, pano tasarımı ve özel grafikler.
+// Muadil müfredat karşılaştırmasından (Excel Off The Grid, Microsoft Press "next-gen formulas", GoSkills, Gharani, Udemy pano kursları) çıkan eksikler.
+// Model sayfaları icerik/modeller.js: İadeler, Ocak/Şubat/Mart/Çeyrek, Görevler, Bölgeler, Vardiyalar, Talep.
+// Satışlar: A Sipariş No, B Tarih, C Müşteri, D Şehir, E Kanal, F Kategori, G Ürün, H Adet, I Birim Fiyat, J İndirim, K Durum (2–241)
+// Talep: A Ay, B Sipariş, C Personel, D Ay no (2–25) · Bölgeler: A Bölge, B Gerçekleşen, C Hedef, D Kötü, E Orta (2–6)
+const MARJ = '=LAMBDA(fiyat;maliyet;(fiyat-maliyet)/fiyat)';
+const AYLAR3 = ['Ocak', 'Şubat', 'Mart'];
+
+export const DERSLER_6 = [
+  // ---------------------------------------------------------------- M18 Modern formüller
+  {
+    id: 'm18-d1', modul: 'm18', baslik: 'LAMBDA: kendi işlevinizi yazmak', sure: 12,
+    ozet: "Aynı hesabı her yerde tekrar yazmak yerine bir kez tanımlayın: =MARJ(D2;E2). VBA'sız, makrosuz kullanıcı işlevi.",
+    hedefler: ['LAMBDA söz dizimini (parametreler ve hesap) yazmak', "Ad Yöneticisi'nde adlandırılmış işlev tanımlamak", 'LAMBDA\'yı önce hücrede deneyip sonra adlandırmak'],
+    anlatim: [
+      '`=LAMBDA(parametre1; parametre2; hesap)` bir **işlev** üretir, değer değil. Hücreye yalnızca LAMBDA yazarsanız `#HESAP!` görürsünüz: işlevi çağırmadınız. Denemek için sonuna bağımsız değişkenleri ekleyin: `=LAMBDA(fiyat;maliyet;(fiyat-maliyet)/fiyat)(D2;E2)`.',
+      'Çalıştığını görünce **Formüller > Ad Yöneticisi > Yeni**: Ad kutusuna `MARJ`, Başvurur kutusuna `=LAMBDA(fiyat;maliyet;(fiyat-maliyet)/fiyat)`. Artık kitabın her yerinde `=MARJ(D2;E2)` yazılır; tanımı değiştirince her kullanım birlikte değişir.',
+      'Parametre adları hücre adresine benzememeli (`A1`, `KDV1` olmaz) ve formüldeki adlarla aynı yazılmalı. LAMBDA dizi de alır: `=MAK(MARJ(D2:D41;E2:E41))` bütün ürünlerin marjını bir kerede hesaplayıp en büyüğünü verir.',
+      "LAMBDA yalnız tanımlandığı kitapta yaşar; başka kitaba kopyalamak için adı taşıyan bir sayfayı kopyalayın ya da Gelişmiş Formül Ortamı (Excel Labs) eklentisini kullanın. Eski Excel'de (2019 ve öncesi) LAMBDA yoktur, dosyayı açan kişi `#AD?` görür.",
+    ],
+    ornek: { sayfa: 'Ürünler', hucre: 'H2', formul: '=LAMBDA(fiyat;maliyet;(fiyat-maliyet)/fiyat)(D2;E2)', hazirlik: { H1: 'Marj' }, aciklama: 'LAMBDA önce hücrede, sonuna (D2;E2) eklenerek denenir. Marj = (fiyat − maliyet) / fiyat.' },
+    alistirmalar: [
+      { id: 'a1', tur: 'ad', sayfa: 'Ürünler', soru: "Ad Yöneticisi'nde **MARJ** adında bir işlev tanımlayın: fiyat ve maliyet alsın, **(fiyat − maliyet) / fiyat** döndürsün.", adGerekli: 'MARJ', cozum: { ad: 'MARJ', tanim: MARJ }, lambdaDeneme: [[100, 60], [250, 200], [80, 80], [1, 0.5]], ipuclari: ['Başvurur: =LAMBDA(fiyat;maliyet;(fiyat-maliyet)/fiyat)'] },
+      { id: 'a2', sayfa: 'Ürünler', hedef: 'H2', hazirlik: { H1: 'En yüksek marj' }, adlar: { MARJ }, soru: 'MARJ işlevi kitapta tanımlı. H2\'ye **en yüksek ürün marjını** MARJ ile tek formülde yazın.', cozum: '=MAK(MARJ(D2:D41;E2:E41))', ipuclari: ['LAMBDA dizi de alır: =MAK(MARJ(D2:D41;E2:E41))'] },
+    ],
+    sikHata: { yanlis: 'Hücreye =LAMBDA(x;x*1,2) yazıp sonuç beklemek', dogru: '=LAMBDA(x;x*1,2)(B2) ile denemek, sonra Ad Yöneticisi\'nde adlandırmak', neden: 'LAMBDA bir işlev üretir; çağrılmadan hücreye yazılırsa #HESAP! verir.' },
+    mulakat: { soru: 'LAMBDA ne işe yarar, VBA kullanıcı işlevinden farkı ne?', cevap: 'LAMBDA ile formül dilinde, makro olmadan kendi işlevimi tanımlarım: Ad Yöneticisi\'nde bir ad verip kitabın her yerinde çağırırım. Dosya .xlsx kalır, Excel web\'de ve Mac\'te çalışır, güvenlik uyarısı çıkmaz. VBA işlevi daha esnektir (döngü, dosya, nesne) ama makro izni ister. Tekrarlanan iş kuralları (marj, KDV, prim) için LAMBDA hem tutarlılık hem bakım kolaylığı sağlar.' },
+  },
+  {
+    id: 'm18-d2', modul: 'm18', baslik: 'BYROW, BYCOL ve MAP: satır satır hesap', sure: 11,
+    ozet: 'Yardımcı sütun açmadan her satıra, her sütuna ya da her hücreye aynı LAMBDA\'yı uygulayın; sonuç tek formülden taşar.',
+    hedefler: ['BYROW ile her satırın özetini almak', 'MAP ile birden çok sütunu hücre hücre birleştirmek', 'Kısa "eta" yazımını (BYROW(alan;TOPLA)) tanımak'],
+    anlatim: [
+      '`=MAK(B2:D5)` bütün tablonun en büyüğünü verir. Her satırın en büyüğü için eskiden her satıra ayrı formül yazılırdı. `=BYROW(B2:D5;LAMBDA(satir;MAK(satir)))` her satırı LAMBDA\'ya verir, 4 sonucu alt alta taşırır. BYCOL aynısını sütunlar için yapar.',
+      'Kısa yazım: hesap tek bir işlevse LAMBDA yazmadan adı verilir: `=BYROW(B2:D5;TOPLA)`. Buna "eta" yazımı denir.',
+      '**MAP** hücre hücre çalışır ve birden çok alan alır: `=MAP(H2:H241;I2:I241;J2:J241;LAMBDA(adet;fiyat;ind;adet*fiyat*(1-ind)))`. Bu örnekte `=H2:H241*I2:I241*(1-J2:J241)` da aynı sonucu verir; MAP, içinde EĞER ya da toplayıcı işlev (TOPLA, MAK) olan ve dizide hücre hücre çalışmayan hesaplarda gerekir.',
+      'LAMBDA\'nın her satır için tek bir değer döndürmesi gerekir; dizi döndürürse `#HESAP!` ("diziler dizisi" desteklenmez).',
+    ],
+    ornek: { sayfa: 'Hedef', hucre: 'E2', formul: '=BYROW(B2:D5;LAMBDA(satir;TOPLA(satir)))', hazirlik: { E1: 'Çeyrek' }, alan: 'E5', aciklama: 'Her kategorinin üç aylık hedefi tek formülle toplanıyor; sonuç E2:E5\'e taşıyor.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Hedef', hedef: 'E2', okunan: 'E2:E5', hazirlik: { E1: 'En yüksek ay' }, soru: 'E2\'ye her kategorinin **en yüksek aylık hedefini** BYROW ile tek formülde yazın (sonuç E2:E5\'e taşsın).', cozum: '=BYROW(B2:D5;LAMBDA(s;MAK(s)))', gerekli: ['BYROW'], durumlar: [{}, { B2: 60000, D3: 7000 }], ipuclari: ['=BYROW(B2:D5;LAMBDA(s;MAK(s))) ya da kısa yazım =BYROW(B2:D5;MAK)'] },
+      { id: 'a2', sayfa: 'Satışlar', hedef: 'L2', okunan: 'L2:L241', hazirlik: { L1: 'Tutar' }, soru: 'L2\'ye her siparişin **indirimli tutarını** (Adet × Birim Fiyat × (1 − İndirim)) MAP ile tek formülde yazın.', cozum: '=MAP(H2:H241;I2:I241;J2:J241;LAMBDA(adet;fiyat;ind;adet*fiyat*(1-ind)))', gerekli: ['MAP'], ipuclari: ['MAP(alan1;alan2;alan3;LAMBDA(a;b;c;hesap)): parametre sırası alan sırasıyla aynı.'] },
+    ],
+    sikHata: { yanlis: '=BYROW(B2:D5;LAMBDA(s;s*2))', dogru: '=BYROW(B2:D5;LAMBDA(s;TOPLA(s*2)))', neden: 'BYROW her satır için tek değer ister; satırın kendisini (dizi) döndürmek #HESAP! verir.' },
+    mulakat: { soru: 'BYROW ile yardımcı sütun arasında nasıl seçim yaparsınız?', cevap: 'Ara sonuç başkası tarafından da okunacaksa, filtrelenecekse ya da eski Excel\'de açılacaksa yardımcı sütun daha şeffaftır. Tek formülde, taşan ve veri uzayınca kendiliğinden genişleyen bir sonuç istiyorsam BYROW/MAP kullanırım. Her iki durumda da hesap iş kuralı ise LAMBDA\'yı adlandırıp tek yerden yönetirim.' },
+  },
+  {
+    id: 'm18-d3', modul: 'm18', baslik: 'SCAN ve REDUCE: birikimli hesap', sure: 10,
+    ozet: 'Kümülatif toplam, Pareto için birikimli pay, bakiye: SCAN her adımı, REDUCE yalnız sonucu verir.',
+    hedefler: ['SCAN ile birikimli toplam taşırmak', 'Birikimli yüzdeyi tek formülde kurmak', 'SCAN ile REDUCE farkını açıklamak'],
+    anlatim: [
+      'Klasik birikimli toplam `=TOPLA($D$2:D2)` aşağı kopyalanır; satır eklenince bozulabilir. `=SCAN(0;D2:D7;LAMBDA(toplam;x;toplam+x))` başlangıç değeri 0\'dan başlayıp her değeri ekler ve **her adımı** alt alta yazar.',
+      'LAMBDA\'nın iki parametresi vardır: birincisi o ana kadarki birikim, ikincisi sıradaki değer. Birikim toplam olmak zorunda değil: `LAMBDA(b;x;MAK(b;x))` "o güne kadarki en yüksek" serisini verir.',
+      '**REDUCE** aynı döngüyü çalıştırır ama yalnız son değeri döndürür: `=REDUCE(0;D2:D7;LAMBDA(t;x;t+x))` = TOPLA. Basit toplam için TOPLA yeter; REDUCE koşullu birikim ya da birden çok aralığı birleştirme (DÜŞEYYIĞ ile) gibi işlerde kullanılır.',
+      'Pareto için birikimli pay: önce büyükten küçüğe sırala, sonra biriktir, sonra toplama böl: `=SCAN(0;SIRALA(B2:B9;;-1);LAMBDA(t;x;t+x))/TOPLA(B2:B9)`.',
+    ],
+    ornek: { sayfa: 'Bütçe', hucre: 'F2', formul: '=SCAN(0;D2:D7;LAMBDA(toplam;x;toplam+x))', hazirlik: { F1: 'Birikimli' }, alan: 'F7', aciklama: 'Elektronik\'in ay ay gerçekleşeni birikiyor; her hücre o aya kadarki toplam.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Bütçe', hedef: 'F2', okunan: 'F2:F7', hazirlik: { F1: 'Birikimli hedef' }, soru: 'F2\'ye ilk altı satırın **hedefinin** (C2:C7) birikimli toplamını SCAN ile tek formülde yazın.', cozum: '=SCAN(0;C2:C7;LAMBDA(t;x;t+x))', gerekli: ['SCAN'], ipuclari: ['=SCAN(0;C2:C7;LAMBDA(t;x;t+x))'] },
+      { id: 'a2', sayfa: 'İadeler', hedef: 'C2', okunan: 'C2:C9', hazirlik: { C1: 'Birikimli pay' }, soru: 'C2\'ye iade adetlerinin **büyükten küçüğe sıralanmış birikimli payını** (Pareto çizgisi) tek formülde yazın.', cozum: '=SCAN(0;SIRALA(B2:B9;;-1);LAMBDA(t;x;t+x))/TOPLA(B2:B9)', gerekli: ['SCAN', 'SORT'], ipuclari: ['Önce SIRALA(B2:B9;;-1), sonra SCAN ile biriktir, en son TOPLA(B2:B9)\'a böl.'] },
+      { id: 'a3', tur: 'secmeli', soru: 'Bir stok hareket listesinde (giriş artı, çıkış eksi) her satırdan sonraki stok bakiyesini görmek istiyorsunuz. Hangisi?', secenekler: ['=REDUCE(0;B2:B50;LAMBDA(s;x;s+x))', '=SCAN(0;B2:B50;LAMBDA(s;x;s+x))', '=TOPLA(B2:B50)', '=BYROW(B2:B50;TOPLA)'], dogru: 1, aciklama: 'Her adımdaki bakiye SCAN ile alınır. REDUCE ve TOPLA yalnız son bakiyeyi verir; BYROW her satırı ayrı ayrı (birikimsiz) hesaplar.' },
+    ],
+    sikHata: { yanlis: 'Birikimli payı sıralamadan hesaplamak', dogru: 'Önce SIRALA ile büyükten küçüğe, sonra SCAN', neden: 'Pareto\'da birikim en büyük nedenden başlar; sırasız birikim %80 eşiğini yanlış yerde gösterir.' },
+    mulakat: { soru: 'Excel\'de kümülatif toplamı kaç yolla kurarsınız?', cevap: 'Karışık başvurulu =TOPLA($D$2:D2) aşağı kopyalanır; Excel Tablosunda =TOPLA(İNDİS([Gerçekleşen];1):[@Gerçekleşen]) satır eklenince bozulmaz; Excel 365\'te =SCAN(0;Gerçekleşen;LAMBDA(t;x;t+x)) tek formülden taşar. Pivotta "Değerleri farklı göster > Birikimli toplam" seçilir. Büyük veride birinci yöntem karesel yavaşlar; SCAN ya da pivot tercih ederim.' },
+  },
+  {
+    id: 'm18-d4', modul: 'm18', baslik: 'GRUPLAÖLÇÜT ve ÖZETÖLÇÜT: formülle özet tablo', sure: 13,
+    ozet: 'Yenilemeye gerek olmayan, veriyle birlikte güncellenen özet tablo: tek formül, satır ya da satır × sütun kırılımı.',
+    hedefler: ['GRUPLAÖLÇÜT ile satır kırılımlı özet kurmak', 'ÖZETÖLÇÜT ile satır × sütun özeti kurmak', 'Toplam, sıralama ve filtre bağımsız değişkenlerini kullanmak'],
+    anlatim: [
+      '`=GRUPLAÖLÇÜT(satır_alanı; değerler; işlev)`: `=GRUPLAÖLÇÜT(F2:F241;H2:H241;TOPLA)` her kategorinin toplam adedini, en altta Toplam satırıyla taşırır. İşlev eta yazımıyla verilir (TOPLA, ORTALAMA, BAĞ_DEĞ_SAY, MAK) ya da LAMBDA ile.',
+      'İsteğe bağlı bağımsız değişkenler sırasıyla: **başlık** (0 yok, 3 var ve göster; boşsa ilk satır metinse kendisi anlar), **toplam derinliği** (0 toplamsız, 1 genel toplam, 2 ara toplam, eksi değer toplamı üste alır), **sıralama** (1 ilk sütuna göre artan, −2 ikinci sütuna göre azalan) ve **filtre** (DOĞRU/YANLIŞ dizisi).',
+      '`=ÖZETÖLÇÜT(F2:F241;E2:E241;H2:H241;TOPLA)` satırlarda kategori, sütunlarda kanal olan bir çapraz tablo kurar; sağda ve altta toplamlar.',
+      'Özet tablo (pivot) ile farkı: pivot **Yenile** ister, sürükle-bırak ile kurulur, dilimleyici alır. GRUPLAÖLÇÜT formül olduğu için veri değişince anında güncellenir, sonucu başka formüller ve grafikler doğrudan okur; ama biçim ve etkileşim pivot kadar zengin değildir. Excel 365 (2024 sonrası) gerekir.',
+    ],
+    ornek: { sayfa: 'Satışlar', hucre: 'M1', formul: '=GRUPLAÖLÇÜT(F1:F241;H1:H241;TOPLA)', alan: 'N9', aciklama: 'Başlık satırı dahil seçildiği için (F1, H1) başlıklar da geliyor; en altta Toplam.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Satışlar', hedef: 'M1', okunan: 'M1:N5', soru: 'M1\'e **kanal başına toplam adedi** başlıklarıyla ve genel toplamla GRUPLAÖLÇÜT ile yazın.', cozum: '=GRUPLAÖLÇÜT(E1:E241;H1:H241;TOPLA)', gerekli: ['GROUPBY'], ipuclari: ['Kanal E, Adet H: =GRUPLAÖLÇÜT(E1:E241;H1:H241;TOPLA)'] },
+      { id: 'a2', sayfa: 'Satışlar', hedef: 'M1', okunan: 'M1:Q9', soru: 'M1\'e satırlarda **kategori**, sütunlarda **kanal** olan toplam adet tablosunu ÖZETÖLÇÜT ile yazın (başlık satırı olmadan: 2. satırdan başlayan alanlar).', cozum: '=ÖZETÖLÇÜT(F2:F241;E2:E241;H2:H241;TOPLA)', gerekli: ['PIVOTBY'], ipuclari: ['=ÖZETÖLÇÜT(satır_alanı;sütun_alanı;değerler;TOPLA)'] },
+      { id: 'a3', sayfa: 'Satışlar', hedef: 'M2', okunan: 'M2:N8', soru: 'M2\'ye **kategori başına ortalama adedi**, ortalamaya göre **büyükten küçüğe** ve **toplam satırı olmadan** yazın.', cozum: '=GRUPLAÖLÇÜT(F2:F241;H2:H241;ORTALAMA;0;0;-2)', gerekli: ['GROUPBY'], ipuclari: ['Başlık 0, toplam derinliği 0, sıralama -2 (ikinci sütun, azalan).'] },
+    ],
+    sikHata: { yanlis: 'Değer alanını başlık satırıyla, satır alanını başlıksız seçmek (F2:F241; H1:H241)', dogru: 'İki alanı aynı satırdan başlatmak', neden: 'Alanların satır sayısı farklı olursa GRUPLAÖLÇÜT #DEĞER! verir; başlık ya ikisinde de olmalı ya hiçbirinde.' },
+    mulakat: { soru: 'GRUPLAÖLÇÜT varken özet tabloya hâlâ gerek var mı?', cevap: 'Var. Pivot sürükle-bırakla hızlı keşif, dilimleyici, tarih gruplama, ayrıntıya inme ve veri modeli (milyonlarca satır, DAX) sunar. GRUPLAÖLÇÜT ise yenileme istemeyen, başka formüllerin okuyacağı, rapor sayfasına gömülü küçük özetler için idealdir. Panoda hesap katmanını formülle, keşfi pivotla yaparım.' },
+  },
+  {
+    id: 'm18-d5', modul: 'm18', baslik: 'Diziyi biçimlendirmek: SÜTUNA, SATIRSAR, GENİŞLET', sure: 11,
+    ozet: 'Çapraz tabloyu tek sütuna dökmek, uzun listeyi satırlara bölmek: veri şeklini formülle değiştirin.',
+    hedefler: ['SÜTUNA ve SATIRA ile alanı tek boyuta indirmek', 'Formülle "özetlemeyi kaldırma" (unpivot) yapmak', 'SATIRSAR ve GENİŞLET ile diziyi yeniden biçimlendirmek'],
+    anlatim: [
+      '`=SÜTUNA(B2:D5)` 4×3 alanı satır satır okuyup 12 değeri alt alta yazar; ikinci bağımsız değişken 1 boşları, 2 hataları, 3 ikisini birden atlar. Üçüncü bağımsız değişken DOĞRU ise sütun sütun okur. SATIRA aynısını tek satıra yapar.',
+      '**Formülle özetlemeyi kaldırma** (Power Query\'deki Unpivot): değerler `=SÜTUNA(B2:D5;1)`; yanına kategori adları için `A2:A5` dört satırlık sütun 4×3\'lük alanla işleme girince her sütuna yayılır: `=SÜTUNA(EĞER(B2:D5="";YOKSAY();A2:A5);2)`. Boş hücreyi hataya çevirip 2 ile atladığımız için iki sütun aynı sırada kalır.',
+      '`=SATIRSAR(B2:B41;4;"")` 40 ürünü 4\'lü satırlara böler (raf etiketi, oturma planı); son satır eksikse "" ile doldurulur. SÜTUNSAR sütunlara böler. `=GENİŞLET(dizi;satır;sütun;dolgu)` diziyi verilen boyuta tamamlar.',
+      'Bu işlevler DÜŞEYYIĞ, YATAYYIĞ, AL, BIRAK, SÜTUNSEÇ ile birlikte "dizi biçimlendirme" araç takımıdır; Power Query\'nin yaptığı şekil değişikliklerini formülde, yenilemesiz yapar.',
+    ],
+    ornek: { sayfa: 'Hedef', hucre: 'F2', formul: '=SÜTUNA(B2:D5;1)', hazirlik: { F1: 'Değer' }, alan: 'F12', aciklama: '4 kategori × 3 ay = 12 hücre; Giyim\'in Mart hedefi boş, 1 ile atlandığı için 11 değer.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Hedef', hedef: 'F2', okunan: 'F2:F13', hazirlik: { F1: 'Hedef' }, soru: 'F2\'ye B2:D5\'teki bütün hedefleri **boşları atlayarak** tek sütuna yazın.', cozum: '=SÜTUNA(B2:D5;1)', gerekli: ['TOCOL'], durumlar: [{}, { C2: 51000, D4: 20000 }], ipuclari: ['=SÜTUNA(B2:D5;1)'] },
+      { id: 'a2', sayfa: 'Hedef', hedef: 'G2', okunan: 'G2:G13', hazirlik: { G1: 'Kategori', F1: 'Hedef', F2: '=SÜTUNA(B2:D5;1)' }, soru: 'F sütununda değerler var. G2\'ye her değerin **kategori adını** aynı sırayla tek formülde yazın (boş hedef atlanmış olsun).', cozum: '=SÜTUNA(EĞER(B2:D5="";YOKSAY();A2:A5);2)', gerekli: ['TOCOL'], durumlar: [{}, { D4: 20000 }], ipuclari: ['A2:A5 sütunu 4×3 alanla işleme girince yayılır; boşları YOKSAY() ile hataya çevirip SÜTUNA(…;2) ile atlayın.'] },
+      { id: 'a3', sayfa: 'Ürünler', hedef: 'H2', okunan: 'H2:K11', soru: 'Raf etiketleri için H2\'ye 40 ürün adını **4\'lü satırlar** hâlinde yazın; eksik kalan hücreler boş metin olsun.', cozum: '=SATIRSAR(B2:B41;4;"")', gerekli: ['WRAPROWS'], ipuclari: ['=SATIRSAR(B2:B41;4;"")'] },
+    ],
+    sikHata: { yanlis: 'Değerleri SÜTUNA(…;1) ile, adları SÜTUNA(…;0) ile almak', dogru: 'İki sütunda da aynı hücreleri atlamak', neden: 'Biri boşu atlayıp öteki atlamazsa satırlar kayar ve her değer yanlış kategoriye düşer.' },
+    mulakat: { soru: 'Çapraz (aylar sütunda) bir tabloyu analiz için uzun biçime nasıl çevirirsiniz?', cevap: 'Tekrarlanan bir işse Power Query\'de "Diğer sütunların özetlemesini kaldır" kullanırım; kaynak değişince Yenile yeter. Formül gerekiyorsa SÜTUNA ile değerleri, aynı boyuta yayılmış etiketleri yine SÜTUNA ile aynı sırada alır, YATAYYIĞ ile birleştiririm. Özet tablo ve grafikler uzun biçimi ister.' },
+  },
+  {
+    id: 'm18-d6', modul: 'm18', baslik: 'Eğim, korelasyon ve doğrusal tahmin', sure: 12,
+    ozet: 'Sipariş her ay ne kadar artıyor, gelecek ay ne bekleriz, personel siparişle birlikte mi hareket ediyor?',
+    hedefler: ['EĞİM ve KESMENOKTASI ile doğrusal eğilimi okumak', 'TAHMİN.DOĞRUSAL ve EĞİLİM ile tahmin yapmak', 'KORELASYON\'u yorumlamak ve sınırlarını bilmek'],
+    anlatim: [
+      'Doğrusal eğilim `y = kesim + eğim × x`. `=EĞİM(B2:B25;D2:D25)` siparişin ay başına ortalama artışını, `=KESMENOKTASI(B2:B25;D2:D25)` x = 0 noktasını verir. İlk bağımsız değişken **y** (tahmin edilen), ikincisi **x**; sıra ters yazılırsa sonuç anlamsızlaşır.',
+      '`=TAHMİN.DOĞRUSAL(25;B2:B25;D2:D25)` 25. ayın beklenen siparişini verir. `=EĞİLİM(B2:B25;D2:D25;{25;26;27})` birden çok ayı taşırır. Grafikte dağılım ya da çizgiye "Eğilim çizgisi" eklemek aynı doğruyu çizer.',
+      '`=KORELASYON(B2:B25;C2:C25)` −1 ile 1 arasında: 1\'e yakın güçlü doğru yönlü ilişki. **Korelasyon neden değildir**: sipariş ile personel birlikte artabilir çünkü ikisi de mevsime bağlıdır. RKARE (R²) eğilimin değişimin ne kadarını açıkladığını söyler.',
+      'Mevsimselliği olan seride (Kasım–Aralık zirvesi) doğrusal tahmin zirveyi kaçırır. **Veri > Tahmin Sayfası** (TAHMİN.ETS) mevsimi ve güven aralığını hesaba katar; bu ders doğrusal temeli öğretir, ETS kavram olarak anlatılır.',
+    ],
+    ornek: { sayfa: 'Talep', hucre: 'F2', formul: '=TAHMİN.DOĞRUSAL(25;B2:B25;D2:D25)', hazirlik: { E2: 'Ocak 2026' }, aciklama: '24 aylık siparişten doğrusal eğilimle 25. ay (Ocak 2026) tahmini.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Talep', hedef: 'F2', hazirlik: { E2: 'Aylık artış' }, soru: 'F2\'ye siparişin **ay başına ortalama artışını** (doğrusal eğim; x = Ay no) yazın.', cozum: '=EĞİM(B2:B25;D2:D25)', gerekli: ['SLOPE'], ipuclari: ['=EĞİM(bilinen_y;bilinen_x): y Sipariş (B), x Ay no (D).'] },
+      { id: 'a2', sayfa: 'Talep', hedef: 'F3', hazirlik: { E3: '26. ay tahmini' }, soru: 'F3\'e **26. ayın** (Şubat 2026) doğrusal sipariş tahminini yazın.', cozum: '=TAHMİN.DOĞRUSAL(26;B2:B25;D2:D25)', gerekli: ['FORECAST.LINEAR'], ipuclari: ['=TAHMİN.DOĞRUSAL(x;bilinen_y;bilinen_x)'] },
+      { id: 'a3', sayfa: 'Talep', hedef: 'F4', hazirlik: { E4: 'Sipariş–personel' }, soru: 'F4\'e sipariş ile personel sayısı arasındaki **korelasyonu** yazın.', cozum: '=KORELASYON(B2:B25;C2:C25)', gerekli: ['CORREL'], ipuclari: ['=KORELASYON(B2:B25;C2:C25)'] },
+    ],
+    sikHata: { yanlis: '=EĞİM(D2:D25;B2:B25) (x ile y yer değiştirmiş)', dogru: '=EĞİM(B2:B25;D2:D25)', neden: 'EĞİM önce y\'yi (tahmin edilen), sonra x\'i ister; ters yazılınca "ay başına sipariş" yerine "sipariş başına ay" çıkar.' },
+    mulakat: { soru: 'Gelecek ayın talebini Excel\'de nasıl tahmin edersiniz?', cevap: 'Önce seriyi çizip eğilim ve mevsim var mı bakarım. Mevsim yoksa TAHMİN.DOĞRUSAL ya da eğilim çizgisi yeterli. Mevsim varsa Tahmin Sayfası (ETS) ile mevsim uzunluğunu ve güven aralığını alırım. Sonucu tek sayı değil aralık olarak sunar, geçmiş aylarda geriye dönük deneyip (son 3 ayı saklayıp tahmin et) hatayı ölçerim.' },
+  },
+  {
+    id: 'm18-d7', modul: 'm18', baslik: 'SIKLIK, TOPLAMA ve uçucu işlevler', sure: 10,
+    ozet: 'Aralıklara düşen sayıyı tek formülle sayın, hatalı veride hatayı atlayarak toplayın; RASGDİZİ, BUGÜN ve KAYDIR neden kitabı yavaşlatır?',
+    hedefler: ['SIKLIK ile sıklık dağılımı çıkarmak', 'TOPLAMA ile hataları atlayarak hesaplamak', 'Uçucu işlevleri tanımak'],
+    anlatim: [
+      '`=SIKLIK(veri;kovalar)` kovalar listesinden **bir fazla** değer taşırır: ilk kovaya kadar, iki kova arası, … ve son kovanın üstü. `=SIKLIK(H2:H241;{1;2})` adedi 1, 2 ve 2\'den büyük siparişleri sayar. Histogram grafiği aynı hesabı çizer.',
+      '`=TOPLAMA(işlev_no;seçenek;alan)` 19 işlevi tek çatıda toplar: 1 ORTALAMA, 4 MAK, 9 TOPLA, 14 BÜYÜK… Seçenek **6** hata değerlerini atlar: `=TOPLAMA(9;6;G2:G5)` içinde #BÖL/0! olsa da toplar. Seçenek 5 gizli satırları atlar (filtreli listede ALTTOPLAM gibi).',
+      '**Uçucu** işlevler (S_SAYI_ÜRET, RASTGELEARADA, RASGDİZİ, BUGÜN, ŞİMDİ, KAYDIR, DOLAYLI) kitapta herhangi bir hücre değişince yeniden hesaplanır. Bir iki tane sorun değildir; on binlerce satırda kitabı yavaşlatır. Rastgele örneklem alındıysa sonuç **Özel Yapıştır > Değerler** ile sabitlenir.',
+    ],
+    ornek: { sayfa: 'Satışlar', hucre: 'M2', formul: '=SIKLIK(H2:H241;{1;2})', hazirlik: { L1: 'Adet', L2: '1', L3: '2', L4: '3+', M1: 'Sipariş' }, alan: 'M4', aciklama: 'İki kova (1 ve 2) üç sonuç verir: 1 adet, 2 adet, 2\'den fazla.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Satışlar', hedef: 'M2', okunan: 'M2:M4', hazirlik: { L1: 'Adet en çok', L2: 1, L3: 2, M1: 'Sipariş sayısı' }, soru: 'L2:L3\'te kova sınırları var. M2\'ye adedi **1, 2 ve 2\'den fazla** olan sipariş sayılarını SIKLIK ile tek formülde yazın.', cozum: '=SIKLIK(H2:H241;L2:L3)', gerekli: ['FREQUENCY'], ipuclari: ['=SIKLIK(H2:H241;L2:L3): iki kova üç sonuç taşırır.'] },
+      { id: 'a2', sayfa: 'Hedef', hedef: 'G7', hazirlik: { G1: 'Mart değişimi', G2: '=(D2-C2)/D2', G3: '=(D3-C3)/D3', G4: '=(D4-C4)/D4', G5: '=(D5-C5)/D5', F7: 'Ortalama' }, soru: 'G2:G5\'te Mart değişim oranları var; Giyim\'in Mart hedefi boş olduğu için G4 #BÖL/0! veriyor. G7\'ye **hatayı atlayarak ortalamayı** TOPLAMA ile yazın.', cozum: '=TOPLAMA(1;6;G2:G5)', gerekli: ['AGGREGATE'], durumlar: [{}, { D2: 70000 }], ipuclari: ['İşlev 1 ORTALAMA, seçenek 6 hataları atla: =TOPLAMA(1;6;G2:G5)'] },
+      { id: 'a3', tur: 'secmeli', soru: '50.000 satırlık bir kitapta her satırda =KAYDIR(…) ve =BUGÜN() var; herhangi bir hücreye yazınca Excel saniyelerce donuyor. İlk ne yaparsınız?', secenekler: ['Hesaplamayı El ile moda alıp unutmak', 'KAYDIR yerine İNDİS ya da Tablo başvurusu kullanmak, BUGÜN\'ü tek bir hücreye alıp oraya başvurmak', 'Bilgisayarın belleğini artırmak', 'Formülleri metne çevirmek'], dogru: 1, aciklama: 'Uçucu işlev her değişiklikte bütün bağımlılarını yeniden hesaplatır. İNDİS uçucu değildir; BUGÜN bir hücrede bir kez hesaplanıp başvurulursa yük binlerce kat azalır. El ile mod sorunu gizler.' },
+    ],
+    sikHata: { yanlis: 'SIKLIK sonucunu kova sayısı kadar hücreye beklemek', dogru: 'Kova sayısından bir fazla sonuç beklemek', neden: 'Son değer son kovanın üstündekileri sayar; okunmazsa en büyük değerler kaybolur.' },
+    mulakat: { soru: 'Uçucu işlev nedir, neden önemlidir?', cevap: 'Bağımlı olduğu hücre değişmese de her hesaplamada yeniden hesaplanan işlevdir: BUGÜN, ŞİMDİ, S_SAYI_ÜRET, KAYDIR, DOLAYLI. Büyük kitapta her tuş vuruşunda zincirleme hesap tetikler. KAYDIR yerine İNDİS, DOLAYLI yerine doğrudan başvuru ya da ELEMAN kullanır, BUGÜN\'ü tek hücreye alırım.' },
+  },
+
+  // ---------------------------------------------------------------- M19 Veri araçları
+  {
+    id: 'm19-d1', modul: 'm19', baslik: 'Gelişmiş Filtre: VE, YA DA ve ölçüt alanı', sure: 12,
+    ozet: 'Otomatik filtrenin yapamadığını yapın: farklı sütunlarda YA DA koşulu, sonucu başka yere kopyalama.',
+    hedefler: ['Ölçüt alanını kurmak (başlık + koşul satırları)', 'Aynı satır VE, alt alta satır YA DA kuralını uygulamak', 'Gelişmiş Filtre\'nin metin ve boş satır tuzaklarını bilmek'],
+    anlatim: [
+      '**Veri > Sırala ve Filtre Uygula > Gelişmiş**. Liste aralığı başlıklarıyla birlikte verinin tamamı (`A1:K241`). Ölçüt aralığı ayrı bir yerde: **ilk satır liste başlıklarının birebir kopyası**, altında koşullar.',
+      'Kural: **aynı satırdaki koşullar VE**, **alt alta satırlar YA DA**. Kanal = Web VE Adet ≥ 2: tek satırda iki koşul. İzmir\'in iadeleri YA DA Ankara\'nın iadeleri: iki satır, her birinde şehir ve durum.',
+      'İki tuzak: (1) Düz metin ölçütü **"ile başlar"** demektir: `Ank` Ankara\'yı, `İstanbul` "İstanbul Avrupa"yı da getirir; tam eşleşme için hücreye `="=İstanbul"` yazılır. (2) Ölçüt aralığına **boş satır** alınırsa o satır "her kayıt" demektir; filtre hiçbir şeyi elemez.',
+      'Excel 365\'te aynı sonuç `=FİLTRE(A2:K241;(E2:E241="Web")*(H2:H241>=2))` ile canlı alınır (VE çarpım, YA DA toplam). Gelişmiş Filtre eski sürümlerde, makroyla tekrar çalıştırılan raporlarda ve sonucu değer olarak başka sayfaya kopyalamada hâlâ kullanılır.',
+    ],
+    ornek: { tur: 'gelismisFiltre', sayfa: 'Satışlar', bolge: 'M1:O4', cozum: { liste: 'A1:K241', olcut: 'M1:N2', hucreler: { M1: 'Kanal', N1: 'Adet', M2: 'Web', N2: '>=2' } }, aciklama: 'M1:N2 ölçüt alanı: Kanal Web VE Adet ≥ 2. Tamam\'a basıp sonucu görün; N2\'yi silip yeniden deneyin.' },
+    alistirmalar: [
+      { id: 'a1', tur: 'gelismisFiltre', sayfa: 'Satışlar', bolge: 'M1:O4', varsayilanListe: 'A1:K241', soru: '**Mağaza** kanalından gelen ve adedi **3** olan siparişleri Gelişmiş Filtre ile bulun. Ölçütü M1\'den başlayarak yazın.', cozum: { liste: 'A1:K241', olcut: 'M1:N2', hucreler: { M1: 'Kanal', N1: 'Adet', M2: 'Mağaza', N2: 3 } }, ipuclari: ['M1 Kanal, N1 Adet; M2 Mağaza, N2 3. Ölçüt aralığı M1:N2.'] },
+      { id: 'a2', tur: 'gelismisFiltre', sayfa: 'Satışlar', bolge: 'M1:O4', varsayilanListe: 'A1:K241', soru: '**İzmir\'in iadelerini YA DA Ankara\'nın iadelerini** tek filtrede bulun (Durum = İade).', cozum: { liste: 'A1:K241', olcut: 'M1:N3', hucreler: { M1: 'Şehir', N1: 'Durum', M2: 'İzmir', N2: 'İade', M3: 'Ankara', N3: 'İade' } }, ipuclari: ['YA DA alt alta satırdır ve her satır kendi koşullarını taşır: M2 İzmir/N2 İade, M3 Ankara/N3 İade. Ölçüt aralığı M1:N3.'] },
+    ],
+    sikHata: { yanlis: 'Ölçüt aralığını M1:N4 seçip 4. satırı boş bırakmak', dogru: 'Ölçüt aralığını yalnız dolu satırlara kadar seçmek (M1:N3)', neden: 'Boş ölçüt satırı her kaydı eşler; YA DA ile birleşince filtre bütün listeyi döndürür.' },
+    mulakat: { soru: 'Otomatik filtre ile Gelişmiş Filtre arasındaki fark nedir?', cevap: 'Otomatik filtre her sütunda ayrı süzer ve sütunlar arası koşullar hep VE\'dir. Gelişmiş Filtre ayrı bir ölçüt alanı kullanır: farklı sütunlarda YA DA kurabilir, formül ölçütü alabilir, sonucu başka bir yere kopyalayabilir ve yinelenenleri atabilir. Excel 365\'te çoğu durumda FİLTRE işlevi daha canlı bir alternatiftir.' },
+  },
+  {
+    id: 'm19-d2', modul: 'm19', baslik: 'Benzersiz kayıtlar ve sonucu başka yere kopyalamak', sure: 9,
+    ozet: 'Yinelenenleri silmeden benzersiz listeyi alın: Gelişmiş Filtre\'nin "Yalnızca benzersiz kayıtlar" kutusu ve BENZERSİZ.',
+    hedefler: ['Benzersiz kayıtları Gelişmiş Filtre ile çıkarmak', 'Yinelenenleri Kaldır ile farkını bilmek', 'FİLTRE + BENZERSİZ ile canlı karşılığını yazmak'],
+    anlatim: [
+      'Gelişmiş Filtre\'de **Yalnızca benzersiz kayıtlar** işaretlenince, liste aralığındaki sütunların tamamı aynı olan satırlardan yalnız ilki kalır. Ölçüt aralığı boş bırakılabilir. **Başka bir konuma kopyala** ile sonuç değer olarak yazılır; kaynak bozulmaz.',
+      '**Veri > Yinelenenleri Kaldır** ise kaynağın kendisinden satır siler, geri alınamaz hâle gelebilir. Önce kopyada çalışın.',
+      'Excel 365: `=BENZERSİZ(D2:E241)` aynı işi canlı yapar; `=SIRALA(BENZERSİZ(FİLTRE(D2:D241;(E2:E241="Web")*(D2:D241<>""))))` "Web\'den sipariş veren şehirler, boşlar hariç, alfabetik" listesidir.',
+    ],
+    ornek: null,
+    alistirmalar: [
+      { id: 'a1', tur: 'gelismisFiltre', sayfa: 'Satışlar', bolge: 'M1:O4', varsayilanListe: 'D1:E241', soru: 'Hangi **şehir–kanal** ikililerinden sipariş geldi? Liste aralığı D1:E241 (Şehir, Kanal) ile **yalnızca benzersiz kayıtları** alın; ölçüt yok.', cozum: { liste: 'D1:E241', olcut: '', benzersiz: true, hucreler: {} }, ipuclari: ['Ölçüt aralığını boş bırakın, "Yalnızca benzersiz kayıtlar" kutusunu işaretleyin.'] },
+      { id: 'a2', sayfa: 'Satışlar', hedef: 'M2', okunan: 'M2:M14', hazirlik: { M1: 'Web şehirleri' }, soru: 'M2\'ye **Web** kanalından sipariş veren şehirlerin **benzersiz, alfabetik ve boşsuz** listesini tek formülle yazın.', cozum: '=SIRALA(BENZERSİZ(FİLTRE(D2:D241;(E2:E241="Web")*(D2:D241<>""))))', gerekli: ['UNIQUE', 'FILTER'], ipuclari: ['İçten dışa: FİLTRE (Web ve boş olmayan) → BENZERSİZ → SIRALA.'] },
+    ],
+    sikHata: { yanlis: 'Yinelenenleri Kaldır\'ı ham verinin kendisinde çalıştırmak', dogru: 'Benzersiz listeyi Gelişmiş Filtre ile başka yere ya da BENZERSİZ ile almak', neden: 'Yinelenenleri Kaldır kaynaktan satır siler; yanlış sütun seçimi gerçek kayıtları da götürür.' },
+    mulakat: { soru: 'Bir listedeki benzersiz değerleri kaç yolla alırsınız?', cevap: 'Excel 365\'te BENZERSİZ; eski sürümde Gelişmiş Filtre (benzersiz kayıtlar, başka yere kopyala) ya da özet tablonun satır alanı; kaynağı temizlemek istiyorsam kopyada Yinelenenleri Kaldır; tekrarlanan iş için Power Query\'de Yinelenenleri Kaldır adımı. Hangi sütunların birlikte "aynı kayıt" sayıldığını önce netleştiririm.' },
+  },
+  {
+    id: 'm19-d3', modul: 'm19', baslik: '3B başvuru ve Birleştir: sayfaları toplamak', sure: 12,
+    ozet: 'Ocak, Şubat, Mart sayfalarını tek formülde toplayın; satır sırası farklıysa konuma değil etikete göre birleştirin.',
+    hedefler: ['Ocak:Mart!B2 biçiminde 3B başvuru yazmak', '3B başvurunun konuma bağlı olduğunu görmek', 'Etikete göre birleştirmek (ETOPLA ya da Veri > Birleştir)'],
+    anlatim: [
+      '**3B başvuru**: `=TOPLA(Ocak:Mart!B2:B8)` Ocak ile Mart arasındaki (sekme sırasıyla) **bütün sayfaların** B2:B8\'ini toplar. Araya yeni bir ay sayfası taşınırsa kendiliğinden dahil olur. TOPLA, ORTALAMA, MAK, MİN, BAĞ_DEĞ_SAY ile çalışır.',
+      'Tuzak: 3B başvuru **konuma** bakar. `=TOPLA(Ocak:Mart!B2)` her sayfanın B2\'sini toplar; Mart sayfasında satırlar farklı sırada ise (burada Mart\'ın ilk satırı Giyim) Elektronik\'e Giyim eklenir ve kimse fark etmez.',
+      '**Etikete göre** birleştirmek: her ay için `ETOPLA(Ocak!A:A;A2;Ocak!B:B)` gibi kategoriyi arayan formül, ya da **Veri > Birleştir**: işlev Topla, her ayın aralığı eklenir, "Etiketleri kullan: **Sol sütun**" işaretlenir. Birleştir etiketleri eşleştirir; "Kaynak verilere bağlantı oluştur" işaretlenmezse sonuç sabit değerdir.',
+      'Tekrarlanan aylık birleştirme için en sağlamı Power Query\'de klasörden ya da sayfalardan **Ekle** (append) yapıp özet tablo kurmaktır (Ders 11.4).',
+    ],
+    ornek: { sayfa: 'Çeyrek', hucre: 'B10', formul: '=TOPLA(Ocak:Mart!B2:B8)', aciklama: 'Üç ayın bütün kategorilerinin toplam adedi. Toplam sıradan bağımsızdır; kategori kategori toplamda sıra önemlidir.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Çeyrek', hedef: 'B10', varyantSayfalar: AYLAR3, soru: 'B10\'a üç ayın (Ocak, Şubat, Mart sayfaları, B2:B8) **toplam adedini** 3B başvuruyla tek formülde yazın.', cozum: '=TOPLA(Ocak:Mart!B2:B8)', ipuclari: ['=TOPLA(Ocak:Mart!B2:B8): ilk sayfa:son sayfa!alan'] },
+      { id: 'a2', sayfa: 'Çeyrek', hedef: 'B2:B8', varyantSayfalar: AYLAR3, soru: 'B2\'ye A2\'deki kategorinin **üç aylık adet toplamını** etikete göre yazın, B8\'e kadar doldurun. Dikkat: Mart sayfasında satır sırası farklı.', cozum: '=ETOPLA(Ocak!$A:$A;A2;Ocak!$B:$B)+ETOPLA(Şubat!$A:$A;A2;Şubat!$B:$B)+ETOPLA(Mart!$A:$A;A2;Mart!$B:$B)', ipuclari: ['Her ay için ETOPLA(Ay!$A:$A;A2;Ay!$B:$B) ve üçünü toplayın. =TOPLA(Ocak:Mart!B2) Mart\'ta yanlış satırı toplar.'] },
+      { id: 'a3', tur: 'secmeli', soru: 'Veri > Birleştir ile üç bölgenin satış sayfasını birleştiriyorsunuz; bölgelerde ürünler farklı sırada ve bazı ürünler bir bölgede yok. Hangi ayar şart?', secenekler: ['İşlev: Ortalama', 'Etiketleri kullan: Sol sütun (ve gerekirse Üst satır)', 'Kaynak verilere bağlantı oluştur', 'Hiçbiri; Birleştir konuma göre doğru toplar'], dogru: 1, aciklama: 'Etiket kullanılmazsa Birleştir 3B başvuru gibi konuma göre toplar; sıra farklıysa yanlış ürünler toplanır. Sol sütun etiketiyle ürün adları eşleştirilir, olmayan ürün de listeye eklenir.' },
+    ],
+    sikHata: { yanlis: '=TOPLA(Ocak:Mart!B2) ile kategori kategori toplamak', dogru: 'Kategori adına göre toplamak (ETOPLA ya da Birleştir, Sol sütun)', neden: '3B başvuru yalnız konuma bakar; sayfalardan birinde sıra farklıysa sessizce yanlış toplar.' },
+    mulakat: { soru: 'Aylık ayrı sayfalardaki verileri nasıl birleştirirsiniz?', cevap: 'Düzen birebir aynı ve sabitse 3B başvuru (=TOPLA(Ocak:Aralık!B2)) hızlı çözümdür. Sıra değişebiliyorsa etikete göre: ETOPLA/ÇAPRAZARA ya da Veri > Birleştir (sol sütun). Her ay tekrarlanacaksa Power Query ile sayfaları alt alta ekler, tek tabloda özet tablo kurarım; yeni ay gelince Yenile yeter.' },
+  },
+  {
+    id: 'm19-d4', modul: 'm19', baslik: 'Hızlı Doldurma ve formülle metin ayırma', sure: 9,
+    ozet: 'Ctrl+E bir örnekten deseni tahmin eder; hızlıdır ama formül değildir. Ne zaman Hızlı Doldurma, ne zaman formül?',
+    hedefler: ['Hızlı Doldurma\'yı (Ctrl+E) kullanmak', 'Sonucun sabit değer olduğunu ve deseni yanlış tahmin edebileceğini bilmek', 'Aynı işi SONRAKİMETİN / ÖNCEKİMETİN ile kalıcı yapmak'],
+    anlatim: [
+      'Ad Soyad sütununun yanına ilk satırda soyadını elle yazıp **Veri > Hızlı Doldurma** (Ctrl+E) dediğinizde Excel deseni tahmin eder ve sütunu doldurur.',
+      'Üç sınır: sonuç **sabit değerdir** (kaynak değişince güncellenmez); desen **yanlış tahmin** edilebilir (iki adlı kişide "Ali Rıza Kaya" → "Rıza Kaya"), bu yüzden birkaç satırı kontrol edip gerekirse ikinci bir örnek yazılır; ve kaydedilmiş bir **adım değildir**, gelecek ay yeniden yapılır.',
+      'Kalıcı çözüm formüldür: `=SONRAKİMETİN(B2;" ";-1)` **son** boşluktan sonrasını, `=ÖNCEKİMETİN(B2;" ";-1)` son boşluktan öncesini (ad, iki adlılar dahil) verir. Power Query\'de aynı iş "Sütunu Böl > Sınırlayıcıya göre, en sağdaki" ile yapılır.',
+    ],
+    ornek: { sayfa: 'Personel', hucre: 'L2', formul: '=SONRAKİMETİN(B2;" ";-1)', hazirlik: { L1: 'Soyad' }, aciklama: '-1 "sondan birinci boşluk" demektir; iki adlı kişide de soyadı doğru gelir.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Personel', hedef: 'L2:L161', hazirlik: { L1: 'Ad' }, soru: 'L2\'ye personelin **adını** (iki adlılarda iki ad birlikte; soyadından önceki her şey) yazın, L161\'e kadar doldurun.', cozum: '=ÖNCEKİMETİN(B2;" ";-1)', gerekli: ['TEXTBEFORE'], ipuclari: ['=ÖNCEKİMETİN(B2;" ";-1): son boşluktan öncesi.'] },
+      { id: 'a2', tur: 'secmeli', soru: 'Hızlı Doldurma ile 160 kişinin adını ayırdınız. Ertesi ay listeye 12 kişi eklendi. Ne olur?', secenekler: ['Yeni satırlar kendiliğinden dolar', 'Hızlı Doldurma sabit değer yazdığı için yeni satırlar boş kalır; yeniden Ctrl+E ya da formül gerekir', 'Eski değerler silinir', 'Excel uyarı verir ve formüle çevirir'], dogru: 1, aciklama: 'Hızlı Doldurma bir kerelik bir işlemdir, formül ya da adım bırakmaz. Tekrarlanan iş için formül, Tablo hesaplanan sütunu ya da Power Query kullanılır.' },
+    ],
+    sikHata: { yanlis: 'Hızlı Doldurma sonucunu kontrol etmeden kullanmak', dogru: 'İki adlı, ünvanlı, boş satırlarda örnek kontrol etmek ya da formül yazmak', neden: 'Hızlı Doldurma ilk örneklerden desen çıkarır; istisnai satırlarda yanlış tahmin eder ve hata vermez.' },
+    mulakat: { soru: 'Hızlı Doldurma\'yı ne zaman kullanırsınız?', cevap: 'Bir kerelik, küçük, gözle kontrol edebileceğim temizlik işlerinde: kod ayırma, ad birleştirme, biçim değiştirme. Tekrarlanan ya da kaynağı değişen işte formül (ÖNCEKİMETİN/SONRAKİMETİN, METİNBÖL) ya da Power Query adımı kurarım; çünkü Hızlı Doldurma iz bırakmaz ve yanlış tahmini sessizdir.' },
+  },
+  {
+    id: 'm19-d5', modul: 'm19', baslik: 'Özel sıralama, Alt Toplam ve gruplama', sure: 10,
+    ozet: 'Yüksek–Orta–Düşük ya da Ocak–Şubat gibi alfabetik olmayan sırayla sıralayın; Alt Toplam komutu ve anahat ile raporu katlayın.',
+    hedefler: ['Özel listeye göre sıralamak (menüde ve formülle)', 'Veri > Alt Toplam komutunun ön koşulunu bilmek', 'Gruplama ve anahatla satırları katlamak'],
+    anlatim: [
+      'Alfabetik sıralama "Düşük, Orta, Yüksek" verir; iş sırası "Yüksek, Orta, Düşük"tür. Menüde: **Sırala > Düzen: Özel Liste** ve listeyi yazmak. Formülde: `=SIRALAÖLÇÜT(A2:A9;KAÇINCI(E2:E9;{"Yüksek";"Orta";"Düşük"};0);1;B2:B9;1)` önce önceliğin listedeki sırasına, eşitlikte başlangıç tarihine göre sıralar.',
+      '**Veri > Alt Toplam** her grup değiştiğinde araya ALTTOPLAM satırı ekler ve solda 1-2-3 anahat düğmelerini kurar. Ön koşul: liste **önce o sütuna göre sıralanmış** olmalı; değilse aynı kategori için birden çok parça alt toplam çıkar.',
+      '**Veri > Gruplandır** (Shift+Alt+Sağ ok) seçili satır ya da sütunları katlanabilir yapar: ayrıntı aylar gizlenip yalnız çeyrek toplamları gösterilir. Sunumda kullanışlıdır; hesap için değil görünüm içindir.',
+    ],
+    ornek: { sayfa: 'Görevler', hucre: 'G2', formul: '=SIRALAÖLÇÜT(A2:A9;KAÇINCI(E2:E9;{"Yüksek";"Orta";"Düşük"};0);1)', hazirlik: { G1: 'Önceliğe göre' }, alan: 'G9', aciklama: 'KAÇINCI her önceliği listedeki sırasına (1, 2, 3) çeviriyor; SIRALAÖLÇÜT bu sayılara göre sıralıyor.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Görevler', hedef: 'G2', okunan: 'G2:G9', hazirlik: { G1: 'Plan sırası' }, soru: 'G2\'ye görev adlarını **önce önceliğe (Yüksek, Orta, Düşük), eşitlikte başlangıç tarihine (eskiden yeniye)** göre sıralı yazın.', cozum: '=SIRALAÖLÇÜT(A2:A9;KAÇINCI(E2:E9;{"Yüksek";"Orta";"Düşük"};0);1;B2:B9;1)', gerekli: ['SORTBY', 'MATCH'], ipuclari: ['=SIRALAÖLÇÜT(A2:A9;KAÇINCI(E2:E9;{"Yüksek";"Orta";"Düşük"};0);1;B2:B9;1)'] },
+      { id: 'a2', tur: 'secmeli', soru: 'Satış listesine Veri > Alt Toplam ile "Kategori\'deki her değişiklikte Adet topla" uyguladınız; Elektronik için beş ayrı alt toplam çıktı. Neden?', secenekler: ['Adet sütununda metin var', 'Liste Kategori\'ye göre sıralı değildi; Alt Toplam her değer değişiminde yeni grup açar', 'ALTTOPLAM işlevi bozuk', 'Filtre açıktı'], dogru: 1, aciklama: 'Alt Toplam yalnız ardışık aynı değerleri bir grup sayar. Önce Kategori\'ye göre sıralanmalı.' },
+      { id: 'a3', tur: 'secmeli', soru: 'Aylık sütunları olan bir bütçe tablosunda yöneticiye yalnız çeyrek toplamlarını göstermek, gerektiğinde ayları açmak istiyorsunuz. En uygunu?', secenekler: ['Ay sütunlarını silmek', 'Ay sütunlarını Gruplandırmak (anahat): 1/2 düğmesiyle katlanır, açılır', 'Ay sütunlarının yazı rengini beyaz yapmak', 'Ayrı bir dosya hazırlamak'], dogru: 1, aciklama: 'Gruplama veriyi silmeden görünümü katlar; okuyan kişi anahat düğmesiyle ayrıntıya iner. Beyaz yazı gizli veri bırakır ve yanıltır.' },
+    ],
+    sikHata: { yanlis: 'Önceliği alfabetik sıralamak (Düşük, Orta, Yüksek)', dogru: 'Özel liste ya da KAÇINCI ile sıra numarasına çevirerek sıralamak', neden: 'Alfabetik sıra iş anlamını bozar; en önemli iş ortada kalır.' },
+    mulakat: { soru: 'Alfabetik olmayan bir sıraya göre (ör. aylar, öncelik) nasıl sıralarsınız?', cevap: 'Menüde Özel Liste tanımlarım; formülde KAÇINCI ile her değeri istenen listedeki sıra numarasına çevirip SIRALAÖLÇÜT\'e veririm. Özet tabloda da Özel Liste sıralaması uygulanır. Aylar tarihse metin yerine tarih tutup ay numarasına göre sıralamak en sağlamıdır.' },
+  },
+
+  // ---------------------------------------------------------------- M20 Pano tasarımı ve özel grafikler
+  {
+    id: 'm20-d1', modul: 'm20', baslik: 'Pano tasarım süreci: soru, taslak, yerleşim', sure: 10,
+    ozet: 'Panoya grafikle değil soruyla başlayın: kim bakacak, ne karar verecek, hangi sıklıkla? Sonra kâğıtta taslak, en son Excel.',
+    hedefler: ['Başlamadan önce sorulacak beş soruyu bilmek', 'Yerleşim kurallarını (sol üst KPI, Z okuma, beyaz alan) uygulamak', 'Son dokunuşlar: yazdırma alanı, koruma, gezinme köprüleri'],
+    anlatim: [
+      'Başlamadan önce beş soru: **Kim** bakacak (yönetici mi operasyon mu)? **Hangi kararı** verecek? **Ne sıklıkla** güncellenecek? **Nerede** açılacak (ekran, telefon, kâğıt)? **Veri nereden** geliyor ve kim yeniliyor? Cevaplar KPI sayısını, ayrıntı düzeyini ve teknolojiyi (pivot mu formül mü Power BI mı) belirler.',
+      '**Taslak**: önce kâğıtta ya da şekillerle kutular. Göz sol üstten başlayıp Z çizer: en önemli KPI\'lar sol üstte, açıklayıcı grafikler altta, filtreler bir kenarda tek sırada. Bir ekranı geçmeyin; 3–4 grafikten fazlası okunmaz.',
+      '**Renk** tasarrufu: veri griye yakın, yalnız dikkat çekilecek şey renkli (Ders 20.6). Kırmızı ve yeşil durum için ayrılır, seri rengi olarak kullanılmaz. Kılavuz çizgileri silik, 3B ve gölge yok.',
+      '**Son dokunuşlar**: Görünüm > Kılavuz çizgilerini kapat; yazdırma alanı ve "Sayfaya sığdır"; hesap sayfalarını gizle ve sayfayı koru (yalnız dilimleyiciler açık); her sayfaya "Panoya dön" köprüsü (Ekle > Bağlantı > Bu Belgede).',
+    ],
+    ornek: null,
+    alistirmalar: [
+      { id: 'a1', tur: 'secmeli', soru: 'Depo müdürü "bana bir pano lazım" dedi. İlk ne yaparsınız?', secenekler: ['Veride ne varsa hepsinin grafiğini çizmek', 'Hangi kararı vereceğini, ne sıklıkla ve nerede bakacağını sormak; cevaplara göre 3–5 KPI seçmek', 'En şık şablonu bulup veriyi içine koymak', 'Power BI lisansı istemek'], dogru: 1, aciklama: 'Pano bir soru listesinin cevabıdır. Karar ve kullanım bilinmeden çizilen grafikler kalabalık yapar ve kimse bakmaz.' },
+      { id: 'a2', tur: 'secmeli', soru: 'Panoda dört KPI kutusu ve üç grafik var. En önemli KPI (zamanında sevk oranı) nereye konur?', secenekler: ['Sağ alta, sona saklanır', 'Sol üste, en büyük ve ilk görülen yere', 'Ortaya, grafiklerin arasına', 'Ayrı bir sayfaya'], dogru: 1, aciklama: 'Batı dillerinde ve Türkçede göz sol üstten başlar (Z deseni). En önemli bilgi ilk bakışta görünmeli.' },
+      { id: 'a3', tur: 'secmeli', soru: 'Pano başkalarına gönderilecek. Kullanıcı yanlışlıkla formül silmesin, ama dilimleyiciyi kullanabilsin. Ne yaparsınız?', secenekler: ['Dosyayı PDF yapmak', 'Hesap sayfalarını gizleyip sayfayı korumak; korumada "PivotTable ve PivotChart kullan" iznini açmak', 'Formülleri değere çevirmek', 'Bütün hücreleri kilitsiz bırakmak'], dogru: 1, aciklama: 'Sayfa koruması formülleri kilitler; koruma penceresindeki izinlerden pivot ve dilimleyici kullanımı açık bırakılırsa etkileşim sürer. PDF etkileşimi, değer çevirme güncellemeyi öldürür.' },
+    ],
+    sikHata: { yanlis: 'Bütün grafikleri bir sayfaya dizip pano demek', dogru: 'Soru listesinden 3–5 KPI ve en çok 4 grafik seçmek', neden: 'Her şeyi gösteren pano hiçbir şeyi göstermez; okuyan ilk 5 saniyede nereye bakacağını bilmeli.' },
+    mulakat: { soru: 'Bir pano projesine nasıl başlarsınız?', cevap: 'Kullanıcıyla 15 dakikalık görüşme: hangi kararı veriyor, hangi sıklıkla, nerede bakıyor, bugün bu bilgiyi nereden alıyor. Bunu 3–5 KPI ve birkaç soruya indirir, kâğıtta taslak çizip onaylatırım. Sonra veri kaynağını ve yenileme sorumlusunu netleştirir, hesap katmanını ayrı sayfada kurar, panoyu en son tasarlarım. Yayından sonra bir hafta kullanımını gözlerim.' },
+  },
+  {
+    id: 'm20-d2', modul: 'm20', baslik: 'Hedef–gerçek: madde grafiği ve ilerleme halkası', sure: 11,
+    ozet: 'Beş bölgenin hedefe göre durumunu tek satırlık çubuklarla gösterin; tek bir sayının ilerlemesini halkayla.',
+    hedefler: ['Madde (bullet) grafiğinin parçalarını okumak', 'Hedef–gerçeği sütun yerine madde grafiğiyle göstermek', 'İlerleme halkasını ne zaman kullanacağını bilmek'],
+    anlatim: [
+      '**Madde grafiği** (Stephen Few): her satırda gerçekleşen kalın bir çubuk, hedef dikey bir çizgi, arkada gri bantlar (kötü, orta, iyi). Ibre grafiğinin anlattığını çok daha dar alanda ve karşılaştırılabilir biçimde anlatır.',
+      'Excel\'de hazır türü yoktur; yığılmış çubuk (bantlar) + ikincil eksende ince çubuk (gerçekleşen) + hata çubuğu ya da dağılım noktası (hedef) ile kurulur. Kesit\'te Madde türü bu yapıyı doğrudan çizer: sütunlar sırasıyla **gerçekleşen, hedef, bant sınırları**.',
+      '**İlerleme halkası**: halka grafikte iki dilim (gerçekleşen ve kalan), kalan dilim gri, ortada büyük yüzde. Tek bir hedefin ilerlemesi için iyidir (yıllık bütçenin %72\'si harcandı); birçok kategoriyi karşılaştırmak için madde grafiği daha iyi okunur.',
+    ],
+    ornek: { tur: 'grafik', sayfa: 'Bölgeler', kaynak: { alan: 'A1:E6' }, secenek: { tur: 'madde', baslik: 'Bölge depoları: günlük sevk ve hedef' }, aciklama: 'Kalın çubuk gerçekleşen, siyah çizgi hedef, gri bantlar kötü ve orta eşiği. Sağdaki yüzde hedefe ulaşma oranı.' },
+    alistirmalar: [
+      { id: 'a1', tur: 'grafik', soru: 'Beş bölgenin günlük sevkini hedefe ve kötü/orta bantlarına göre **tek bakışta** gösterin; bir başlık yazın.', sayfa: 'Bölgeler', kaynakSabit: true, kaynak: { alan: 'A1:E6' }, secenek: { tur: 'sutun' }, cozum: { kaynak: { alan: 'A1:E6' }, secenek: { tur: 'madde', baslik: 'Bölge sevkleri: hedefe göre' } }, kural: { turler: ['madde'], baslikGerekli: true, turNeden: 'Dört serili sütun grafik hedefi ve bantları ayrı çubuk yapıyor; Madde (hedef–gerçek) türünü seçin.' }, ipuclari: ['Grafik türü: Hedef ve ilerleme > Madde.'] },
+      { id: 'a2', tur: 'grafik', soru: 'Her bölgenin **hedefe ulaşma yüzdesini** halkalarla gösterin; başlık yazın.', sayfa: 'Bölgeler', kaynakSabit: true, kaynak: { alan: 'A1:C6' }, secenek: { tur: 'pasta' }, cozum: { kaynak: { alan: 'A1:C6' }, secenek: { tur: 'ilerleme', baslik: 'Hedefe ulaşma' } }, kural: { turler: ['ilerleme', 'madde'], baslikGerekli: true, turNeden: 'Pasta bölgelerin payını gösterir, hedefe ulaşmayı değil. İlerleme halkası ya da madde grafiği seçin.' }, ipuclari: ['Hedef ve ilerleme > İlerleme halkası.'] },
+    ],
+    sikHata: { yanlis: 'Hedef ve gerçekleşeni yan yana iki sütun çizmek', dogru: 'Gerçekleşeni çubuk, hedefi çizgi işaret olarak üst üste çizmek (madde grafiği)', neden: 'Yan yana sütunlarda göz farkı hesaplamak zorunda kalır; hedef çizgisi "geçti mi" sorusunu doğrudan cevaplar.' },
+    mulakat: { soru: 'Hedef–gerçek karşılaştırmasını nasıl görselleştirirsiniz?', cevap: 'Birden çok kategori için madde grafiği ya da gerçekleşen çubuk + hedef işareti; zamana yayılmışsa gerçekleşen çizgi + hedef kesikli çizgi; tek bir KPI için büyük sayı ve altında "hedefin %94\'ü". Sapmanın kendisi önemliyse artı/eksi renkli sapma sütunu. İbreyi yalnız tek bir değerle sınırlı alanda kullanırım.' },
+  },
+  {
+    id: 'm20-d3', modul: 'm20', baslik: 'İbre (hız göstergesi) ve ne zaman kullanılmaz', sure: 8,
+    ozet: 'Yöneticiler ibreyi sever; ama bir panoda en çok bir tane. Ne zaman işe yarar, ne zaman yer kaplar?',
+    hedefler: ['İbre grafiğinin parçalarını kurmak (ölçek, değer, hedef)', 'İbrenin madde grafiğine göre zayıf yanlarını bilmek', 'Tek değerli KPI için doğru görseli seçmek'],
+    anlatim: [
+      'Excel\'de ibre: yarım halka (halka grafiğin alt yarısı görünmez yapılır) + pasta grafikten ince bir dilim ibre olarak. Kesit\'te İbre türü ilk satırı değer, ikinci sütunu hedef alır; ölçek en çok ayarlanabilir.',
+      'Zayıf yanları: büyük alan kaplar, tek bir sayı gösterir, kategoriler arası karşılaştırılamaz, açıyı okumak uzunluğu okumaktan zordur. Beş bölge için beş ibre, beş satırlık bir madde grafiğinin yaptığını üç kat alanda ve daha kötü yapar.',
+      'Ne zaman kullanılır: yönetici panosunun en üstünde **tek** bir kritik oran (doluluk, zamanında sevk) için, hedef açıkça işaretlenmişse. Çoğu zaman büyük punto sayı + "hedefin %92\'si" yazısı aynı işi daha iyi yapar.',
+    ],
+    ornek: { tur: 'grafik', sayfa: 'Bölgeler', kaynak: { alan: 'A1:C2' }, secenek: { tur: 'ibre', baslik: 'İzmir: günlük sevk' }, aciklama: 'İzmir\'in gerçekleşeni (410) ve hedefi (450, çizgi). Aynı bilgi madde grafiğinde tek satırdır.' },
+    alistirmalar: [
+      { id: 'a1', tur: 'secmeli', soru: 'Panoya beş bölgenin hedefe ulaşma durumunu koyacaksınız. Hangisi en az alanda en iyi karşılaştırma sağlar?', secenekler: ['Beş ibre yan yana', 'Beş satırlık madde grafiği', 'Beş dilimli pasta', '3B sütun grafik'], dogru: 1, aciklama: 'Madde grafiği uzunlukla gösterir (en kolay okunan), hedefi ve bantları aynı satırda taşır, satırlar alt alta karşılaştırılır. İbreler açıyla gösterir ve beş kat yer kaplar.' },
+      { id: 'a2', tur: 'grafik', soru: 'Genel müdür panonun en üstünde yalnız **İzmir deposunun** günlük sevkini hedefle birlikte bir ibrede görmek istiyor. Kurun ve başlık yazın.', sayfa: 'Bölgeler', kaynakSabit: true, kaynak: { alan: 'A1:C2' }, secenek: { tur: 'pasta' }, cozum: { kaynak: { alan: 'A1:C2' }, secenek: { tur: 'ibre', baslik: 'İzmir: günlük sevk' } }, kural: { turler: ['ibre', 'ilerleme', 'madde'], baslikGerekli: true, turNeden: 'Pasta iki sayıyı bütünün parçası gibi gösterir; tek KPI için İbre (ya da İlerleme halkası) seçin.' }, ipuclari: ['Hedef ve ilerleme > İbre.'] },
+    ],
+    sikHata: { yanlis: 'Her KPI için bir ibre koymak', dogru: 'En kritik tek KPI için ibre ya da büyük sayı, karşılaştırma için madde grafiği', neden: 'İbre alan yer ve açı okuması ister; birden çoğu panoyu kalabalıklaştırır, karşılaştırmayı zorlaştırır.' },
+    mulakat: { soru: 'Hız göstergesi (gauge) grafiği hakkında ne düşünüyorsunuz?', cevap: 'Yöneticiye tanıdık gelir ve tek bir KPI\'ın hedefe göre durumunu çarpıcı gösterir; ama çok alan kaplar ve karşılaştırma için kötüdür. Bir panoda en çok bir tane kullanır, birden çok kategori için madde grafiğine geçerim. Rengi durumla (kırmızı/yeşil) değil, hedef çizgisiyle anlatmayı tercih ederim.' },
+  },
+  {
+    id: 'm20-d4', modul: 'm20', baslik: 'Pareto: sorunun %80\'i nereden geliyor?', sure: 10,
+    ozet: 'İade nedenlerini büyükten küçüğe sıralayıp birikimli payı çizin: hangi üç nedeni çözmek iadelerin çoğunu bitirir?',
+    hedefler: ['Pareto grafiğini kurmak ve okumak', '80/20 eşiğini yorumlamak', 'İlk N nedenin payını formülle hesaplamak'],
+    anlatim: [
+      'Pareto ilkesi: sonuçların büyük kısmı az sayıda nedenden gelir. Grafik iki katmandır: nedenler **büyükten küçüğe sıralı** sütunlar ve sağ eksende **birikimli yüzde** çizgisi. %80 çizgisinin solunda kalan nedenler önceliktir.',
+      'Excel 2016+: **Ekle > İstatistik Grafiği > Pareto** veriyi kendisi sıralar. Eski sürümde: veriyi sırala, birikimli % sütunu ekle (Ders 18.3\'teki SCAN), sütun + ikincil eksende çizgi.',
+      'Kalite ve depo işinde kullanımı: iade nedenleri, hata türleri, duruş nedenleri, sayım farkları. Grafiğin altına "İlk 3 neden iadelerin %X\'i" cümlesi yazılır: karar o cümleyle verilir.',
+    ],
+    ornek: { tur: 'grafik', sayfa: 'İadeler', kaynak: { alan: 'A1:B9' }, secenek: { tur: 'pareto', baslik: 'İade nedenleri' }, aciklama: 'Beden, yanlış ürün ve geç teslim birlikte iadelerin %80\'inden fazlası; soluk sütunlar eşiğin sağı.' },
+    alistirmalar: [
+      { id: 'a1', tur: 'grafik', soru: 'İade nedenleri bir pastada gösterilmiş. Önceliği gösteren grafiğe çevirin ve başlık yazın.', sayfa: 'İadeler', kaynakSabit: true, kaynak: { alan: 'A1:B9' }, secenek: { tur: 'pasta' }, cozum: { kaynak: { alan: 'A1:B9' }, secenek: { tur: 'pareto', baslik: 'İade nedenleri (Pareto)' } }, kural: { turler: ['pareto'], baslikGerekli: true, turNeden: 'Sekiz dilimli pasta öncelik göstermez; Pareto seçin.' }, ipuclari: ['Karşılaştırma > Pareto.'] },
+      { id: 'a2', sayfa: 'İadeler', hedef: 'D2', hazirlik: { D1: 'İlk 3 nedenin payı' }, soru: 'D2\'ye **en büyük 3 nedenin** iadelerin yüzde kaçını oluşturduğunu tek formülle yazın.', cozum: '=TOPLA(AL(SIRALA(B2:B9;;-1);3))/TOPLA(B2:B9)', gerekli: ['TAKE', 'SORT'], ipuclari: ['SIRALA(B2:B9;;-1) büyükten küçüğe, AL(…;3) ilk üçü, TOPLA ve toplama böl.'] },
+    ],
+    sikHata: { yanlis: 'Pareto\'yu sırasız sütun + birikimli çizgiyle çizmek', dogru: 'Önce büyükten küçüğe sıralamak', neden: 'Sırasız birikim çizgisi eğri değil zikzaktır; %80 eşiğinin solunu okumak imkânsızlaşır.' },
+    mulakat: { soru: 'Pareto analizini nerede kullandınız?', cevap: 'Hata ya da iade nedenlerini önceliklendirmek için: nedenleri sayıp büyükten küçüğe sıralar, birikimli payı çizerim. İlk birkaç neden genelde sorunun çoğudur; iyileştirme ekibinin zamanı oraya gider. Sonra aynı grafiği iyileştirmeden sonra tekrar çizip etkiyi gösteririm.' },
+  },
+  {
+    id: 'm20-d5', modul: 'm20', baslik: 'Gantt, kelebek ve halter grafikleri', sure: 12,
+    ozet: 'Proje planı takvimde, iki vardiya yan yana, önce–sonra farkı tek çizgide: Excel\'in hazır vermediği üç pano grafiği.',
+    hedefler: ['Gantt grafiğini başlangıç + süre ile kurmak', 'İki grubu kelebek grafikte karşılaştırmak', 'Önce–sonra farkını halter grafikle göstermek'],
+    anlatim: [
+      '**Gantt**: yığılmış çubuk grafikte ilk seri başlangıç tarihi (dolgusuz, görünmez), ikinci seri süre. Eksen en az değeri projenin ilk günüyle sınırlanır, kategori ekseni ters çevrilir ki ilk görev üstte olsun. Kesit\'te Gantt türü sütunları **görev, başlangıç, süre (gün)** olarak okur.',
+      '**Kelebek (tornado)**: iki grup aynı ölçütlerde; biri sola, biri sağa uzar, ortada ölçüt adları. Excel\'de bir seri eksiye çevrilip yığılmış çubukla çizilir. İki vardiyanın, iki yılın, iki bölgenin profili için idealdir; ölçütler aynı birimde olmalı (hepsi yüzde gibi).',
+      '**Halter (dumbbell)**: her kategoride iki nokta ve aralarında çizgi. Geçen yıl–bu yıl, hedef–gerçek farkını sütun çiftlerinden daha temiz gösterir; çizginin uzunluğu fark, yönü artış ya da azalış.',
+    ],
+    ornek: { tur: 'grafik', sayfa: 'Görevler', kaynak: { alan: 'A1:C9', tarihSeri: true }, secenek: { tur: 'gantt', baslik: 'Depo taşıma planı' }, aciklama: 'Başlangıç tarihleri ve süreler: raf montajı ile WMS tanımları aynı anda yürüyor, taşıma sayımdan hemen sonra.' },
+    alistirmalar: [
+      { id: 'a1', tur: 'grafik', soru: 'Depo taşıma projesinin görevlerini (başlangıç ve süre) **takvim üzerinde** gösterin; başlık yazın.', sayfa: 'Görevler', kaynakSabit: true, kaynak: { alan: 'A1:C9', tarihSeri: true }, secenek: { tur: 'cubuk' }, cozum: { kaynak: { alan: 'A1:C9', tarihSeri: true }, secenek: { tur: 'gantt', baslik: 'Depo taşıma planı' } }, kural: { turler: ['gantt'], baslikGerekli: true, turNeden: 'Çubuk grafik başlangıç tarihini (45.663 gibi) uzunluk gibi çiziyor; Gantt seçin.' }, ipuclari: ['Zaman > Gantt.'] },
+      { id: 'a2', tur: 'grafik', soru: 'A ve B vardiyasının beş kalite ölçüsünü (yüzde) **karşılıklı** gösterin: hangi vardiya nerede güçlü?', sayfa: 'Vardiyalar', kaynakSabit: true, kaynak: { alan: 'A1:C6' }, secenek: { tur: 'radar' }, cozum: { kaynak: { alan: 'A1:C6' }, secenek: { tur: 'kelebek', baslik: 'A ve B vardiyası' } }, kural: { turler: ['kelebek', 'halter', 'cubuk'], baslikGerekli: true, turNeden: 'Radar alanı okutur, değeri değil; kelebek (ya da halter) seçin.' }, ipuclari: ['Karşılaştırma > Kelebek (tornado).'] },
+      { id: 'a3', tur: 'grafik', soru: 'Her bölgede **hedef ile gerçekleşen arasındaki farkı** tek bir çizgiyle gösterin; başlık yazın.', sayfa: 'Bölgeler', kaynakSabit: true, kaynak: { alan: 'A1:C6' }, secenek: { tur: 'sutun' }, cozum: { kaynak: { alan: 'A1:C6' }, secenek: { tur: 'halter', baslik: 'Gerçekleşen ve hedef' } }, kural: { turler: ['halter', 'madde'], baslikGerekli: true, turNeden: 'Yan yana sütunlarda fark göz kararı; Halter (önce–sonra) seçin.' }, ipuclari: ['Karşılaştırma > Halter.'] },
+    ],
+    sikHata: { yanlis: 'Gantt için başlangıç tarihini çubuk uzunluğu olarak çizmek', dogru: 'Başlangıcı görünmez ilk parça, süreyi görünen parça yapmak (yığılmış çubuk)', neden: 'Tarih bir seri sayıdır (45.663); doğrudan çizilince bütün çubuklar dev ve eşit görünür.' },
+    mulakat: { soru: 'Excel\'de Gantt şeması nasıl kurulur?', cevap: 'Görev, başlangıç ve süre sütunlarıyla yığılmış çubuk grafik çizerim; başlangıç serisinin dolgusunu kaldırırım, eksen en az değerini projenin ilk gününün seri sayısına sabitler, kategori eksenini ters çeviririm. Alternatif olarak hücrelerde koşullu biçimle (tarih başlıkları ve =VE(tarih>=başlangıç;tarih<bitiş) kuralı) takvim boyarım; bu yöntem yazdırmada daha nettir.' },
+  },
+  {
+    id: 'm20-d6', modul: 'm20', baslik: 'Dikkati yönetmek: vurgu ve hedef çizgisi', sure: 9,
+    ozet: 'Grafik okuyana nereye bakacağını söylemeli: tek bir çubuğu renklendirin, hedefi kesikli çizgiyle gösterin.',
+    hedefler: ['En büyük ya da en küçük değeri vurgulamak', 'Hedef çizgisi eklemek', 'Başlıkla mesajı tamamlamak'],
+    anlatim: [
+      'Her çubuğun aynı canlı renkte olduğu grafikte göz dolaşır. **Vurgu**: mesajın konusu olan çubuk renkli, ötekiler soluk gri; başlık da onu söyler ("İstanbul Avrupa hedefi aşan tek bölge").',
+      'Excel\'de: tek çubuğa iki kez tıklayıp ayrı renk verilir; dinamik yapmak için iki seri kurulur: `=EĞER(B2=MAK($B$2:$B$6);B2;YOKSAY())` vurgulu seri, öteki soluk seri, Seri Çakışması %100.',
+      '**Hedef çizgisi**: hedef değerini her kategoride tekrarlayan bir seri eklenip türü çizgi yapılır (kesikli, ince, koyu gri) ve etiketi sağ uca yazılır. Kesit\'te grafik ayarlarındaki "Hedef çizgisi" kutusu bunu çizer.',
+    ],
+    ornek: { tur: 'grafik', sayfa: 'Bölgeler', kaynak: { alan: 'A1:B6' }, secenek: { tur: 'sutun', vurgu: 'enBuyuk', hedefCizgisi: 500, baslik: 'İstanbul Avrupa en çok sevk eden bölge' }, aciklama: 'En büyük değer renkli, ötekiler soluk; kesikli çizgi 500 paletlik hedef.' },
+    alistirmalar: [
+      { id: 'a1', tur: 'grafik', soru: 'Bölgelerin günlük sevki sütunlarla gösteriliyor. **En çok sevk eden bölgeyi** vurgulayın ve mesajı söyleyen bir başlık yazın.', sayfa: 'Bölgeler', kaynakSabit: true, kaynak: { alan: 'A1:B6' }, secenek: { tur: 'sutun' }, cozum: { kaynak: { alan: 'A1:B6' }, secenek: { tur: 'sutun', vurgu: 'enBuyuk', baslik: 'En çok sevk: İstanbul Avrupa' } }, kural: { turler: ['sutun', 'cubuk'], vurgu: 'enBuyuk', baslikGerekli: true }, ipuclari: ['Vurgu: En büyük.'] },
+      { id: 'a2', tur: 'grafik', soru: 'Aylık sipariş çizgisine **6.000 siparişlik aylık kapasite** hedefini kesikli çizgi olarak ekleyin.', sayfa: 'Talep', kaynakSabit: true, kaynak: { alan: 'A1:B25' }, secenek: { tur: 'cizgi', baslik: 'Aylık sipariş' }, cozum: { kaynak: { alan: 'A1:B25' }, secenek: { tur: 'cizgi', baslik: 'Aylık sipariş ve kapasite', hedefCizgisi: 6000 } }, kural: { turler: ['cizgi', 'sutun', 'alan'], hedefCizgisi: 6000 }, ipuclari: ['Hedef çizgisi kutusuna 6000 yazın.'] },
+    ],
+    sikHata: { yanlis: 'Önemli çubuğu kırmızı, ötekileri farklı canlı renklerle boyamak', dogru: 'Vurgulananı tek renk, ötekileri soluk gri yapmak', neden: 'Her şey renkliyse hiçbir şey öne çıkmaz; kırmızı ayrıca "kötü" anlamı taşır.' },
+    mulakat: { soru: 'Bir grafiği sunuma hazırlarken neler yaparsınız?', cevap: 'Mesajı tek cümle başlık yaparım ("Ankara hedefin %20 altında"). Mesajın konusu olan veriyi renklendirip gerisini griye çekerim, hedef ya da ortalama çizgisi eklerim, gereksiz kılavuz çizgilerini ve göstergeyi kaldırıp etiketleri doğrudan serilere yazarım. Ekseni sütun grafikte sıfırdan başlatırım.' },
+  },
+  {
+    id: 'm20-d7', modul: 'm20', baslik: 'Vaka: formülle KPI panosu', sure: 14,
+    ozet: 'Pivot ve dilimleyici olmadan: açılan kutuyla bölge seçilir, başlık ve KPI\'lar formülle değişir, madde grafiği hepsini özetler.',
+    hedefler: ['Seçimi bir hücreye bağlayıp KPI formüllerini ona dayandırmak', 'Dinamik başlık ve genel oran KPI\'ı yazmak', 'Panoyu telefon ve yazdırma için düşünmek'],
+    anlatim: [
+      'Yapı üç katmandır: **veri** (Bölgeler), **hesap** (seçim hücresi ve KPI formülleri), **görünüm** (KPI kutuları ve grafikler). Görünüm hiçbir zaman ham veriye doğrudan bakmaz; hesap katmanına bakar.',
+      'Açılan kutu H1\'e bölge sıra numarasını yazar (Ders 17.3). Başlık: `=İNDİS(A2:A6;H1)&" · gerçekleşme %"&METNEÇEVİR(İNDİS(B2:B6;H1)/İNDİS(C2:C6;H1)*100;"0")`. Genel KPI: `=TOPLA(B2:B6)/TOPLA(C2:C6)`.',
+      'Pano telefonda açılacaksa tek sütun düşünülür: KPI kutuları üstte, tek grafik altta; yazdırılacaksa A4 yatay ve sayfaya sığdır. Excel web\'de form denetimleri çalışmaz, veri doğrulama listesi çalışır: geniş kitle için açılan kutu yerine veri doğrulama tercih edilir.',
+    ],
+    ornek: { sayfa: 'Bölgeler', hucre: 'H2', formul: '=İNDİS(A2:A6;H1)&" · gerçekleşme %"&METNEÇEVİR(İNDİS(B2:B6;H1)/İNDİS(C2:C6;H1)*100;"0")', hazirlik: { G1: 'Bölge no', H1: 1, G2: 'Başlık' }, denetimler: [{ tur: 'acilan', hucre: 'H1', liste: 'İzmir;Ankara;İstanbul Avrupa;İstanbul Anadolu;Bursa', etiket: 'Bölge' }], aciklama: 'Açılan kutudan bölge seçin: başlık seçilen bölgenin adını ve gerçekleşme oranını yazar.' },
+    alistirmalar: [
+      { id: 'a1', sayfa: 'Bölgeler', hedef: 'H2', hazirlik: { G1: 'Bölge no', H1: 1, G2: 'Başlık' }, denetimler: [{ tur: 'acilan', hucre: 'H1', liste: 'İzmir;Ankara;İstanbul Avrupa;İstanbul Anadolu;Bursa', etiket: 'Bölge' }], soru: 'Açılan kutu H1\'e bölge sıra numarasını yazıyor. H2\'ye **"Bölge adı · gerçekleşme %91"** biçiminde başlığı yazın (yüzde ondalıksız).', cozum: '=İNDİS(A2:A6;H1)&" · gerçekleşme %"&METNEÇEVİR(İNDİS(B2:B6;H1)/İNDİS(C2:C6;H1)*100;"0")', gerekli: ['INDEX', 'TEXT'], durumlar: [{ H1: 1 }, { H1: 3 }, { H1: 5 }], ipuclari: ['İNDİS(A2:A6;H1) bölge adı; oran İNDİS(B…)/İNDİS(C…); METNEÇEVİR(…*100;"0").'] },
+      { id: 'a2', sayfa: 'Bölgeler', hedef: 'H4', hazirlik: { G4: 'Genel gerçekleşme' }, soru: 'H4\'e bütün bölgelerin **toplam gerçekleşeninin toplam hedefe oranını** yazın (panonun ana KPI\'ı).', cozum: '=TOPLA(B2:B6)/TOPLA(C2:C6)', ipuclari: ['Oranların ortalaması değil, toplamların oranı: =TOPLA(B2:B6)/TOPLA(C2:C6)'] },
+      { id: 'a3', tur: 'secmeli', soru: 'Pano Excel web\'de (tarayıcıda) ve telefonda açılacak. Bölge seçimi için hangisi?', secenekler: ['Form denetimi açılan kutu', 'ActiveX açılan kutu', 'Veri doğrulama listesi ya da dilimleyici', 'VBA ile UserForm'], dogru: 2, aciklama: 'Excel web ve mobilde form denetimleri ve ActiveX çalışmaz, VBA hiç çalışmaz. Veri doğrulama listesi ve dilimleyici her yerde çalışır.' },
+    ],
+    sikHata: { yanlis: 'Genel gerçekleşmeyi bölge oranlarının ortalaması almak', dogru: 'Toplam gerçekleşeni toplam hedefe bölmek', neden: 'Küçük bir bölgenin yüksek oranı ortalamayı şişirir; oranların ortalaması ağırlıksızdır.' },
+    mulakat: { soru: 'Pivot kullanmadan etkileşimli bir pano kurabilir misiniz?', cevap: 'Evet: seçimi veri doğrulama listesi ya da form denetimiyle bir hücreye alırım; KPI\'ları İNDİS, ÇOKETOPLA, FİLTRE, GRUPLAÖLÇÜT gibi formüllerle o hücreye bağlarım; grafikleri bu hesap alanından beslerim. Avantajı yenileme gerektirmemesi ve her hesabın görünür olması; dezavantajı çok boyutlu keşfin pivot kadar kolay olmaması.' },
+  },
+];

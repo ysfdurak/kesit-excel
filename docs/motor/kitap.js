@@ -1,5 +1,5 @@
 // Kesit Excel · çalışma kitabı: sayfalar, hücreler, hesaplama, dinamik dizi taşması, döngü koruması.
-import { ayristir, degerlendir, coz, Dizi, Hata, H, hataMi, sayiMetin, adresCoz, alanCoz, kaydir, HATA_TR, SINIR, adres, Bas } from './formul.js';
+import { ayristir, degerlendir, coz, Dizi, Hata, H, hataMi, sayiMetin, adresCoz, alanCoz, kaydir, HATA_TR, SINIR, adres, Bas, Lambda } from './formul.js';
 import { ISLEVLER, basvuruAyristiriciKur } from './islevler.js';
 // DOLAYLI'nın metni başvuruya çevirmesi için ayrıştırıcı (döngüsel içe aktarmayı önlemek için buradan bağlanır)
 basvuruAyristiriciKur(m => ayristir('=' + m, ISLEVLER));
@@ -123,7 +123,7 @@ export class Kitap {
     let v;
     try {
       if (h.hata) v = new Hata('#FORMÜL');
-      else { v = coz(degerlendir(h.agac, { kitap: this, sayfa: s, satir: r, sutun: c, adim: this.adim, bugun: this.bugun, degisken: null }), { kitap: this }); }
+      else { v = coz(degerlendir(h.agac, { kitap: this, sayfa: s, satir: r, sutun: c, adim: this.adim, bugun: this.bugun, degisken: null }), { kitap: this }); if (v instanceof Lambda) v = H.HESAP; }
     } catch (e) { v = new Hata(e && e.kod ? e.kod : '#CALC!'); }
     this.hesapta.delete(k);
     if (v instanceof Dizi) {

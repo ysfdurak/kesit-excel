@@ -110,6 +110,38 @@ KAYIT_SATIR[2][6] = 'Kulaklık'; KAYIT_SATIR[2][3] = 'Kitap'; KAYIT_SATIR[16][3]
 KAYIT_SATIR[3][2] = 'web '; KAYIT_SATIR[11][2] = 'Magaza'; KAYIT_SATIR[7][4] = 0; KAYIT_SATIR[18][4] = 2.5; KAYIT_SATIR[22][4] = 60;
 KAYIT_SATIR[5][5] = 0.45; KAYIT_SATIR[26][5] = 0.6; KAYIT_SATIR[14][1] = 45930; KAYIT_SATIR[20][0] = 9010;
 
+
+// ---- Modül 18–20 ----
+// İade nedenleri (Pareto): büyükten küçüğe sıralı değil; Pareto grafiği kendisi sıralar
+const IADELER = [['Yanlış ürün gönderildi', 48], ['Hasarlı ürün', 12], ['Beden uymadı', 64], ['Geç teslim', 30], ['Eksik parça', 9], ['Renk farklı', 5], ['Fikir değişikliği', 4], ['Diğer', 3]];
+// Üç aylık kategori özeti: aynı düzen (3B başvuru için), ama Mart'ta satır sırası farklı (Birleştir/ETOPLA dersinin tuzağı)
+const KAT7 = ['Elektronik', 'Ev & Yaşam', 'Giyim', 'Hediye', 'Kitap', 'Kozmetik', 'Spor'];
+const ay = (adet, ciro) => KAT7.map((k, i) => [k, adet[i], ciro[i]]);
+const OCAK = ay([182, 240, 310, 75, 128, 96, 140], [612400, 286300, 248900, 41200, 30700, 52800, 119600]);
+const SUBAT = ay([165, 226, 284, 140, 117, 104, 133], [548900, 270100, 230400, 77900, 28100, 57200, 112300]);
+const MART_SIRA = [2, 0, 6, 4, 1, 5, 3]; // Giyim, Elektronik, Spor, Kitap, Ev & Yaşam, Kozmetik, Hediye
+const MART = MART_SIRA.map(i => [KAT7[i], [201, 258, 335, 88, 131, 112, 151][i], [671900, 302800, 270100, 48600, 31900, 61400, 128800][i]]);
+const CEYREK = [['Kategori', 'Çeyrek adet'], ...KAT7.map(k => [k, null]), [null, null], ['Toplam', null]];
+// Depo taşıma projesi (Gantt ve özel sıralama). Başlangıç tarih seri sayısı: 06.01.2025 = 45663
+const GOREVLER = [
+  ['Yeni depo sözleşmesi', 45663, 5, 'Satın alma', 'Yüksek'],
+  ['Raf yerleşim planı', 45670, 8, 'Operasyon', 'Yüksek'],
+  ['Raf montajı', 45680, 15, 'Tedarikçi', 'Orta'],
+  ['WMS adres tanımları', 45684, 6, 'BT', 'Yüksek'],
+  ['Personel eğitimi', 45695, 4, 'İK', 'Orta'],
+  ['Stok sayımı', 45699, 2, 'Operasyon', 'Yüksek'],
+  ['Taşıma', 45701, 5, 'Lojistik', 'Yüksek'],
+  ['Eski depo teslimi', 45708, 3, 'İdari işler', 'Düşük'],
+];
+// Bölge depoları: günlük sevk (palet), hedef ve madde grafiği bantları (kötü/orta üst sınırları)
+const BOLGELER = [['İzmir', 410, 450, 300, 400], ['Ankara', 318, 400, 260, 350], ['İstanbul Avrupa', 655, 620, 450, 560], ['İstanbul Anadolu', 540, 600, 420, 520], ['Bursa', 228, 250, 170, 220]];
+// İki vardiyanın kalite ölçüleri (%): kelebek grafiği
+const VARDIYALAR = [['Zamanında sevk', 94, 88], ['Doğru toplama', 99.1, 98.4], ['Ekipman kullanımı', 72, 81], ['Devamlılık', 96, 91], ['Eğitim tamamlama', 85, 64]];
+// Aylık sipariş talebi ve personel (tahmin, eğim, korelasyon). Ay: ayın ilk günü (01.01.2024 = 45292)
+const AY_BAS = [45292, 45323, 45352, 45383, 45413, 45444, 45474, 45505, 45536, 45566, 45597, 45627, 45658, 45689, 45717, 45748, 45778, 45809, 45839, 45870, 45901, 45931, 45962, 45992];
+const SEZON = [-320, -410, -60, 40, 120, 90, 60, 20, 180, 260, 640, 880];
+const TALEP = AY_BAS.map((t, i) => { const sip = Math.round(4300 + 86 * i + SEZON[i % 12] + [37, -52, 18, -11, 44, -29][i % 6]); return [t, sip, Math.round(sip / 148 + [0.4, -0.6, 0.2, 0.9, -0.3, 0][i % 6]), i + 1]; });
+
 export const MODELLER = {
   'Kredi': { satirlar: KREDI, ham: true },
   'Yatırım': { satirlar: YATIRIM, ham: true },
@@ -118,5 +150,14 @@ export const MODELLER = {
   'Vardiya': { satirlar: VARDIYA, ham: true },
   'Denetim': { satirlar: DENETIM, ham: true },
   'Listeler': { satirlar: LISTELER, ham: true },
+  'İadeler': { basliklar: ['Neden', 'Adet'], satirlar: IADELER },
+  'Ocak': { basliklar: ['Kategori', 'Adet', 'Ciro'], satirlar: OCAK, bicim: [null, '#.##0', '#.##0'] },
+  'Şubat': { basliklar: ['Kategori', 'Adet', 'Ciro'], satirlar: SUBAT, bicim: [null, '#.##0', '#.##0'] },
+  'Mart': { basliklar: ['Kategori', 'Adet', 'Ciro'], satirlar: MART, bicim: [null, '#.##0', '#.##0'] },
+  'Çeyrek': { satirlar: CEYREK, ham: true },
+  'Görevler': { basliklar: ['Görev', 'Başlangıç', 'Süre (gün)', 'Sorumlu', 'Öncelik'], satirlar: GOREVLER, bicim: [null, 'gg.aa.yyyy', null, null, null] },
+  'Bölgeler': { basliklar: ['Bölge', 'Gerçekleşen', 'Hedef', 'Kötü', 'Orta'], satirlar: BOLGELER },
+  'Vardiyalar': { basliklar: ['Ölçüt', 'A vardiyası', 'B vardiyası'], satirlar: VARDIYALAR },
+  'Talep': { basliklar: ['Ay', 'Sipariş', 'Personel', 'Ay no'], satirlar: TALEP, bicim: ['aaa yyyy', '#.##0', null, null] },
   'Kayıt': { basliklar: ['Sipariş No', 'Tarih', 'Kanal', 'Kategori', 'Adet', 'İndirim', 'Ürün'], satirlar: KAYIT_SATIR, bicim: [null, 'gg.aa.yyyy', null, null, null, '0%', null] },
 };

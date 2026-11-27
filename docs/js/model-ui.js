@@ -5,6 +5,8 @@ import { DOGRULAMA_TURLERI, DOGRULAMA_OP, HATA_STILI } from '../motor/dogrulama.
 import { ozelBicim } from '../motor/bicim.js';
 import { hedefAra, veriTablosu, senaryoOzeti, cozucu } from '../motor/senaryo.js';
 import { goster } from '../motor/kitap.js';
+import { gelismisFiltre } from '../motor/veriaraclari.js';
+import { alanCoz, adres } from '../motor/formul.js';
 
 let sayac = 0;
 const yeniId = () => 'md' + (++sayac);
@@ -190,5 +192,36 @@ export class CozucuAlani {
     const r = cozucu(this.s.kitap, this.s.sayfa, this.ayar());
     this.s.izgara.guncelle(); this.s.izgara.hucreBilgisi();
     this.sonuc.textContent = r.tamam ? `${r.mesaj} Amaç: ${goster(+r.amac.toPrecision(10))}. ` + Object.entries(r.degerler).map(([a, v]) => `${a} = ${goster(v)}`).join(', ') : r.mesaj;
+  }
+}
+
+/* ---------------------------------------------------------------- Gelişmiş Filtre */
+export class GelismisFiltreAlani {
+  // s: { kitap, sayfa, izgara, varsayilan?: { liste, olcut, benzersiz }, bolge: ölçüt yazılabilecek alan (ör. M1:P4) }
+  constructor(s) {
+    this.s = s; const v = s.varsayilan || {};
+    this.a = { liste: v.liste || '', olcut: v.olcut || '', benzersiz: !!v.benzersiz };
+    this.sonuc = h('div.small-note', { 'aria-live': 'polite' });
+    const kutu = h('input', { type: 'checkbox', checked: this.a.benzersiz, on: { change: e => { this.a.benzersiz = e.target.checked; } } });
+    this.el = h('div.durum-kutu', {}, h('h4', {}, 'Gelişmiş Filtre'),
+      h('p.small-note.muted', {}, `Ölçütleri tablodaki ${s.bolge} alanına yazın: ilk satıra liste başlıkları, altına koşullar. Aynı satır VE, alt alta satırlar YA DA.`),
+      h('div.pivot-alanlar', {}, alan('Liste aralığı', metin(this.a.liste, x => { this.a.liste = adr(x); }, 'A1:K241')),
+        alan('Ölçüt aralığı', metin(this.a.olcut, x => { this.a.olcut = adr(x); }, 'M1:N2')),
+        h('div.alan', {}, h('span', {}, ' '), h('label.cip', {}, kutu, 'Yalnızca benzersiz kayıtlar')),
+        h('div.alan', {}, h('span', {}, ' '), h('button.btn.primary', { type: 'button', on: { click: () => this.calistir() } }, 'Tamam'))),
+      this.sonuc);
+  }
+  hucreler() {
+    const al = alanCoz(this.s.bolge), out = {};
+    for (let r = al.r1; r <= al.r2; r++) for (let c = al.c1; c <= al.c2; c++) { const v = this.s.kitap.icerik(this.s.sayfa, r, c); if (v != null && v !== '') out[adres(r, c)] = v; }
+    return out;
+  }
+  ayar() { return { ...this.a, hucreler: this.hucreler() }; }
+  calistir() {
+    let r; try { r = gelismisFiltre(this.s.kitap, this.s.sayfa, this.a.liste, this.a.olcut, { benzersiz: this.a.benzersiz }); } catch (e) { yerlestir(temizle(this.sonuc), h('p.uyari', {}, e.message)); return; }
+    const goster20 = r.satirlar.slice(0, 20);
+    yerlestir(temizle(this.sonuc), h('p', {}, `${r.satirlar.length} kayıt bulundu${r.bosSatir ? ' (ölçüt aralığında boş satır var: her kayıt geçer)' : ''}.` + (r.satirlar.length > 20 ? ' İlk 20 gösteriliyor.' : '')),
+      h('div.tablo-kaydir', {}, h('table.veri', {}, h('thead', {}, h('tr', {}, r.basliklar.map(b => h('th', { scope: 'col' }, b)))),
+        h('tbody', {}, goster20.map(sat => h('tr', {}, sat.map(x => h('td', {}, goster(x)))))))));
   }
 }

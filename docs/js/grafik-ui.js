@@ -40,7 +40,7 @@ export async function pngIndir(svgMetni, ad, W, H) {
   } finally { setTimeout(() => URL.revokeObjectURL(u), 2000); }
 }
 
-const AILE = { karsilastirma: 'Karşılaştırma', zaman: 'Zaman', parca: 'Parça–bütün', iliski: 'İlişki', dagilim: 'Dağılım', akis: 'Akış' };
+const AILE = { karsilastirma: 'Karşılaştırma', zaman: 'Zaman', parca: 'Parça–bütün', hedef: 'Hedef ve ilerleme', iliski: 'İlişki', dagilim: 'Dağılım', akis: 'Akış' };
 const YIGINLI = new Set(['sutun', 'cubuk', 'cizgi', 'alan']);
 
 export class GrafikAlani {
@@ -55,7 +55,7 @@ export class GrafikAlani {
     if (this.kaynak.pivot) return pivotVerisi(pivot(t, this.kaynak.pivot));
     const al = alanCoz(this.kaynak.alan); if (!al) throw new Error('Veri aralığını A1:D7 biçiminde yazın');
     const kt = this.s.kitap; if (!kt) throw new Error('Kitap yok');
-    return aralikVerisi(kt.degerler(this.s.sayfa, al), { seriYonu: this.kaynak.seriYonu || 'otomatik', bicimler: (t.bicim || []).slice(al.c1 - 1, al.c2) });
+    return aralikVerisi(kt.degerler(this.s.sayfa, al), { seriYonu: this.kaynak.seriYonu || 'otomatik', bicimler: (t.bicim || []).slice(al.c1 - 1, al.c2), tarihSeri: !!this.kaynak.tarihSeri });
   }
   ciz() {
     const sc = this.secenek, id = 'gr' + Math.random().toString(36).slice(2, 7);
@@ -72,6 +72,9 @@ export class GrafikAlani {
       YIGINLI.has(sc.tur) ? sec('Yığın', sc.yigin, [['yok', 'Kümelenmiş (yan yana)'], ['yigin', 'Yığılmış'], ['yuzde', '%100 yığılmış']], v => { sc.yigin = v; this.yenile(); }) : null,
       metin('Başlık', sc.baslik, v => { sc.baslik = v; this.yenile(); }, 'Ne gösteriyor?'),
       ['sutun', 'cubuk', 'cizgi', 'alan', 'birlesik', 'dagilim'].includes(sc.tur) ? metin('Değer ekseni en az', sc.eksenMin ?? '', v => { sc.eksenMin = v.trim() === '' ? null : Number(v.replace(',', '.')); this.yenile(); }, 'otomatik') : null,
+      ['sutun', 'cubuk'].includes(sc.tur) ? sec('Vurgu', sc.vurgu || 'yok', [['yok', 'Yok'], ['enBuyuk', 'En büyük'], ['enKucuk', 'En küçük']], v => { sc.vurgu = v === 'yok' ? undefined : v; this.yenile(); }) : null,
+      ['sutun', 'cubuk', 'cizgi', 'alan', 'birlesik'].includes(sc.tur) ? metin('Hedef çizgisi', sc.hedefCizgisi ?? '', v => { sc.hedefCizgisi = v.trim() === '' ? undefined : Number(v.replace(/\./g, '').replace(',', '.')); this.yenile(); }, 'yok') : null,
+      sc.tur === 'ibre' ? metin('Ölçek en çok', sc.eksenMax ?? '', v => { sc.eksenMax = v.trim() === '' ? undefined : Number(v.replace(',', '.')); this.yenile(); }, 'otomatik') : null,
       sec('Gösterge', sc.gosterge, [['alt', 'Altta'], ['yok', 'Yok']], v => { sc.gosterge = v; this.yenile(); }),
       h('div.alan.cipler', {}, kutucuk('Veri etiketleri', sc.veriEtiketi, v => { sc.veriEtiketi = v; this.yenile(); }),
         sc.tur === 'birlesik' ? kutucuk('İkincil eksen', sc.ikincilEksen, v => { sc.ikincilEksen = v; this.yenile(); }) : null,

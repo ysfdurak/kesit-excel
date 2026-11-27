@@ -9,11 +9,11 @@
 
 | | |
 |---|---|
-| **Ne** | Tarayıcıda çalışan Türkçe Excel eğitimi: kendi formül motoru (151 işlev), 81 ders, 170 denetlenen alıştırma; özet tablo, Power Query, görselleştirme (grafik, pivot grafik, koşullu biçim, pano), VBA makro, kitap tasarımı (Tablo, ad, veri doğrulama, özel biçim, formül denetimi) ve durum çözümlemesi (finans, Hedef Ara, Veri Tablosu, Senaryo, Çözücü); yerel MCP sunucusu (8 araç) |
+| **Ne** | Tarayıcıda çalışan Türkçe Excel eğitimi: kendi formül motoru (179 işlev, LAMBDA dahil), 100 ders, 218 denetlenen alıştırma; özet tablo, Power Query, görselleştirme (grafik, pivot grafik, koşullu biçim, pano), VBA makro, kitap tasarımı (Tablo, ad, veri doğrulama, özel biçim, formül denetimi) ve durum çözümlemesi (finans, Hedef Ara, Veri Tablosu, Senaryo, Çözücü), modern formüller (LAMBDA, GRUPLAÖLÇÜT, tahmin), veri araçları (Gelişmiş Filtre, 3B başvuru) ve pano grafikleri (madde, ibre, Pareto, Gantt); yerel MCP sunucusu (8 araç) |
 | **Kimin için** | Excel'i işte kullanacak herkes; özellikle veri analisti, BI, operasyon/planlama, finans, BT iş analisti ve ofis rolleri. Kesit ailesinin (SQL, Power BI, Python, İstatistik) beşinci üyesi |
 | **Canlı** | https://ysfdurak.github.io/kesit-excel/ (depo açılıp Pages etkinleşince) |
 | **Depo** | `ysfdurak/kesit-excel` |
-| **Durum** | 0.3.0 · yerelde tamam, testler yeşil (108), LibreOffice 219/219, güvenlik taraması temiz; depo açılmayı bekliyor. Makrolar gerçek Excel'de örneklemle denenecek (§7) |
+| **Durum** | 0.4.0 · yerelde tamam, testler yeşil (136), LibreOffice 255/255, güvenlik taraması temiz; depo açılmayı bekliyor. Makrolar gerçek Excel'de örneklemle denenecek (§7) |
 | **Sunucu** | Yok (GitHub Pages). VPS gerekmiyor; gerekçe §6 |
 
 **Tek cümle:** "Excel formülünü ezberletmek yerine Kesit verisinde yazdırıyor; cevabı gördüğünüz tabloda ve sayıları değiştirilmiş gizli bir kopyada denetleyip hatanın nedenini söylüyor."
@@ -93,7 +93,7 @@
 
 > ⚠️ **Şöyle daha iyi olur:** `formul.js` 400 satırı geçti ve `TR_EN` tablosu da içinde. Tabloyu `motor/adlar.js`'e taşımak hem okunurluğu artırır hem de MCP'nin yalnız adlara ihtiyaç duyduğu yerlerde daha küçük bir içe aktarma sağlar.
 
-### 5.2 `motor/islevler.js` (151 işlev)
+### 5.2 `motor/islevler.js` (179 işlev)
 - `tanim(ad, fn, { tembel })`: `tembel` işlevler (EĞER, EĞERHATA, ÇOKEĞER, ELEMAN, LET, SATIR) bağımsız değişkenleri **değerlendirilmemiş** AST olarak alır. Böylece `=EĞER(A1=0;0;1/A1)` hiç `#BÖL/0!` üretmez ve LET ad tanımlayabilir.
 - `yay(fn)`: tek değerli bir işlevi diziye yayar: `=SOLDAN(A2:A5;2)` dört sonuç taşırır (Excel 365 davranışı).
 - **Ölçüt** (`olcut`): `">1000"`, `"<>"`, `""`, `"E*"`, `"~*"`. Sayı ölçütü yalnız sayılarla, metin ölçütü yalnız metinlerle eşleşir (Excel gibi: `"5"` metni sayı 5'e eşit sayılmaz).
@@ -126,7 +126,7 @@
 - `yardim.js`: `h()` DOM kurucusu ve `yerlestir()`. **Ders:** `Element.append(dizi)` diziyi düzleştirmez, `"[object HTMLElement],…"` yazar; `append(null)` de "null" yazar. İlk ölçümde 5 sayfa boş göründü; `yerlestir` ikisini de düzeltir.
 - `[hidden]{display:none!important}`: `.btn{display:inline-flex}` `hidden` özniteliğini eziyordu; tek hücreli alıştırmada "Aşağı doldur" görünüyordu.
 
-### 5.7 `motor/grafik.js` (15 grafik türü, SVG)
+### 5.7 `motor/grafik.js` (23 grafik türü, SVG; 0.4.0 eklemeleri §5.16)
 
 **İçeride ne oluyor?** Grafik üç adımda çizilir:
 
@@ -230,6 +230,62 @@ Vakalar bilerek kesirli çıkacak şekilde seçildi: Üretim LP 185.555,56 → t
 - **ÖZETVERİAL:** `pivotYerlestir()` pivotu bir sayfaya yazar ve `kitap.pivotlar`'a kaydeder; `=ÖZETVERİAL("Adet";$A$3;"Şehir";"İzmir")` bu kayıttan okur. Pivot düzeni değişse de doğru hücreyi bulur; pivota tıklayınca Excel'in bu formülü kendiliğinden yazmasının nedeni bu.
 - **Form denetimleri:** açılan kutu, onay kutusu, kaydırma çubuğu, seçenek düğmesi bir hücreye bağlanır ve o hücreye *değer* yazar (açılan kutu metin değil **sıra numarası** yazar; İNDİS ile metne çevrilir: sık hata). Denetçi her durumu sırayla dener (`durumlar`): formül her denetim değerinde doğru mu?
 
+### 5.14 Modern formüller: LAMBDA ve yardımcıları (0.4.0)
+
+**LAMBDA bir değer türüdür.** `formul.js`'te `Lambda` sınıfı üç şey taşır: parametre adları, gövde ağacı (AST) ve tanımlandığı andaki LET değişkenleri (**kapanış**). `=LAMBDA(x;x*2)` hesaplanınca bir sayı değil bu nesne çıkar; hücreye böyle bir nesne düşerse `kitap.js` onu `#HESAP!` yapar (Excel de öyle yapar).
+
+Bir LAMBDA üç yoldan çağrılır:
+
+| Yazım | Ayrıştırıcıda | Değerlendiricide |
+|---|---|---|
+| `=LAMBDA(x;x*2)(5)` | İşlev düğümünden sonra gelen `(` yeni bir **`cagir`** düğümü açar | `f` hesaplanır, Lambda ise `lambdaCagir()` |
+| `=MARJ(D2;E2)` (Ad Yöneticisi) | `MARJ` bilinen bir işlev değil, `ad: null` olan işlev düğümü | Önce LET değişkenleri, sonra `kitap.adDegeri()`; Lambda bulunursa çağrılır, yoksa `#AD?` |
+| `=BYROW(B2:D5;TOPLA)` ("eta") | `TOPLA` parantezsiz, yani `ad` belirteci | Ad bulunamazsa ve bir yerleşik işlevin adıysa `new Lambda(null, null, null, 'SUM')` |
+
+`lambdaCagir()`: parametre sayısı tutmazsa `#DEĞER!`; kapanışı kopyalayıp parametreleri ekler, gövdeyi o değişkenlerle değerlendirir, sonra eski değişkenleri geri koyar (`try/finally`: hata olsa da sızıntı yok). Özyineleme 256 derinlikte `#SAYI!` ile kesilir.
+
+**Yardımcılar** (`islevler.js`) hep aynı kalıptır: diziyi gez, her parça için `cagirTek()` ile LAMBDA'yı çağır, sonucun **tek değer** olduğunu denetle (dizi dönerse `#HESAP!`: Excel "diziler dizisi"ni desteklemez).
+
+```
+MAP(a;b;λ)      → her (r,c) için λ(a[r,c], b[r,c])
+BYROW(d;λ)      → her satır için λ(satır)          → R×1
+SCAN(b;d;λ)     → birikim = λ(birikim, x), her adımı yaz
+REDUCE(b;d;λ)   → aynı döngü, yalnız son birikim
+MAKEARRAY(R;C;λ)→ λ(r, c)
+```
+
+**GRUPLAÖLÇÜT** dört adımda çalışır: (1) başlık kipi (boşsa "ilk satır metin, altı sayı" ise başlık var sayılır), (2) filtre dizisiyle satırları süz, (3) satır alanındaki değer birleşimlerine göre grupla (anahtar: büyük harfe çevrilmiş değerlerin JSON'u, Türkçe i/İ doğru), (4) sırala, her grup için her değer sütununu LAMBDA'ya ver, ara ve genel toplamı ekle. ÖZETÖLÇÜT aynı gruplamayı satır ve sütun alanında ayrı yapıp kesişimleri hesaplar.
+
+**3B başvuru** (`Ocak:Mart!B2`): belirteçleyici `Ad:Ad!` desenini tanır ve başvuruya `sayfa2` ekler. Değerlendirici kitaptaki **sekme sırasına** göre aradaki her sayfanın aynı alanını alt alta dizer; TOPLA/ORTALAMA/MAK bu diziyi toplar. Kaydırma (`kaydir()`) sayfa önekine dokunmadığı için 3B başvuru da aşağı doldurulunca doğru kayar.
+
+> 💡 **Şöyle daha iyi olur:** Excel'de 3B başvuru yalnız bazı işlevlerde geçerlidir (ETOPLA 3B almaz). Kesit diziye çevirdiği için her işlevde çalışıyor; ileride desteklenmeyen işlevde `#DEĞER!` verilebilir.
+
+### 5.15 Gelişmiş Filtre (`motor/veriaraclari.js`)
+
+Ölçüt alanının ilk satırı liste başlıklarıyla eşlenir (büyük/küçük harf duyarsız; bulunamayan başlık açık hata verir). Her alt satır bir **VE grubu**, gruplar arası **YA DA**. Bir hücrenin koşulu `kosul()` ile EĞERSAY'ın ölçüt dilinden kurulur, iki Excel inceliğiyle:
+
+- Düz metin **"ile başlar"**: `İstanbul` → `=İstanbul*`. Tam eşleşme için hücreye `="=İstanbul"` yazılır (tek başına `=İstanbul` bir formüldür ve `#AD?` verir; testte bu da sınandı).
+- Boş ölçüt satırı boş bir VE grubudur, `[].every()` her zaman doğru döndüğü için **her kaydı geçirir**. Bu Excel'in davranışı ve en sık hatası; denetçi bunu ayrıca söylüyor.
+
+Denetçi (`gelismisFiltreDenetle`) öğrencinin ölçüt hücrelerini kitaba yazar, filtreyi çalıştırır ve **satır numaralarını** çözümünkilerle karşılaştırır; yani başlığı farklı yazan ama aynı satırları bulan da doğru sayılır.
+
+### 5.16 Pano grafikleri (0.4.0)
+
+| Tür | Nasıl çiziliyor | Excel'de karşılığı |
+|---|---|---|
+| Pareto | Seriyi büyükten küçüğe sırala, birikimli payı sağ eksende çiz, %80 kesikli; eşiğin sağı soluk | Ekle > İstatistik > Pareto |
+| Madde | Bantlar (gri tonları, sondan başa açılan), ince gerçekleşen çubuk, kalın hedef çizgisi, sağda yüzde | Yığılmış çubuk + ikincil eksen + hata çubuğu |
+| İbre | Yarım halka iz, değere kadar dolu yay, ibre çizgisi, hedef çentiği | Halka + pasta birleşimi |
+| İlerleme | Halka iz + yay, ortada yüzde; %100'ü geçen yeşil | Halka grafik, iki dilim |
+| Gantt | Başlangıçtan süre kadar çubuk; tarih ekseni haftalık | Yığılmış çubuk, ilk parça dolgusuz |
+| Kelebek | Ortada etiket, iki seri zıt yönde | Bir seri eksiye çevrilmiş yığılmış çubuk |
+| Halter | İki nokta ve aralarında çizgi | Dağılım + hata çubuğu |
+| Güneş | İç halka üst kırılım, dış halka alt; iki metin sütunu "Üst › Alt" olur | Ekle > Hiyerarşi > Güneş Patlaması |
+
+**Geometri dersi:** bütün halka ve yaylar tek bir `yay(cx, cy, r1, r2, a1, a2)` işleviyle çizilir. İlk sürümde %120'lik ilerleme halkası **boş** çıktı: tam turda yayın başlangıç ve bitiş noktası (0,1 px'e yuvarlanınca) aynı noktaya düşüyor, SVG de başı sonu aynı olan yayı hiç çizmiyor. Çözüm: yarımdan büyük halkayı iki yarım yay olarak çizmek. Test bunu yeşil dolgunun varlığıyla sınıyor.
+
+**Vurgu ve hedef çizgisi** eksenli grafiğe seçenek olarak eklendi: `vurgu: 'enBuyuk'` tek serideki en büyük çubuğu tam renkte bırakıp ötekileri `fill-opacity=0.28` yapar ve değerini yazar; `hedefCizgisi` ölçeğe dahil edilir (çizgi ekran dışına düşmesin) ve kesikli çizilir. Gantt için tarih sütunları seriye dahil edilmeli; bu yüzden `aralikVerisi()` `tarihSeri` seçeneği aldı (diğer grafiklerde tarih sütunu seri olmaz, yoksa 45.663 gibi sayılar çizilir).
+
 ---
 
 ## 6. Sunucu ve yayın
@@ -247,10 +303,11 @@ Vakalar bilerek kesirli çıkacak şekilde seçildi: Üretim LP 185.555,56 → t
 | Katman | Ne | Sayı |
 |---|---|---|
 | Motor birim | TR/EN eşdeğerliği (tüm vakalar + geri çeviri), kaydırma, çeviri biçimi, taşma ve engel, döngü, bozuk formüller, sınırlar, Türkçe harf, Türkçe giriş | 9 test |
-| LibreOffice | 187 formül LibreOffice 24.2'de hesaplanır ve karşılaştırılır (0.3.0'da 41 finans/DOLAYLI/KAYDIR/ADRES eklendi); 32 vaka elle (FAİZ_ORANI'nın çözümsüz vakasında Excel #SAYI!, LO #YOK verir: Excel'e uyduk) (LO'da olmayan Excel 365 işlevleri, Türkçe BÜYÜKHARF, Türkçe METNEÇEVİR, örtük kesişimsiz dizi) | 219/219 |
-| Dersler | Her örnek hatasız; her çözüm denetçiden geçer; tek hücreli sayısal alıştırmada sabit cevap **gizli denemede** yakalanır; hedefin ilk satırı boş bir kaynağa bakmaz. Grafikte başlangıç ayarı geçmez; koşullu biçimde boş kural, panoda boş pano, makroda boş Sub geçmez; sabit son satırlı makro (`yanlis`) gizli kopyada yakalanır | 62 test, 170 alıştırma |
+| LibreOffice | 203 formül LibreOffice 24.2'de hesaplanır ve karşılaştırılır (0.3.0'da 41 finans/DOLAYLI/KAYDIR/ADRES, 0.4.0'da 16 regresyon/SIKLIK/TOPLAMA eklendi); 52 vaka elle (LAMBDA yardımcıları, GRUPLAÖLÇÜT ve dizi biçimlendirme LO 24.2'de yok; TOPLAMA'nın dizi biçimi ve farklı uzunluklu EĞİM'de Excel belgesine uyduk) (FAİZ_ORANI'nın çözümsüz vakasında Excel #SAYI!, LO #YOK verir: Excel'e uyduk) (LO'da olmayan Excel 365 işlevleri, Türkçe BÜYÜKHARF, Türkçe METNEÇEVİR, örtük kesişimsiz dizi) | 255/255 |
+| Dersler | Her örnek hatasız; her çözüm denetçiden geçer; tek hücreli sayısal alıştırmada sabit cevap **gizli denemede** yakalanır; hedefin ilk satırı boş bir kaynağa bakmaz. Grafikte başlangıç ayarı geçmez; koşullu biçimde boş kural, panoda boş pano, makroda boş Sub geçmez; sabit son satırlı makro (`yanlis`) gizli kopyada yakalanır | 101 test, 218 alıştırma |
 | Görselleştirme ve makro | 15 grafik türü geçerli XML, tarih sütunu kategori, histogram ve çeyrekler, `$` kaydırmalı koşullu kural, pano KPI süzmesi, ders örneği makrolar, R1C1, `.bas` 1254 | 7 test |
 | Model (0.3.0) | Tablo/ad başvurusu, DOLAYLI/KAYDIR/ADRES, özel biçim (30 vaka), doğrulama ve bağımlı liste, formül adımları, Hedef Ara, Veri Tablosu, Çözücü (LP ve tamsayı ayrı sonuç vermeli), hesaplanmış alan, ayrıntı, ÖZETVERİAL, işlev rehberi örnekleri | 9 test |
+| Modern (0.4.0) | LAMBDA (çağrı, ad, LET kapanışı, eta, parametre sayısı, hücrede #HESAP!), MAP/BYROW/BYCOL/SCAN/REDUCE/MAKEARRAY, GRUPLAÖLÇÜT (başlık, toplam, sıralama, ara toplam, filtre), ÖZETÖLÇÜT, SÜTUNA/SATIRSAR/GENİŞLET, regresyon ve SIKLIK, 3B başvuru, Gelişmiş Filtre (VE/YA DA, ile başlar, =tam, boş satır, benzersiz), 8 yeni grafik türü (iki kipte geçerli SVG, NaN yok, çift class yok, %100+ halka dolu), vurgu ve hedef çizgisi, Mart sırası tuzağı | 9 test |
 | MCP | 8 araç (`durum_cozumle` dahil) (grafik SVG gömülü renk, makro yalıtılmış kopya ve hata satırı, yeni alıştırma türleri), TR/EN aynı sonuç, taşma, CSV izinli klasör, dış yol reddi, sabit cevabın gizli denemede yakalanması | 1 test, 30+ doğrulama |
 | Arayüz (Playwright, elle) | 19 sayfa × 390/1350 px: konsol hatası 0, yatay taşma 0; uçtan uca: öneri → tıkla-başvuru → F4 → aşağı doldur → Denetle → pivot → Power Query | örneklem |
 
@@ -291,6 +348,18 @@ Vakalar bilerek kesirli çıkacak şekilde seçildi: Üretim LP 185.555,56 → t
 | 17.1: hesaplanmış alan, çift tık ayrıntı | Şişkin ciro, ayrıntı tablosu | aynı | ✓ |
 | 17.3: onay kutusu H2, H5 formülü | Her iki durumda doğru | aynı | ✓ |
 | 6 yeni ders, 390 px | Yatay taşma 0, form kutuları tek sütun | aynı | ✓ |
+
+**Örneklem testi (0.4.0, Playwright)**
+
+| Adım | Beklenen | Gözlenen | Durum |
+|---|---|---|---|
+| 19 yeni ders × 1350 ve 390 px | Konsol hatası 0, yatay taşma 0 | aynı | ✓ |
+| 19.1 a2: yalnız İzmir satırı, Denetle | 2 kayıt, "YA DA satırı eksik" | ilk sürümde ileti "ile başlar" diyordu; düzeltildi | ✓ |
+| 19.1 a2: Ankara satırını ekle, ölçüt M1:N3 | "Doğru… 4 kayıt" | aynı | ✓ |
+| 18.1 a1: MARJ = LAMBDA(…) | "Doğru… =MARJ(…)" | ilk sürümde kutu örneği "=Satışlar!$H$2:$H$241" idi; LAMBDA örneğine çevrildi | ✓ |
+| 18.4 a1: GRUPLAÖLÇÜT taşması | Kanal, Mağaza, Mobil, Web, Toplam | aynı | ✓ |
+| 19.3 a2: `=TOPLA(Ocak:Mart!B2)` | Yakalanır (Mart sırası farklı) | "sizin 682, beklenen 548" | ✓ |
+| 20.6: vurgu ve 6.000 hedef çizgisi | Doğru, çizgi görünür | aynı | ✓ |
 
 > 🧪 **Burada bir test daha yapalım (sizin bilgisayarda):** `docs/indir/kesit-excel-veri.xlsx`'i açıp `.xlsm` kaydedin; Makro atölyesinden beş örnek makroyu (Merhaba, Tutar sütunu, İptalleri boya, Kategori özeti, Formül yazdır) `.bas` olarak alıp Alt+F11 > Dosya Al ile içeri alın ve çalıştırın. Bakılacaklar: Türkçe harfler düzgün mü (1254), `FormulaLocal` Türkçe Excel'de çalışıyor mu, sonuçlar Kesit'teki tabloyla aynı mı. Fark çıkarsa motor değil Excel haklıdır; vakayı `tests/` altına ekleyelim.
 > 🧪 **Burada bir test daha yapalım:** Gerçek Türkçe Excel'de (Windows, Türkiye bölge ayarı) 10 dersin çözüm formülünü yapıştırıp sonuçları karşılaştırmak. LibreOffice bağımsız bir hakem ama Türkçe yerelleştirmeyi (METNEÇEVİR kodları, dizi sabiti ayırıcıları) sınayamıyor. Özellikle `METNEÇEVİR(B2;"aaaa yyyy")` ve `{…}` dizi sabitleri.
@@ -333,10 +402,23 @@ Vakalar bilerek kesirli çıkacak şekilde seçildi: Üretim LP 185.555,56 → t
 
 > 💡 **Şöyle daha iyi olur:** Alıştırma ızgarası 240 satırın hepsini çiziyor (yaklaşık 3.400 hücre). Telefonda akıcı, ama 8 alıştırmalı bir derste 25.000 hücreye çıkar. Görünür satırları çizen sanal bir ızgara ya da "ilk 50 satır + daha fazla göster" daha hafif olur.
 
+**0.4.0 turu (19 yeni ders):** 19 ders × 390/1350 px ölçüldü (konsol hatası 0, yatay taşma 0), altı alıştırma görevle çözüldü.
+
+| Rol | Bulgu | Karar |
+|---|---|---|
+| Günlük kullanıcı (Gelişmiş Filtre) | Yalnız İzmir satırını yazınca ileti "düz metin ile başlar" diyor; asıl eksik Ankara satırı | Eksik kayıtta "YA DA satırı eksik ya da koşul fazla", fazla kayıtta VE/YA DA ve ="=metin" ipucu; hiç kayıt yoksa VE açıklaması |
+| Günlük kullanıcı (LAMBDA adı) | Ad kutusunun örneği "=Satışlar!$H$2:$H$241": LAMBDA alıştırmasında yanlış yöne çekiyor | Çözüm LAMBDA ise örnek "=LAMBDA(parametre;…;hesap)" ve not "Ad Yöneticisi > Yeni" |
+| Tasarımcı | İlerleme halkası en çok 4 kategori gösteriyordu, beşinci bölge sessizce düşüyordu | En çok 6, telefonda 3'lü ızgara |
+| Tasarımcı | İbre 320 px yükseklikte alt yazıyı kesiyordu | Yarıçap alt yazıya yer bırakacak şekilde küçüldü |
+| Alan uzmanı (depo) | Pareto, Gantt, kelebek örnekleri satış değil depo işinden olmalı | İade nedenleri, depo taşıma planı, A/B vardiyası kalite ölçüleri, bölge depoları sevk hedefi; Gantt verisi gerçek bir taşıma sırasıyla (sözleşme → raf → WMS → eğitim → sayım → taşıma) |
+| Alan uzmanı (Excel eğitmeni) | Kelebek grafikte farklı birimler (adet ve yüzde) yan yana yanıltır | Vardiyalar sayfasında beş ölçünün hepsi yüzde; ders metninde "aynı birim" uyarısı |
+| Mülakatçı | GRUPLAÖLÇÜT ve özet tablo farkı sorulur | Ders 18.4 mülakat sorusu ve sık hata (başlıklı/başlıksız alan karışması) |
+
 ---
 
 ## 9. Bilinen sınırlar ve sonraki adımlar
 
+- **0.4.0 sınırları:** Harita grafiği ve Zaman Çizelgesi dilimleyicisi yok; TAHMİN.ETS ve Tahmin Sayfası kavramsal; ISOMITTED, PERCENTOF, REGEX işlevleri, TRIMRANGE ve `.:` kırpılmış başvuru yok; ÖZETÖLÇÜT tek değer sütunu alır; GRUPLAÖLÇÜT toplam satırını "Toplam" diye yazar **[doğrulanacak: Türkçe Excel'deki etiket]**; LAMBDA yardımcılarının (MAP, BYROW, SCAN…) Türkçe Excel'de İngilizce kaldığı ikinci el kaynaktan **[doğrulanacak]**; Birleştir (Consolidate) iletişim kutusu yok, eşdeğeri ETOPLA ile öğretiliyor; Hızlı Doldurma desen tahmini yok, ders formül karşılığını öğretiyor.
 - **Yok:** `M2#` taşma başvurusu, mühendislik işlevleri, Power Pivot/DAX (veri modeli dersi kavramsal; DAX Kesit Power BI'da), Gözcü Penceresi, sayfa koruması (anlatılıyor, uygulanmıyor), kitaplar arası başvuru.
 - **Çözücü:** yalnız doğrusal model (Simplex LP + dal-sınır). Doğrusal olmayan modeli reddeder (Excel'de GRG); evrimsel yöntem yok. Dal-sınırda değişken sayısı küçük tutulmalı (ders modelleri ≤ 7 değişken).
 - **Veri Tablosu ve Senaryo:** sonuç panelde gösterilir; kitaba `{=TABLO()}` dizi formülü yazılmaz.
@@ -367,7 +449,36 @@ Kaynaklar: Microsoft MO-211 (Excel Expert) beceri listesi, Macquarie/Coursera "E
 
 **Uygulandı (0.3.0):** Yüksek ve Orta satırların tamamı Modül 15, 16 ve 17 olarak eklendi (Gözcü Penceresi hariç; koruma ve veri modeli kavramsal ders). **Düşük** satır sonraki adım.
 
-> 💡 **Şöyle daha iyi olur:** Sıradaki en değerli ikisi: gelişmiş filtre ve Birleştir (Consolidate); ikisi de var olan motorla yapılabilir.
+> 💡 **Şöyle daha iyi olur:** Sıradaki en değerli ikisi: gelişmiş filtre ve Birleştir (Consolidate); ikisi de var olan motorla yapılabilir. → 0.4.0'da yapıldı (aşağıda).
+
+### İkinci karşılaştırma: ileri Excel ve pano kursları (Kasım 2026, 0.4.0)
+
+Kaynaklar: Excel Off The Grid "Dynamic Formulas Unleashed" (11 bölüm), Microsoft Press "Complete Guide to Next-Gen Excel Formulas" (2026), Udemy LAMBDA ve ileri işlev kursları, Leila Gharani "Visually Effective Excel Dashboards" (18 bölüm), My Online Training Hub pano kursu, GoSkills Excel Dashboards ve Charts, Udemy "50+ Advanced Excel Charts" ve infografik kursları, STL Advanced Excel Dashboards, FutureLearn/The Excel Club, Coursera EDUCBA pano kursları, Chandoo Excel School, Yenibiriş "Orta & İleri" (Gelişmiş Filtre, Birleştir).
+
+| Konu | Kaynaklar | 0.3.0'da | 0.4.0 |
+|---|---|---|---|
+| LAMBDA, adlandırılmış işlev | Off The Grid, MS Press, Udemy | Yok | Ders 18.1, motor |
+| MAP, BYROW, BYCOL, SCAN, REDUCE, MAKEARRAY | Off The Grid, MS Press, MECS | Yok | Ders 18.2–18.3 |
+| GROUPBY, PIVOTBY | Off The Grid, MS Press, Chris Menard | Yok | Ders 18.4 |
+| TOCOL, WRAPROWS, EXPAND (dizi biçimlendirme), formülle unpivot | Off The Grid, MOTH | VSTACK/AL/BIRAK vardı | Ders 18.5 |
+| RANDARRAY, uçucu işlevler | Off The Grid | Yok | Ders 18.7 (kavram + işlev) |
+| Eğim, korelasyon, doğrusal tahmin, eğilim | STL, Macquarie | Dağılım + eğilim çizgisi vardı | Ders 18.6 |
+| SIKLIK, TOPLAMA | MO-211, Coursera | Yok | Ders 18.7 |
+| Gelişmiş Filtre, benzersiz kayıtlar | Yenibiriş, MO-211 | Yok | Ders 19.1–19.2, motor + arayüz |
+| 3B başvuru ve Birleştir | Yenibiriş, Macquarie Intermediate | Yok | Ders 19.3 (Mart sırası tuzağıyla) |
+| Hızlı Doldurma | MO-211, Yenibiriş | Yok | Ders 19.4 (formül karşılığı) |
+| Özel sıralama, Alt Toplam komutu, gruplama | Yenibiriş, MO-211 | ALTTOPLAM işlevi vardı | Ders 19.5 |
+| Pano süreci: 5 soru, taslak, yerleşim, koruma, köprü | Gharani, Udemy KPI kursu | Vaka dersi vardı | Ders 20.1 |
+| Madde (bullet), ibre, ilerleme halkası | Udemy pano, GoSkills, Coursera, FutureLearn | Yok | Ders 20.2–20.3, 3 grafik türü |
+| Pareto | Udemy 50+ grafik | Yok | Ders 20.4 |
+| Gantt, kelebek (tornado), halter (dumbbell) | Udemy infografik, GoSkills, STL | Yok | Ders 20.5 |
+| Güneş patlaması | Udemy grafik kursları | Yok | Grafik türü (ders yok) |
+| En büyüğü vurgulama, dinamik hedef çizgisi | Udemy, Hindi MIS kursu | Yok | Ders 20.6 |
+| Formülle KPI panosu | Gharani (Office 365 sürümü) | Kısmen (17.3–17.5) | Ders 20.7 |
+| Harita grafiği, Zaman Çizelgesi dilimleyicisi, Tahmin Sayfası (ETS), kamera aracı, resim arama | GoSkills, Udemy, STL | Yok | **Yok** (§9) |
+| Power Pivot/DAX ile pano | Maven, Udemy, Algebra | Köprü ders | Köprü ders (DAX Kesit Power BI'da) |
+
+> 💡 **Şöyle daha iyi olur:** Kalan eksiklerden en değerlisi **Zaman Çizelgesi** (tarih dilimleyicisi): pano dersinin doğal parçası ve motor (pivot tarih gruplama) hazır. Harita grafiği için Türkiye il sınırları verisi gerekir (≈200 KB); yalnız bölge düzeyi (7 bölge) daha hafif bir başlangıç olur.
 
 ## 10. Mülakat soruları
 
@@ -418,6 +529,18 @@ C: Model sayfaları (Kredi, Üretim) veri değil, girdileri olan bir hesap. Orad
 **S: `=TOPLA(Satışlar[Adet])` ile `=TOPLA(H2:H241)` arasındaki fark ne, motor bunu nasıl çözüyor?**
 C: Birincisi tablo büyüdükçe kendisi uzar ve sütunun adını taşıdığı için okunur. Motor köşeli bloğu tek belirteç okuyup tabloyu buluyor ve o anki aralığa çeviriyor; yani hesap aynı, fark tanımın canlı olması.
 
+**S: Excel'de LAMBDA'yı nasıl uyguladın?**
+C: LAMBDA'yı bir değer türü yaptım: parametre adları, gövdenin AST'si ve tanımlandığı andaki LET değişkenleri. Ayrıştırıcıya bir işlev düğümünden sonra gelen parantezi "çağrı" olarak okuyan bir kural ekledim: `LAMBDA(x;x*2)(5)`. Ad Yöneticisi'ndeki LAMBDA'lar bilinmeyen işlev adı olarak gelir; önce LET değişkenlerine, sonra adlara bakıp bulursam çağırırım. Hücreye çağrılmamış LAMBDA düşerse Excel gibi #HESAP! veririm. MAP, SCAN gibi yardımcılar diziyi gezip her parça için aynı çağrıyı yapıyor.
+
+**S: Gelişmiş Filtre'de "boş satır her şeyi getirir" neden olur?**
+C: Ölçüt alanındaki her satır bir VE grubu; boş satır hiç koşulu olmayan bir grup. Hiç koşulu olmayan grup "her koşulu sağlıyor" sayılır (boş kümede "hepsi" doğrudur), gruplar YA DA ile birleştiği için bütün liste geçer. Kodda bu `[].every()` her zaman `true` döndürdüğü için kendiliğinden oluyor; denetçi bunu ayrıca tespit edip öğrenciye söylüyor.
+
+**S: Pano grafiklerini (madde, ibre) neden kendin çizdin, Excel'de yoklar mı?**
+C: Madde ve ibrenin Excel'de hazır türü yok; yığılmış çubuk, ikincil eksen, hata çubuğu gibi parçalarla kuruluyor. Dersin amacı ne zaman hangisinin kullanılacağı; o yüzden Kesit'te tür olarak çizdim, ders metninde Excel'deki kurulum adımlarını anlattım. Denetçi görüntüyü değil kararı denetliyor: beş bölge için ibre değil madde, sekiz neden için pasta değil Pareto.
+
+**S: 3B başvurunun tuzağını nasıl öğretiyorsun?**
+C: Ocak, Şubat, Mart sayfaları aynı düzende ama Mart'ta kategoriler farklı sırada. `=TOPLA(Ocak:Mart!B2:B8)` toplamı doğru verir (toplam sıradan bağımsız), ama `=TOPLA(Ocak:Mart!B2)` Elektronik'e Mart'ın Giyim'ini ekler. Alıştırmada kategori kategori toplam istenince bu yakalanıyor; doğru yol etikete göre (ETOPLA ya da Birleştir'de "Sol sütun"). Gizli denemede üç ay sayfası da karıştırılıyor, yani elle yazılan sayı da tutmuyor.
+
 ---
 
 ## 11. Kendini test et
@@ -437,6 +560,11 @@ C: Birincisi tablo büyüdükçe kendisi uzar ve sütunun adını taşıdığı 
 <details><summary>14. `=NBD(r;B6:G6)` yatırım analizinde neden yanlış?</summary>NBD ilk değeri de bir dönem iskonto eder; 0. yıl yatırımı NBD'nin dışında eklenmeli: `=NBD(r;C6:G6)+B6`.</details>
 <details><summary>15. Çözücü LP 22,33 verdi; tamsayı kısıtıyla neden 22 değil 23?</summary>22 kişiyle bazı günlerin talebi karşılanmaz (olurlu değil); yuvarlama aşağı değil, dal-sınırla en iyi olurlu tamsayıdır.</details>
 <details><summary>16. Açılan kutu (form denetimi) bağlı hücreye ne yazar?</summary>Seçilen öğenin sıra numarasını; metne `=İNDİS(liste;H1)` ile çevrilir.</details>
+<details><summary>17. `=LAMBDA(x;x*2)` hücrede ne gösterir, neden?</summary>#HESAP!: LAMBDA bir işlev üretir, çağrılmadı. `=LAMBDA(x;x*2)(5)` 10 verir.</details>
+<details><summary>18. SCAN ile REDUCE farkı?</summary>İkisi de biriktirir; SCAN her adımı taşırır (birikimli toplam), REDUCE yalnız son değeri verir.</details>
+<details><summary>19. Gelişmiş Filtre'de ölçüt hücresine `Ank` yazdınız. Ankara'yı getirir mi?</summary>Evet: düz metin "ile başlar" demektir. Tam eşleşme için ="=Ankara" yazılır.</details>
+<details><summary>20. Pareto grafiğinde soluk sütunlar ne anlatır?</summary>Birikimli payın %80'i geçtiği yerden sonraki nedenler: önceliği düşük olanlar.</details>
+<details><summary>21. Gantt'ı yığılmış çubukla kurarken ilk seri neden görünmez yapılır?</summary>İlk seri başlangıç tarihidir; görevin "nerede başladığını" kaydırmak için vardır, çizilecek uzunluk süredir.</details>
 <details><summary>6. CSP `style-src 'self'` iken kenar çizgisi nasıl renkleniyor?</summary>CSSOM ile (`td.style.boxShadow = …`); CSP satır içi `style` özniteliğini engeller, CSSOM'u engellemez.</details>
 
 ---
@@ -455,6 +583,8 @@ C: Birincisi tablo büyüdükçe kendisi uzar ve sütunun adını taşıdığı 
 **Alıştırma 3 (15 dk, grafik):** `docs/icerik/dersler-4.js`'teki Ders 13.6'ya dördüncü bir "kötü grafik" ekle: 180 noktalı çizgi grafik ve her noktada veri etiketi (`veriEtiketi: true`, kural `veriEtiketiYok`). `npm test` başlangıç ayarının geçmediğini doğrulamalı.
 
 **Alıştırma 4 (20 dk, finans):** `islevler.js`'e `ÇİFTAZALANBAKİYE`'nin kardeşi `VDB`'yi değil, daha kolayı `SYD`'yi (YILLIK_TOPLAM, yıl sayısı toplamı amortismanı: (maliyet−hurda)·(ömür−dönem+1)·2/(ömür·(ömür+1))) ekle; `TR_EN`'e `'YAT': 'SYD'`, `tests/vakalar.json`'a `"=SYD(30000;7500;10;1)"` (4090,91). LibreOffice karşılaştırması 220/220 olmalı.
+
+**Alıştırma 5 (20 dk, LAMBDA):** `ISOMITTED` (Türkçe Excel'de de aynı adla) ekleyin: LAMBDA'nın son parametresi verilmezse `lambdaCagir()` onu "atlanmış" işaretli bir değerle doldursun, `ISOMITTED(x)` DOĞRU döndürsün. İpucu: şu an parametre sayısı tutmazsa `#DEĞER!` dönüyor (`formul.js` → `lambdaCagir`); bunu "eksikse doldur, fazlaysa hata" yapın. Test: `=LAMBDA(a;[b];EĞER(ISOMITTED(b);a;a*b))(5)` → 5. (Excel'de isteğe bağlı parametre köşeli parantezle yazılır; ayrıştırıcıya bu da eklenmeli.)
 
 **5 dakikalık demo akışı**
 1. Ana sayfa (20 sn): "Türkçe Excel, Kesit verisi, cevap gizli bir kopyada da denetleniyor."
@@ -476,3 +606,4 @@ C: Birincisi tablo büyüdükçe kendisi uzar ve sütunun adını taşıdığı 
 - **2026-11-27 · 0.2.0** Görselleştirme ve makro: Modül 13 (7 ders: grafik seçimi, 15 tür, pivot grafik ve dilimleyici, koşullu biçim, veri çubuğu/renk ölçeği/simge/mini grafik, kötü grafiği düzeltme, pano vakası) ve Modül 14 (6 ders: kaydedici, Range ve son satır, If/Select Case, biçim, Function ve WorksheetFunction, Office Scripts ve güvenlik). Yeni motorlar `grafik.js`, `kosullu.js`, `vba.js`; atölyeler Görselleştirme (4 sekme) ve Makro; MCP `grafik_ciz`, `makro_calistir`. Makro varyantı uzayan kopya. Veri kitabı `docs/indir/kesit-excel-veri.xlsx`. 61 ders, 124 alıştırma, 79 test, LibreOffice 177/177, tarama temiz.
 - **2026-11-27 · 0.2.0 (inceleme)** Muadil müfredatlarla karşılaştırma (§9) ve kullanıcı gözüyle ikinci tur (§8): telefonda pano KPI'ları ve makro Çalıştır düğmesi ilk ekranda, atölyeler arası geçiş satırı, menü iki gruba ayrıldı, dilimleyici davranışı tekleştirildi, sekmelerde ok tuşları.
 - **2026-11-27 · 0.3.0** Kitap tasarımı, senaryo ve finans, ileri pano: Modül 15 (7 ders), 16 (7), 17 (6). Motor: yapılandırılmış başvuru, adlar, DOLAYLI/KAYDIR/ADRES/ÖZETVERİAL, 16 finans işlevi (151 işlev), `bicim.js`, `dogrulama.js`, `senaryo.js` (Hedef Ara, Veri Tablosu, Senaryo, Çözücü), hesaplanmış alan, ayrıntıya inme. Model sayfaları (`modeller.js`). MCP `durum_cozumle`. 81 ders, 170 alıştırma, 17 soruluk seviye testi, 108 test, LibreOffice 219/219, tarama temiz. Bulunan hatalar: TU matrisli Çözücü vakası (LP zaten tamsayı), Fiyat sayfasında satır kayması, FAİZ_ORANI çözümsüzde Excel–LO farkı, rehberde `%36` yazımı.
+- **2026-11-27 · 0.4.0** İleri Excel ve pano kurslarıyla ikinci karşılaştırma (§9): Modül 18 (modern formüller, 7 ders), 19 (veri araçları, 5), 20 (pano tasarımı ve özel grafikler, 7). Motor: LAMBDA (çağrı, ad, eta, kapanış), MAP/BYROW/BYCOL/SCAN/REDUCE/MAKEARRAY, GRUPLAÖLÇÜT/ÖZETÖLÇÜT, SÜTUNA/SATIRA/SATIRSAR/SÜTUNSAR/GENİŞLET, rastgele işlevler, regresyon ve tahmin, SIKLIK, TOPLAMA, YOKSAY (179 işlev), 3B başvuru, Gelişmiş Filtre (`veriaraclari.js`), 8 grafik türü + vurgu + hedef çizgisi, iki düzeyli kategori. Model sayfaları: İadeler, Ocak/Şubat/Mart/Çeyrek, Görevler, Bölgeler, Vardiyalar, Talep. MCP: Gelişmiş Filtre denetimi, vurgu/hedef çizgisi, Gantt için tarih serisi. 100 ders, 218 alıştırma, 20 soruluk seviye testi, 136 test, LibreOffice 255/255. Bulunan hatalar: adlandırılmış LAMBDA'da `null`/`undefined` karışması (#AD?), %100+ halkanın boş çizilmesi, ibrenin alttan taşması, `=İstanbul` ölçütünün formül sanılması (Excel'de de öyle; ders ve test `="=İstanbul"`a çevrildi), filtre iletisinin YA DA eksikliğini "ile başlar"a bağlaması, boş durumda "Denetim  iken" ön eki.

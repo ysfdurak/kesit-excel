@@ -1,6 +1,6 @@
 // Kesit Excel · işlev kütüphanesi. İç adlar İngilizce; Türkçe adlar formul.js'deki TR_EN tablosuyla eşlenir.
 // Davranış Excel 365'e göredir (dinamik diziler, taşma). Excel'den bilinçli ayrılan yerler belgede listelenir.
-import { H, Hata, Dizi, Bas, hataMi, coz, sayiya, metne, mantiga, karsilastir, degerlendir, sayiMetin, SINIR } from './formul.js';
+import { H, Hata, Dizi, Bas, hataMi, coz, sayiya, metne, mantiga, karsilastir, degerlendir, sayiMetin, SINIR, Lambda, lambdaCagir } from './formul.js';
 import { seriden, seriye, zaman, ayinSonGunu, bicimle, metindenTarih } from './tarih.js';
 
 const F = {};
@@ -641,5 +641,202 @@ tanim('DB', (a, b) => { const c = finAl(a, b, 0), sv = finAl(a, b, 1), l = finAl
   for (let i = 2; i <= per; i++) { const d = i === l + 1 ? (c - top) * oran * (12 - ay) / 12 : (c - top) * oran; if (i === per) return d; top += d; } return 0; });
 tanim('EFFECT', (a, b) => { const nr = finAl(a, b, 0), n = Math.trunc(finAl(a, b, 1)); const e = finHata(nr, n); if (e) return e; if (nr <= 0 || n < 1) return H.SAYI; return (1 + nr / n) ** n - 1; });
 tanim('NOMINAL', (a, b) => { const er = finAl(a, b, 0), n = Math.trunc(finAl(a, b, 1)); const e = finHata(er, n); if (e) return e; if (er <= 0 || n < 1) return H.SAYI; return n * ((1 + er) ** (1 / n) - 1); });
+
+/* ---------------------------------------------------------------- LAMBDA ve yardımcıları (Excel 365) */
+// LAMBDA tembeldir: parametreler ad, son bağımsız değişken gövdedir; tanımlandığı andaki LET değişkenlerini yakalar.
+tanim('LAMBDA', (args, bag) => {
+  if (!args.length) return H.DEGER;
+  const params = args.slice(0, -1);
+  if (params.some(p => p.t !== 'ad')) return H.DEGER;
+  const adlar = params.map(p => trB(p.v));
+  if (new Set(adlar).size !== adlar.length) return H.DEGER;
+  return new Lambda(adlar, args[args.length - 1], bag.degisken ? new Map(bag.degisken) : null);
+}, { tembel: true });
+const lambdaAl = (x, bag) => { const v = deger(x, bag); return v instanceof Lambda ? v : null; };
+const tekDeger = v => { v = v instanceof Bas ? coz(v, { kitap: null }) : v; if (v instanceof Dizi) return v.satir === 1 && v.sutun === 1 ? v.v[0][0] : H.HESAP; return v; };
+const cagirTek = (L, args, bag) => { let v = lambdaCagir(L, args, bag); v = coz(v, bag); if (v instanceof Lambda) return H.HESAP; return tekDeger(v); };
+tanim('MAP', (a, b) => {
+  const L = lambdaAl(a[a.length - 1], b); if (!L || a.length < 2) return H.DEGER;
+  const ds = a.slice(0, -1).map(x => diziyeCevir(x, b)), R = Math.max(...ds.map(d => d.satir)), C = Math.max(...ds.map(d => d.sutun));
+  if (ds.some(d => !(d.satir === R || d.satir === 1) || !(d.sutun === C || d.sutun === 1))) return H.DEGER;
+  if (R * C > SINIR.hucreDizi) return H.HESAP;
+  return new Dizi(Array.from({ length: R }, (_, r) => Array.from({ length: C }, (_, c) => cagirTek(L, ds.map(d => d.al(r, c) ?? null), b))));
+});
+tanim('BYROW', (a, b) => { const d = diziyeCevir(a[0], b), L = lambdaAl(a[1], b); if (!L) return H.DEGER; return new Dizi(d.v.map(s => [cagirTek(L, [new Dizi([s.slice()])], b)])); });
+tanim('BYCOL', (a, b) => { const d = diziyeCevir(a[0], b), L = lambdaAl(a[1], b); if (!L) return H.DEGER; return new Dizi([Array.from({ length: d.sutun }, (_, c) => cagirTek(L, [new Dizi(d.v.map(s => [s[c]]))], b))]); });
+// SCAN: her adımdaki birikimi döndürür (kümülatif toplam); REDUCE: yalnız sonuncuyu
+tanim('SCAN', (a, b) => {
+  const L = lambdaAl(a[2], b); if (!L) return H.DEGER;
+  let acc = a[0] == null ? null : deger(a[0], b); const d = diziyeCevir(a[1], b);
+  return new Dizi(d.v.map(s => s.map(x => (acc = cagirTek(L, [acc, x ?? null], b)))));
+});
+tanim('REDUCE', (a, b) => {
+  const L = lambdaAl(a[2], b); if (!L) return H.DEGER;
+  let acc = a[0] == null ? null : deger(a[0], b); const d = diziyeCevir(a[1], b);
+  for (const s of d.v) for (const x of s) { acc = coz(lambdaCagir(L, [acc, x ?? null], b), b); if (acc instanceof Lambda) return H.HESAP; }
+  return acc;
+});
+tanim('MAKEARRAY', (a, b) => {
+  const R = Math.trunc(N(deger(a[0], b))), C = Math.trunc(N(deger(a[1], b))), L = lambdaAl(a[2], b);
+  if (hataMi(R) || hataMi(C) || !L) return H.DEGER; if (R < 1 || C < 1) return H.DEGER; if (R * C > SINIR.hucreDizi) return H.HESAP;
+  return new Dizi(Array.from({ length: R }, (_, r) => Array.from({ length: C }, (_, c) => cagirTek(L, [r + 1, c + 1], b))));
+});
+
+/* ---------------------------------------------------------------- GRUPLAÖLÇÜT ve ÖZETÖLÇÜT: formülle özet tablo */
+// Başlık: 0 yok, 1 var/gösterme, 2 yok/üret, 3 var/göster; boş bırakılırsa ilk satır metin, altı sayıysa "var ve göster".
+function baslikKip(x, deg) {
+  if (x != null) return Math.trunc(N(x));
+  return deg.satir > 1 && typeof deg.v[0][0] === 'string' && typeof deg.v[1][0] === 'number' ? 3 : 0;
+}
+const TOPLAM_ETIKET = 'Toplam';
+function gruplaAnahtar(satir) { return JSON.stringify(satir.map(x => x == null ? '' : hataMi(x) ? x.kod : typeof x === 'string' ? trB(x) : x)); }
+function grupla(alanlar, satirlar) {
+  const m = new Map();
+  for (const i of satirlar) { const k = gruplaAnahtar(alanlar.v[i]); if (!m.has(k)) m.set(k, { degerler: alanlar.v[i].map(x => x ?? ''), satirlar: [] }); m.get(k).satirlar.push(i); }
+  return [...m.values()];
+}
+const sirala = (gruplar, sutun, yon) => gruplar.sort((p, q) => { for (let j = sutun; j < p.degerler.length; j++) { const c = siralaKarsilastir(p.degerler[j], q.degerler[j]); if (c) return c * yon; } return 0; });
+tanim('GROUPBY', (a, b) => {
+  let rf = diziyeCevir(a[0], b), vf = diziyeCevir(a[1], b); const L = lambdaAl(a[2], b);
+  if (!L || rf.satir !== vf.satir) return H.DEGER;
+  const hk = baslikKip(a[3] == null ? null : deger(a[3], b), vf);
+  const basR = hk === 1 || hk === 3 ? rf.v[0] : null, basV = hk === 1 || hk === 3 ? vf.v[0] : null;
+  if (basR) { rf = new Dizi(rf.v.slice(1)); vf = new Dizi(vf.v.slice(1)); }
+  const derinlik = a[4] == null ? 1 : Math.trunc(N(deger(a[4], b))), sira = a[5] == null ? 1 : Math.trunc(N(deger(a[5], b)));
+  const filtre = a[6] == null ? null : diziyeCevir(a[6], b);
+  let idx = rf.v.map((_, i) => i);
+  if (filtre) { if (filtre.satir !== rf.satir + (basR ? 1 : 0) && filtre.satir !== rf.satir) return H.DEGER; const fo = filtre.satir === rf.satir ? 0 : 1; idx = idx.filter(i => mantiga(filtre.v[i + fo][0]) === true); }
+  if (!idx.length) return H.HESAP;
+  const ozet = sat => vf.v[0].map((_, c) => cagirTek(L, [new Dizi(sat.map(i => [vf.v[i][c]]))], b));
+  let gruplar = grupla(rf, idx);
+  const K = rf.sutun;
+  if (Math.abs(sira) <= K) sirala(gruplar, Math.abs(sira) - 1, sira < 0 ? -1 : 1);
+  else { gruplar.forEach(g => { g.oz = ozet(g.satirlar); }); const j = Math.abs(sira) - K - 1; gruplar.sort((p, q) => siralaKarsilastir(p.oz[j], q.oz[j]) * (sira < 0 ? -1 : 1)); }
+  const out = [];
+  if (hk === 3) out.push([...basR, ...basV]);
+  const satir = (etiketler, sat) => [...etiketler, ...ozet(sat)];
+  // Ara toplam (derinlik 2): ilk alanın her grubu bitince o grubun toplam satırı
+  const ara = Math.abs(derinlik) >= 2 && K >= 2, govde = [];
+  let grupBas = null, grupSatirlari = [];
+  const araToplam = () => { if (ara && grupBas !== null) govde.push(satir([grupBas, ...Array(K - 1).fill('')], grupSatirlari)); };
+  for (const g of gruplar) {
+    if (ara && (grupBas === null || gruplaAnahtar([g.degerler[0]]) !== gruplaAnahtar([grupBas]))) { araToplam(); grupBas = g.degerler[0]; grupSatirlari = []; }
+    govde.push(satir(g.degerler, g.satirlar)); grupSatirlari.push(...g.satirlar);
+  }
+  araToplam();
+  const genel = derinlik !== 0 ? satir([TOPLAM_ETIKET, ...Array(K - 1).fill('')], idx) : null;
+  if (genel && derinlik < 0) out.push(genel);
+  out.push(...govde);
+  if (genel && derinlik > 0) out.push(genel);
+  return new Dizi(out);
+});
+tanim('PIVOTBY', (a, b) => {
+  let rf = diziyeCevir(a[0], b), cf = diziyeCevir(a[1], b), vf = diziyeCevir(a[2], b); const L = lambdaAl(a[3], b);
+  if (!L || rf.satir !== vf.satir || cf.satir !== vf.satir || vf.sutun !== 1) return H.DEGER;
+  const hk = baslikKip(a[4] == null ? null : deger(a[4], b), vf);
+  const basR = hk === 1 || hk === 3 ? rf.v[0] : null;
+  if (basR) { rf = new Dizi(rf.v.slice(1)); cf = new Dizi(cf.v.slice(1)); vf = new Dizi(vf.v.slice(1)); }
+  const rDer = a[5] == null ? 1 : Math.trunc(N(deger(a[5], b))), rSira = a[6] == null ? 1 : Math.trunc(N(deger(a[6], b)));
+  const cDer = a[7] == null ? 1 : Math.trunc(N(deger(a[7], b))), cSira = a[8] == null ? 1 : Math.trunc(N(deger(a[8], b)));
+  const filtre = a[9] == null ? null : diziyeCevir(a[9], b);
+  let idx = rf.v.map((_, i) => i);
+  if (filtre) idx = idx.filter(i => mantiga((filtre.v[i + (filtre.satir === rf.satir ? 0 : 1)] || [])[0]) === true);
+  if (!idx.length) return H.HESAP;
+  const ozet = sat => cagirTek(L, [new Dizi(sat.map(i => [vf.v[i][0]]))], b);
+  const sg = sirala(grupla(rf, idx), Math.max(0, Math.abs(rSira) - 1), rSira < 0 ? -1 : 1), cg = sirala(grupla(cf, idx), Math.max(0, Math.abs(cSira) - 1), cSira < 0 ? -1 : 1);
+  const K = rf.sutun, kesis = (p, q) => { const s = new Set(q); return p.filter(i => s.has(i)); };
+  const ust = [...(hk === 3 ? basR : Array(K).fill('')), ...cg.map(g => g.degerler.join(' ')), ...(cDer ? [TOPLAM_ETIKET] : [])];
+  const out = [ust];
+  for (const g of sg) out.push([...g.degerler, ...cg.map(c => { const k = kesis(g.satirlar, c.satirlar); return k.length ? ozet(k) : ''; }), ...(cDer ? [ozet(g.satirlar)] : [])]);
+  if (rDer) out.push([TOPLAM_ETIKET, ...Array(K - 1).fill(''), ...cg.map(c => ozet(c.satirlar)), ...(cDer ? [ozet(idx)] : [])]);
+  return new Dizi(out);
+});
+
+/* ---------------------------------------------------------------- dizi biçimlendirme */
+function tekBoyut(d, yoksay, sutunSutun) {
+  const out = [];
+  const ekle = x => { if ((yoksay === 1 || yoksay === 3) && (x == null)) return; if ((yoksay === 2 || yoksay === 3) && hataMi(x)) return; out.push(x ?? 0); };
+  if (sutunSutun) { for (let c = 0; c < d.sutun; c++) for (let r = 0; r < d.satir; r++) ekle(d.v[r][c]); } else for (const s of d.v) for (const x of s) ekle(x);
+  return out;
+}
+const opsSayi = (x, b, v) => x == null ? v : Math.trunc(N(deger(x, b)));
+tanim('TOCOL', (a, b) => { const o = tekBoyut(diziyeCevir(a[0], b), opsSayi(a[1], b, 0), mantiga(a[2] == null ? false : deger(a[2], b)) === true); return o.length ? new Dizi(o.map(x => [x])) : H.HESAP; });
+tanim('TOROW', (a, b) => { const o = tekBoyut(diziyeCevir(a[0], b), opsSayi(a[1], b, 0), mantiga(a[2] == null ? false : deger(a[2], b)) === true); return o.length ? new Dizi([o]) : H.HESAP; });
+function sar(a, b, satirSatir) {
+  const d = diziyeCevir(a[0], b), n = Math.trunc(N(deger(a[1], b))), dolgu = a[2] == null ? H.NA : deger(a[2], b);
+  if (d.satir > 1 && d.sutun > 1) return H.DEGER; if (hataMi(n) || n < 1) return H.SAYI;
+  const v = d.v.flat().map(x => x ?? 0), parca = [];
+  for (let i = 0; i < v.length; i += n) { const p = v.slice(i, i + n); while (p.length < n) p.push(dolgu); parca.push(p); }
+  return new Dizi(satirSatir ? parca : Array.from({ length: n }, (_, r) => parca.map(p => p[r])));
+}
+tanim('WRAPROWS', (a, b) => sar(a, b, true));
+tanim('WRAPCOLS', (a, b) => sar(a, b, false));
+tanim('EXPAND', (a, b) => {
+  const d = diziyeCevir(a[0], b), R = opsSayi(a[1], b, d.satir), C = opsSayi(a[2], b, d.sutun), dolgu = a[3] == null ? H.NA : deger(a[3], b);
+  if (R < d.satir || C < d.sutun) return H.DEGER; if (R * C > SINIR.hucreDizi) return H.SAYI;
+  return new Dizi(Array.from({ length: R }, (_, r) => Array.from({ length: C }, (_, c) => r < d.satir && c < d.sutun ? (d.v[r][c] ?? 0) : dolgu)));
+});
+
+/* ---------------------------------------------------------------- rastgele (uçucu) */
+tanim('NA', () => H.NA);
+tanim('RAND', () => Math.random(), { ucucu: true });
+tanim('RANDBETWEEN', (a, b) => { const x = Math.ceil(N(deger(a[0], b))), y = Math.floor(N(deger(a[1], b))); if (hataMi(x) || hataMi(y)) return H.DEGER; if (x > y) return H.SAYI; return x + Math.floor(Math.random() * (y - x + 1)); }, { ucucu: true });
+tanim('RANDARRAY', (a, b) => {
+  const R = opsSayi(a[0], b, 1), C = opsSayi(a[1], b, 1), mn = a[2] == null ? 0 : N(deger(a[2], b)), mx = a[3] == null ? 1 : N(deger(a[3], b)), tam = a[4] == null ? false : mantiga(deger(a[4], b)) === true;
+  if ([R, C, mn, mx].some(hataMi)) return H.DEGER; if (R < 1 || C < 1 || mn > mx) return H.DEGER; if (R * C > SINIR.hucreDizi) return H.SAYI;
+  return new Dizi(Array.from({ length: R }, () => Array.from({ length: C }, () => tam ? Math.ceil(mn) + Math.floor(Math.random() * (Math.floor(mx) - Math.ceil(mn) + 1)) : mn + Math.random() * (mx - mn))));
+}, { ucucu: true });
+
+/* ---------------------------------------------------------------- regresyon, tahmin, sıklık */
+// Eşleştirilmiş sayılar: iki dizide aynı konumda ikisi de sayıysa alınır (metin ve boşlar atlanır, Excel gibi)
+function ciftler(ay, ax, b) {
+  const y = diziyeCevir(ay, b).v.flat(), x = diziyeCevir(ax, b).v.flat();
+  if (y.length !== x.length) return H.NA;
+  const e = y.find(hataMi) || x.find(hataMi); if (e) return e;
+  const p = []; for (let i = 0; i < y.length; i++) if (typeof y[i] === 'number' && typeof x[i] === 'number') p.push([x[i], y[i]]);
+  return p;
+}
+function regresyon(p) {
+  const n = p.length; if (n < 2) return H.BOL0;
+  const mx = p.reduce((t, q) => t + q[0], 0) / n, my = p.reduce((t, q) => t + q[1], 0) / n;
+  let sxy = 0, sxx = 0, syy = 0; for (const [x, y] of p) { sxy += (x - mx) * (y - my); sxx += (x - mx) ** 2; syy += (y - my) ** 2; }
+  if (sxx === 0) return H.BOL0;
+  const egim = sxy / sxx; return { egim, kesim: my - egim * mx, sxy, sxx, syy };
+}
+tanim('SLOPE', (a, b) => { const p = ciftler(a[0], a[1], b); if (hataMi(p)) return p; const r = regresyon(p); return hataMi(r) ? r : r.egim; });
+tanim('INTERCEPT', (a, b) => { const p = ciftler(a[0], a[1], b); if (hataMi(p)) return p; const r = regresyon(p); return hataMi(r) ? r : r.kesim; });
+tanim('CORREL', (a, b) => { const p = ciftler(a[0], a[1], b); if (hataMi(p)) return p; const r = regresyon(p.map(([x, y]) => [y, x])); if (hataMi(r)) return r; return r.syy === 0 ? H.BOL0 : r.sxy / Math.sqrt(r.sxx * r.syy); });
+tanim('RSQ', (a, b) => { const p = ciftler(a[0], a[1], b); if (hataMi(p)) return p; const r = regresyon(p); if (hataMi(r)) return r; return r.syy === 0 ? H.BOL0 : (r.sxy * r.sxy) / (r.sxx * r.syy); });
+const tahmin = (a, b) => yay(([x], bb) => { const n = N(x); if (hataMi(n)) return n; const p = ciftler(a[1], a[2], bb); if (hataMi(p)) return p; const r = regresyon(p); return hataMi(r) ? r : r.kesim + r.egim * n; }, [0])([a[0]], b);
+tanim('FORECAST.LINEAR', tahmin);
+tanim('FORECAST', tahmin);
+tanim('TREND', (a, b) => {
+  const yd = diziyeCevir(a[0], b), y = yd.v.flat();
+  const xd = a[1] == null ? new Dizi(y.map((_, i) => [i + 1])) : diziyeCevir(a[1], b), x = xd.v.flat();
+  const yeni = a[2] == null ? xd : diziyeCevir(a[2], b), sabit = a[3] == null ? true : mantiga(deger(a[3], b)) !== false;
+  if (x.length !== y.length) return H.BASV;
+  if (y.some(v => typeof v !== 'number') || x.some(v => typeof v !== 'number')) return H.DEGER;
+  let egim, kesim;
+  if (sabit) { const r = regresyon(x.map((v, i) => [v, y[i]])); if (hataMi(r)) return r; ({ egim, kesim } = r); }
+  else { const sxx = x.reduce((t, v) => t + v * v, 0); if (!sxx) return H.BOL0; egim = x.reduce((t, v, i) => t + v * y[i], 0) / sxx; kesim = 0; }
+  return new Dizi(yeni.v.map(s => s.map(v => typeof v === 'number' ? kesim + egim * v : H.DEGER)));
+});
+tanim('FREQUENCY', (a, b) => {
+  const veri = diziyeCevir(a[0], b).v.flat().filter(v => typeof v === 'number'), kov = diziyeCevir(a[1], b).v.flat().filter(v => typeof v === 'number');
+  const sirali = kov.map((v, i) => ({ v, i })).sort((p, q) => p.v - q.v), say = new Array(kov.length + 1).fill(0);
+  for (const x of veri) { const k = sirali.find(s => x <= s.v); say[k ? k.i : kov.length]++; }
+  return new Dizi(say.map(n => [n]));
+});
+tanim('STDEV.P', (a, b) => { const x = sayilar(a, b); if (hataMi(x)) return x; return x.length < 1 ? H.BOL0 : Math.sqrt(x.reduce((t, v) => t + v * v, 0) / x.length - (x.reduce((t, v) => t + v, 0) / x.length) ** 2); });
+// TOPLAMA (AGGREGATE): 19 işlev; seçenek 2, 3, 6, 7 hata değerlerini atlar. Gizli satır seçenekleri (1, 3, 5, 7) Kesit'te gizli satır olmadığı için etkisizdir.
+const TOPLAMA_ISLEV = { 1: 'AVERAGE', 2: 'COUNT', 3: 'COUNTA', 4: 'MAX', 5: 'MIN', 6: 'PRODUCT', 7: 'STDEV.S', 8: 'STDEV.P', 9: 'SUM', 10: 'VAR.S', 12: 'MEDIAN', 13: 'MODE.SNGL', 14: 'LARGE', 15: 'SMALL', 16: 'PERCENTILE.INC', 17: 'QUARTILE.INC' };
+tanim('AGGREGATE', (a, b) => {
+  const fno = Math.trunc(N(deger(a[0], b))), sec = a[1] == null ? 0 : Math.trunc(N(deger(a[1], b)));
+  const ad = TOPLAMA_ISLEV[fno]; if (!ad || !F[ad]) return H.DEGER; if (sec < 0 || sec > 7) return H.DEGER;
+  const hataAtla = [2, 3, 6, 7].includes(sec);
+  const temizle = x => { const v = diziyeCevir(x, b); return hataAtla ? new Dizi(v.v.map(s => s.map(y => hataMi(y) ? null : y))) : v; };
+  if (fno >= 14) return F[ad].fn([temizle(a[2]), a[3] == null ? null : deger(a[3], b)], b);
+  return F[ad].fn(a.slice(2).filter(x => x != null).map(temizle), b);
+});
 
 export const ISLEVLER = F;

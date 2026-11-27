@@ -1,6 +1,7 @@
 // Ders içeriği doğrulaması: her alıştırmanın çözümü denetçiden geçer; elle yazılmış sonuç (sabit) gizli varyantta yakalanır.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { gelismisFiltreDenetle } from '../docs/motor/denetci.js';
 import { DERSLER, MODULLER } from '../docs/icerik/dersler.js';
 import { SAYFALAR } from '../docs/icerik/sayfalar.js';
 import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, kosulluDenetle, panoDenetle, dogrulamaDenetle, bicimDenetle, hucreBulDenetle, sayiDenetle, hedefAraDenetle, veriTablosuDenetle, cozucuDenetle, adDenetle, kitapKur } from '../docs/motor/denetci.js';
@@ -64,6 +65,13 @@ for (const d of DERSLER) {
       if (a.tur === 'ad') { assert.ok(adDenetle(a, SAYFALAR, a.cozum).tamam, ad + ': ' + adDenetle(a, SAYFALAR, a.cozum).mesaj); assert.equal(adDenetle(a, SAYFALAR, { ad: a.cozum.ad, tanim: '=A1:A2' }).tamam, false, ad); assert.equal(adDenetle(a, SAYFALAR, { ad: 'KDV 1', tanim: a.cozum.tanim }).tamam, false, ad + ': boşluklu ad geçiyor'); continue; }
       if (a.tur === 'hedefAra') { const r = hedefAraDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj); assert.equal(hedefAraDenetle(a, SAYFALAR, { ...a.cozum, hedefHucre: a.cozum.degisenHucre, degisenHucre: a.cozum.hedefHucre }).tamam, false, ad); continue; }
       if (a.tur === 'veriTablosu') { assert.ok(veriTablosuDenetle(a, SAYFALAR, { satirGiris: a.cozum.satirGiris, sutunGiris: a.cozum.sutunGiris }).tamam, ad); assert.equal(veriTablosuDenetle(a, SAYFALAR, { satirGiris: a.cozum.sutunGiris, sutunGiris: a.cozum.satirGiris }).tamam, false, ad + ': ters giriş geçiyor'); continue; }
+      if (a.tur === 'gelismisFiltre') {
+        const r = gelismisFiltreDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj);
+        // Ölçütsüz (her kayıt) ve boş satırlı ölçüt alanı geçmemeli
+        if (a.cozum.olcut) { assert.equal(gelismisFiltreDenetle(a, SAYFALAR, { ...a.cozum, olcut: '', hucreler: {} }).tamam, false, ad + ': ölçütsüz filtre geçiyor'); const al = a.cozum.olcut.split(':'); const bos = al[0] + ':' + al[1].replace(/\d+$/, n => String(+n + 1)); assert.equal(gelismisFiltreDenetle(a, SAYFALAR, { ...a.cozum, olcut: bos }).tamam, false, ad + ': boş satırlı ölçüt geçiyor'); }
+        else assert.equal(gelismisFiltreDenetle(a, SAYFALAR, { ...a.cozum, benzersiz: false }).tamam, false, ad + ': benzersiz kutusu olmadan geçiyor');
+        continue;
+      }
       if (a.tur === 'cozucu') {
         const r = cozucuDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj);
         if (a.baslangic) assert.equal(cozucuDenetle(a, SAYFALAR, a.baslangic).tamam, false, ad + ': kısıtsız model geçiyor');

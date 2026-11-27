@@ -1,8 +1,9 @@
 // Kesit Excel · alıştırma denetçisi.
 // Öğrencinin formülü iki veriyle hesaplanır: gördüğü tablo ve aynı yapıda gizli bir varyant (sayılar, satır sırası ve
 // metinler karıştırılmış). Sonucu elle yazmak ya da yanlış hücreye bağlanmak görünür veride tutsa bile varyantta yakalanır.
+import { gelismisFiltre } from './veriaraclari.js';
 import { Kitap, goster } from './kitap.js';
-import { ayristir, belirtec, adresCoz, alanCoz, adres, kaydir, hataMi, HATA_TR, yazimBul, islevAdi, EN_TR } from './formul.js';
+import { ayristir, belirtec, adresCoz, alanCoz, adres, kaydir, hataMi, HATA_TR, yazimBul, islevAdi, EN_TR, Lambda, lambdaCagir } from './formul.js';
 import { ISLEVLER } from './islevler.js';
 import { pivot, pivotYerlestir } from './pivot.js';
 import { gecersizler, dogrula } from './dogrulama.js';
@@ -121,7 +122,7 @@ export function formulDenetle(alistirma, tablolar, ogrenciFormul) {
   let son;
   for (const d of alistirma.durumlar) {
     son = formulDenetleTek({ ...alistirma, hazirlik: { ...(alistirma.hazirlik || {}), ...d } }, tablolar, ogrenciFormul);
-    if (!son.tamam) { const ne = Object.entries(d).map(([a, v]) => `${a} = ${goster(v)}`).join(', '); return { ...son, mesaj: `Denetim ${ne} iken: ` + son.mesaj }; }
+    if (!son.tamam) { const ne = Object.entries(d).map(([a, v]) => `${a} = ${goster(v)}`).join(', '); return ne ? { ...son, mesaj: `Denetim ${ne} iken: ` + son.mesaj } : son; }
   }
   return { ...son, mesaj: `Doğru. Formül denetimin ${alistirma.durumlar.length} farklı seçiminde ve gizli denemede doğru sonuç verdi.` };
 }
@@ -152,7 +153,7 @@ function formulDenetleTek(alistirma, tablolar, ogrenciFormul) {
     return { tamam: false, mesaj, ipucu: alistirma.ipuclari?.[0], sizin: g.o, beklenen: g.c };
   }
   // Gizli varyant: aynı yapı, farklı sayılar
-  const tv = Object.fromEntries(Object.entries(tablolar).map(([ad, t]) => [ad, t.basliklar && !t.ham && ad === sayfa ? varyant(t, alistirma.tohum ?? 11, { sabit: alistirma.sabitSutunlar || [] }) : t]));
+  const tv = Object.fromEntries(Object.entries(tablolar).map(([ad, t]) => [ad, t.basliklar && !t.ham && (ad === sayfa || (alistirma.varyantSayfalar || []).includes(ad)) ? varyant(t, alistirma.tohum ?? 11, { sabit: alistirma.sabitSutunlar || [] }) : t]));
   const v = deneme(tv);
   if (!izgaraEsit(v.o, v.c)) {
     const sabitYazilmis = !bilgi.basvuru;
@@ -233,7 +234,7 @@ export function grafikVerisiAl(tablolar, sayfa, kaynak, hazirlik) {
   const kt = kitapKur({ sayfa, hazirlik }, tablolar);
   const al = alanCoz(kaynak.alan); if (!al) throw new Error('Geçersiz veri aralığı');
   const t = tablolar[sayfa];
-  return aralikVerisi(kt.degerler(sayfa, al), { seriYonu: kaynak.seriYonu || 'otomatik', bicimler: (t.bicim || []).slice(al.c1 - 1, al.c2) });
+  return aralikVerisi(kt.degerler(sayfa, al), { seriYonu: kaynak.seriYonu || 'otomatik', bicimler: (t.bicim || []).slice(al.c1 - 1, al.c2), tarihSeri: !!kaynak.tarihSeri });
 }
 export function grafikAlistirmaDenetle(alistirma, tablolar, cevap) {
   let veri, beklenen;
@@ -409,8 +410,37 @@ export function adDenetle(alistirma, tablolar, { ad, tanim }) {
   const bag = kk => ({ kitap: kk, sayfa: kk.sayfaBul(alistirma.sayfa), satir: 2, sutun: 1, adim: kk.adim, bugun: kk.bugun, degisken: null });
   const o = k.adDegeri(String(ad).toLocaleUpperCase('tr'), bag(k)), c = kc.adDegeri(alistirma.cozum.ad.toLocaleUpperCase('tr'), bag(kc));
   const ayni = (a, b) => a && b && a.sayfa === b.sayfa && a.r1 === b.r1 && a.r2 === b.r2 && a.c1 === b.c1 && a.c2 === b.c2;
+  // Adlandırılmış LAMBDA: deneme bağımsız değişkenleriyle çağrılır, sonuçlar karşılaştırılır
+  if (c instanceof Lambda) {
+    if (!(o instanceof Lambda)) return { tamam: false, mesaj: 'Ad bir LAMBDA olmalı: Başvurur kutusuna =LAMBDA(parametre;…;hesap) yazın.', ipucu: alistirma.ipuclari?.[0] };
+    if (o.params && o.params.length !== c.params.length) return { tamam: false, mesaj: `LAMBDA ${c.params.length} parametre almalı, sizinki ${o.params.length} alıyor.` };
+    for (const args of alistirma.lambdaDeneme || []) {
+      const x = lambdaCagir(o, args, bag(k)), y = lambdaCagir(c, args, bag(kc));
+      const es = (typeof x === 'number' && typeof y === 'number') ? Math.abs(x - y) < 1e-9 : String(x) === String(y);
+      if (!es) return { tamam: false, mesaj: `${alistirma.cozum.ad}(${args.map(v => goster(v)).join('; ')}) ${goster(x)} veriyor, beklenen ${goster(y)}.`, ipucu: alistirma.ipuclari?.[0] };
+    }
+    return { tamam: true, mesaj: `Doğru. ${ad} artık kitabın her yerinde bir işlev gibi çağrılabilir: =${ad}(…).` };
+  }
   if (c && c.r1 != null) { if (!ayni(o, c)) return { tamam: false, mesaj: o && o.r1 != null ? `Ad ${o.sayfa}!${adres(o.r1, o.c1)}:${adres(o.r2, o.c2)} alanına bakıyor; beklenen ${c.sayfa}!${adres(c.r1, c.c1)}:${adres(c.r2, c.c2)}.` : 'Ad bir hücre alanına başvurmalı (ör. =Satışlar!$H$2:$H$241 ya da =Satışlar[Adet]).', ipucu: alistirma.ipuclari?.[0] }; }
   else if (!(typeof o === 'number' && Math.abs(o - c) < 1e-12)) return { tamam: false, mesaj: 'Adın değeri beklenenden farklı.' };
   if (/\$/.test(alistirma.cozum.tanim) && /![A-Z]+\d/.test(tanim) && !/\$/.test(tanim)) return { tamam: false, mesaj: 'Ad göreli başvuruyla tanımlanmış ($ yok): Excel adı kullanıldığı hücreye göre kaydırır. Mutlak başvuru yazın: $H$2:$H$241.' };
   return { tamam: true, mesaj: 'Doğru. Ad tanımlandı; artık formüllerde alan yerine adı yazabilirsiniz.' + (/\[/.test(tanim) ? ' Tablo sütununa bağladığınız için veri uzayınca ad da uzar.' : '') };
+}
+
+// Gelişmiş Filtre: öğrencinin ölçüt hücreleri (hucreler: { M1: 'Kanal', M2: 'Web' }) kitaba yazılır, filtre çalıştırılır,
+// çıkan satırlar çözümün satırlarıyla karşılaştırılır.
+export function gelismisFiltreDenetle(alistirma, tablolar, { liste, olcut: olcutAlan, benzersiz, hucreler = {} }) {
+  const calistir = (h, l, o, b) => { const k = kitapKur({ ...alistirma, hazirlik: { ...(alistirma.hazirlik || {}), ...h } }, tablolar); return gelismisFiltre(k, alistirma.sayfa, l, o, { benzersiz: b }); };
+  let r; try { r = calistir(hucreler, liste, olcutAlan, benzersiz); } catch (e) { return { tamam: false, mesaj: e.message }; }
+  const c = alistirma.cozum, cr = calistir(c.hucreler || {}, c.liste, c.olcut, c.benzersiz);
+  const la = alanCoz(String(liste || '').replace(/\$/g, '')), cl = alanCoz(c.liste);
+  if (la && cl && (la.r2 < cl.r2 || la.c2 < cl.c2 || la.r1 > cl.r1)) return { tamam: false, mesaj: `Liste aralığı verinin tamamını kapsamalı (${c.liste}); yoksa dışarıda kalan satırlar hiç denetlenmez.` };
+  if (r.bosSatir) return { tamam: false, mesaj: 'Ölçüt aralığında boş bir satır var: boş satır "her kayıt" demektir, filtre hiçbir şeyi elemez. Ölçüt aralığını yalnız dolu satırlara kadar seçin.', satir: r.satirlar.length };
+  const anahtar = x => x.satirNo.join(',');
+  if (anahtar(r) !== anahtar(cr)) {
+    const fark = r.satirlar.length - cr.satirlar.length;
+    if (!r.satirlar.length) return { tamam: false, mesaj: `Filtre hiç kayıt getirmedi, beklenen ${cr.satirlar.length}. Aynı satırdaki koşullar VE demektir (ikisi birden doğru olmalı); "biri ya da öteki" için koşulları alt alta ayrı satırlara yazın. Başlıkların liste başlıklarıyla aynı olduğuna da bakın.`, ipucu: alistirma.ipuclari?.[0] };
+    return { tamam: false, mesaj: `Filtre ${r.satirlar.length} kayıt getirdi, beklenen ${cr.satirlar.length}. ` + (fark > 0 ? 'Fazla kayıt var: koşullar aynı satırda (VE) mı, alt alta (YA DA) mı yazılmalı? Düz metin "ile başlar" demektir; tam eşleşme için ="=metin" yazılır.' : 'Eksik kayıt var: bir YA DA satırı eksik ya da bir koşul fazla olabilir. Ölçüt aralığının bütün koşul satırlarını kapsadığına da bakın.'), ipucu: alistirma.ipuclari?.[0] };
+  }
+  return { tamam: true, mesaj: `Doğru. Gelişmiş Filtre ${r.satirlar.length} kaydı getiriyor.` + (benzersiz ? ' Yinelenenler atıldı.' : '') };
 }

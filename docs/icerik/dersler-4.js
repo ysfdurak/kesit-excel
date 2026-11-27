@@ -30,7 +30,7 @@ export const DERSLER_4 = [
   },
   {
     id: 'm13-d2', modul: 'm13', baslik: 'Bütün grafik türleri', sure: 14,
-    ozet: 'Sütundan şelaleye 15 tür: her biri hangi soruyu cevaplar, Excel\'de nerede, hangi tuzağı var?',
+    ozet: 'Sütundan şelaleye 15 temel tür (pano grafikleri Modül 20\'de): her biri hangi soruyu cevaplar, Excel\'de nerede, hangi tuzağı var?',
     hedefler: ['Zaman serisini çizgiyle, ilişkiyi dağılımla, dağılımı histogramla göstermek', 'Şelale, huni, ağaç haritası, kutu ve radarın yerini bilmek', 'Birleşik grafik ve ikincil eksen tuzağını tanımak'],
     anlatim: [
       '**Sütun / çubuk**: karşılaştırma. Yığılmış hâli toplamı ve parçaları birlikte gösterir; %100 yığılmış payları. Yığılmışta yalnız en alttaki seri ortak tabandan başlar, diğerlerini karşılaştırmak zordur.',

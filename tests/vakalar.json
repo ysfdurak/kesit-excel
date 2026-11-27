@@ -262,7 +262,23 @@
   "=ADDRESS(2,3,4)",
   "=ADDRESS(2,3,1,FALSE)",
   "=ADDRESS(5,28,3,TRUE,\"Veri\")",
-  "=COUNT(OFFSET(D1,1,0,8))"
+  "=COUNT(OFFSET(D1,1,0,8))",
+  "=SLOPE(C2:C9,D2:D9)",
+  "=INTERCEPT(C2:C9,D2:D9)",
+  "=CORREL(C2:C9,D2:D9)",
+  "=RSQ(C2:C9,D2:D9)",
+  "=FORECAST(6,C2:C9,D2:D9)",
+  "=FORECAST.LINEAR(6,C2:C9,D2:D9)",
+  "=SUM(TREND(C2:C8,D2:D8,{6;7}))",
+  "=INDEX(TREND(C2:C8),3)",
+  "=INDEX(FREQUENCY(D2:D9,{2;5}),1)",
+  "=INDEX(FREQUENCY(D2:D9,{2;5}),2)",
+  "=INDEX(FREQUENCY(D2:D9,{2;5}),3)",
+  "=AGGREGATE(9,6,C2:C9)",
+  "=AGGREGATE(14,6,C2:C9,2)",
+  "=AGGREGATE(4,0,C2:C9)",
+  "=STDEV.P(C2:C9)",
+  "=ISNA(NA())"
  ],
  "elle": [
   [
@@ -392,7 +408,87 @@
   [
    "=RATE(10,-1000,5000,10000)",
    "#NUM!"
+  ],
+  [
+   "=LAMBDA(x,y,x*y)(6,7)",
+   42
+  ],
+  [
+   "=SUM(MAP({1;2;3},LAMBDA(a,a*a)))",
+   14
+  ],
+  [
+   "=SUM(BYROW({1,2;3,4},LAMBDA(r,MAX(r))))",
+   6
+  ],
+  [
+   "=SUM(BYCOL({1,2;3,4},SUM))",
+   10
+  ],
+  [
+   "=INDEX(SCAN(0,{1;2;3},LAMBDA(a,b,a+b)),3)",
+   6
+  ],
+  [
+   "=REDUCE(0,{1;2;3},LAMBDA(a,b,a+b))",
+   6
+  ],
+  [
+   "=SUM(MAKEARRAY(2,2,LAMBDA(r,c,r*c)))",
+   9
+  ],
+  [
+   "=LET(f,LAMBDA(x,x+1),f(4))",
+   5
+  ],
+  [
+   "=ROWS(TOCOL({1,2;3,4}))",
+   4
+  ],
+  [
+   "=INDEX(TOCOL({1,2;3,4},0,TRUE),2)",
+   3
+  ],
+  [
+   "=COLUMNS(TOROW({1;2;3}))",
+   3
+  ],
+  [
+   "=INDEX(WRAPROWS({1;2;3;4;5},2,0),3,2)",
+   0
+  ],
+  [
+   "=INDEX(WRAPCOLS({1;2;3},2),2,2)",
+   "#N/A"
+  ],
+  [
+   "=COLUMNS(EXPAND({1,2},2,4,0))",
+   4
+  ],
+  [
+   "=INDEX(GROUPBY(B2:B9,D2:D9,SUM,0,0),1,2)",
+   9
+  ],
+  [
+   "=INDEX(GROUPBY(B2:B9,D2:D9,SUM,0,1),4,2)",
+   32
+  ],
+  [
+   "=INDEX(GROUPBY(B2:B9,D2:D9,SUM,0,0,-2),1,1)",
+   "Kirtasiye"
+  ],
+  [
+   "=INDEX(PIVOTBY(B2:B9,F2:F9,D2:D9,SUM,0),2,2)",
+   3
+  ],
+  [
+   "=AGGREGATE(15,6,C2:C9/D2:D9,1)",
+   2.55
+  ],
+  [
+   "=SLOPE({1;2;3},{1;2})",
+   "#N/A"
   ]
  ],
- "not": "elle: LibreOffice 24.2'de olmayan işlevler ve Kesit'in bilinçli olarak Türkçe Excel'e göre davrandığı yerler (BÜYÜKHARF'te İ, METNEÇEVİR'de Türkçe sayı biçimi, dinamik dizide örtük kesişim yok). RATE(10;-1000;5000;10000) çözümsüzdür: Excel 20 denemede yakınsamazsa #SAYI! verir (Microsoft belgesi), LibreOffice 24.2 #YOK verdiği için elle listesinde."
+ "not": "elle: LibreOffice 24.2'de olmayan işlevler ve Kesit'in bilinçli olarak Türkçe Excel'e göre davrandığı yerler (BÜYÜKHARF'te İ, METNEÇEVİR'de Türkçe sayı biçimi, dinamik dizide örtük kesişim yok). RATE(10;-1000;5000;10000) çözümsüzdür: Excel 20 denemede yakınsamazsa #SAYI! verir (Microsoft belgesi), LibreOffice 24.2 #YOK verdiği için elle listesinde. 0.4.0: LAMBDA yardımcıları, GROUPBY/PIVOTBY ve dizi biçimlendirme işlevleri LibreOffice 24.2'de yok; değerler Microsoft örnekleriyle elle doğrulandı. AGGREGATE dizi biçimi (14–19) ve farklı uzunluklu EĞİM Excel belgesine göre (LO #DEĞER! verir)."
 }

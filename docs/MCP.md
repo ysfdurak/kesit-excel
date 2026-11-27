@@ -32,12 +32,12 @@ Sondaki klasör(ler) **izinli klasörlerdir**: `formul_hesapla` yalnız bunları
 | `formul_cevir` | `formul`, `hedef` (`tr`/`en`) | Çevrilmiş formül (boşluklar korunur) |
 | `islev_bilgisi` | `ad` ya da `ara` / `kategori` | Söz dizimi, açıklama, örnek, işlevin geçtiği dersler |
 | `alistirma_getir` | `ders` (m4-d3), `alistirma` (a1), `cozum_goster`; ya da `rol` | Soru, sayfa ve sütunlar, hedef hücre, ipuçları; rolün ders sırası |
-| `alistirma_denetle` | `ders`, `alistirma` ve alıştırmanın türüne göre `formul` / `pivot` / `adimlar` / `grafik` / `kurallar` / `pano` / `vba` / `secim` / `dogrulama` / `bicim_kodu` / `hucre` / `sayi` / `yeni_ad` / `model` | `tamam`, açıklama, gizli denemede yakalandı mı, ipucu, (Power Query için) M kodu |
+| `alistirma_denetle` | `ders`, `alistirma` ve alıştırmanın türüne göre `formul` / `pivot` / `adimlar` / `grafik` / `kurallar` / `pano` / `vba` / `secim` / `dogrulama` / `bicim_kodu` / `hucre` / `sayi` / `yeni_ad` (LAMBDA tanımı dahil) / `filtre` (Gelişmiş Filtre: `{ liste, olcut, benzersiz, hucreler }`) / `model` | `tamam`, açıklama, gizli denemede yakalandı mı, ipucu, (Power Query için) M kodu |
 | `grafik_ciz` | `sayfa`, `alan` (A1:D5) ya da `pivot`; `secenek` (`tur`, `baslik`, `yigin`, `eksenMin`, `veriEtiketi`, `egilim`…), `tema`, `genislik` | Kategori ve seri adları, renkleri gömülü `svg` metni |
 | `durum_cozumle` | `tur` (`hedefAra` \| `cozucu`), `sayfa`, `model`, isteğe bağlı `hucreler` | Hedef Ara: bulunan değer ve sonuç; Çözücü: değişken değerleri, amaç, "doğrusal değil" ya da "olurlu değil" iletisi |
 | `makro_calistir` | `kod` (VBA), isteğe bağlı `sayfa`, `makro`, `oku` (en çok 500 hücre), `girdiler` (InputBox) | `tamam`, hata satırı ve iletisi, MsgBox/Debug.Print çıktısı, yazılan hücre sayısı, okunan değerler |
 
-Hazır sayfalar: Satışlar, Ürünler, Personel, İzinler, Teslimat, Bütçe, Tatiller, Bayi, Müşteri ham, Ürün ham, Hedef; model sayfaları: Kredi, Yatırım, Fiyat, Üretim, Vardiya, Denetim, Listeler, Kayıt. Her veri sayfası aynı adla bir Excel Tablosudur: `=TOPLA(Satışlar[Adet])`. Kendi veriniz `Veri` sayfasına A1'den yazılır; metin değerler Türkçe girişe göre çevrilir ("1.250,50" → 1250,5; "15.03.2025" → tarih).
+Hazır sayfalar: Satışlar, Ürünler, Personel, İzinler, Teslimat, Bütçe, Tatiller, Bayi, Müşteri ham, Ürün ham, Hedef; model sayfaları: Kredi, Yatırım, Fiyat, Üretim, Vardiya, Denetim, Listeler, Kayıt, İadeler, Ocak, Şubat, Mart, Çeyrek, Görevler, Bölgeler, Vardiyalar, Talep. Her veri sayfası aynı adla bir Excel Tablosudur: `=TOPLA(Satışlar[Adet])`. Kendi veriniz `Veri` sayfasına A1'den yazılır; metin değerler Türkçe girişe göre çevrilir ("1.250,50" → 1250,5; "15.03.2025" → tarih).
 
 ## Örnek konuşmalar
 
@@ -48,6 +48,9 @@ Hazır sayfalar: Satışlar, Ürünler, Personel, İzinler, Teslimat, Bütçe, T
 - "Kategori başına toplam adedi çubuk grafikle çiz." → `grafik_ciz` (pivot: satir Kategori, değer Adet)
 - "Bu makro 300 satırlık veride de çalışır mı?" → `makro_calistir`, sonra `alistirma_denetle` (vba)
 - "Vardiya sayfasında en az kaç operatörle haftayı kapatırız?" → `durum_cozumle` (cozucu, tamsayı)
+- "İade nedenlerinin Pareto grafiğini çiz" → `grafik_ciz` (sayfa İadeler, alan A1:B9, tur pareto)
+- "Depo taşıma planını Gantt olarak göster" → `grafik_ciz` (sayfa Görevler, alan A1:C9, tur gantt; tarih sütunu kendiliğinden seri olur)
+- "=GRUPLAÖLÇÜT(F2:F241;H2:H241;TOPLA) ne döndürür?" → `formul_hesapla`
 
 ## Güvenlik
 

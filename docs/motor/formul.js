@@ -20,6 +20,12 @@ export class Dizi {
   get sutun() { return this.v.length ? this.v[0].length : 0; }
   al(r, c) { const s = this.v[this.satir === 1 ? 0 : r]; return s ? (s[this.sutun === 1 ? 0 : c]) : undefined; }
 }
+// LAMBDA değeri: parametre adları, gövde ağacı, tanımlandığı andaki değişkenler (kapanış).
+// yerlesik doluysa "eta" biçimidir: BYROW(A2:C5;TOPLA) gibi işlev adının kendisi.
+export class Lambda {
+  constructor(params, govde, kapsam, yerlesik = null) { this.params = params; this.govde = govde; this.kapsam = kapsam; this.yerlesik = yerlesik; }
+  toString() { return '#CALC!'; }
+}
 // Başvuru: sayfa + dikdörtgen (1 tabanlı satır ve sütun)
 export class Bas {
   constructor(sayfa, r1, c1, r2, c2) { this.sayfa = sayfa; this.r1 = Math.min(r1, r2); this.c1 = Math.min(c1, c2); this.r2 = Math.max(r1, r2); this.c2 = Math.max(c1, c2); }
@@ -61,6 +67,11 @@ export const TR_EN = {
   'TARİH': 'DATE', 'YIL': 'YEAR', 'AY': 'MONTH', 'GÜN': 'DAY', 'BUGÜN': 'TODAY', 'ŞİMDİ': 'NOW', 'ZAMAN': 'TIME', 'SAAT': 'HOUR', 'DAKİKA': 'MINUTE', 'SANİYE': 'SECOND',
   'HAFTANINGÜNÜ': 'WEEKDAY', 'HAFTASAY': 'WEEKNUM', 'ISOHAFTASAY': 'ISOWEEKNUM', 'SERİTARİH': 'EDATE', 'SERİAY': 'EOMONTH', 'İŞGÜNÜ': 'WORKDAY', 'İŞGÜNÜ.ULUSL': 'WORKDAY.INTL',
   'TAMİŞGÜNÜ': 'NETWORKDAYS', 'TAMİŞGÜNÜ.ULUSL': 'NETWORKDAYS.INTL', 'ETARİHLİ': 'DATEDIF', 'TARİHSAYISI': 'DATEVALUE', 'GÜNSAY': 'DAYS', 'YILORAN': 'YEARFRAC',
+  'LAMBDA': 'LAMBDA', 'MAP': 'MAP', 'BYROW': 'BYROW', 'BYCOL': 'BYCOL', 'SCAN': 'SCAN', 'REDUCE': 'REDUCE', 'MAKEARRAY': 'MAKEARRAY',
+  'GRUPLAÖLÇÜT': 'GROUPBY', 'ÖZETÖLÇÜT': 'PIVOTBY', 'SÜTUNA': 'TOCOL', 'SATIRA': 'TOROW', 'SATIRSAR': 'WRAPROWS', 'SÜTUNSAR': 'WRAPCOLS', 'GENİŞLET': 'EXPAND',
+  'S_SAYI_ÜRET': 'RAND', 'RASTGELEARADA': 'RANDBETWEEN', 'RASGDİZİ': 'RANDARRAY',
+  'EĞİM': 'SLOPE', 'KESMENOKTASI': 'INTERCEPT', 'KORELASYON': 'CORREL', 'RKARE': 'RSQ', 'TAHMİN.DOĞRUSAL': 'FORECAST.LINEAR', 'TAHMİN': 'FORECAST', 'EĞİLİM': 'TREND',
+  'SIKLIK': 'FREQUENCY', 'YOKSAY': 'NA', 'TOPLAMA': 'AGGREGATE', 'STDSAPMA.P': 'STDEV.P',
   'FİLTRE': 'FILTER', 'BENZERSİZ': 'UNIQUE', 'SIRALA': 'SORT', 'SIRALAÖLÇÜT': 'SORTBY', 'SIRALI': 'SEQUENCE', 'LET': 'LET', 'AL': 'TAKE', 'BIRAK': 'DROP',
   'DÜŞEYYIĞ': 'VSTACK', 'YATAYYIĞ': 'HSTACK', 'SÜTUNSEÇ': 'CHOOSECOLS', 'SATIRSEÇ': 'CHOOSEROWS',
   'DOLAYLI': 'INDIRECT', 'KAYDIR': 'OFFSET', 'ADRES': 'ADDRESS', 'ÖZETVERİAL': 'GETPIVOTDATA',
@@ -150,7 +161,8 @@ export function belirtec(f, yazim = yazimBul(f)) {
       for (;;) { if (j >= s.length) throw new Error('Kapanmamış sayfa adı'); if (s[j] === "'") { if (s[j + 1] === "'") { ad += "'"; j += 2; continue; } break; } ad += s[j++]; }
       if (s[j + 1] !== '!') throw new Error('Sayfa adından sonra ! bekleniyor');
       const r = basvuruOku(s, j + 2); if (!r) throw new Error('Sayfa adından sonra başvuru bekleniyor');
-      out.push({ ...r.tk, sayfa: ad, bas: j + 2, son: r.son }); i = r.son; continue;
+      const uc = ad.split(':');
+      out.push({ ...r.tk, sayfa: uc[0], ...(uc.length === 2 ? { sayfa2: uc[1] } : {}), bas: j + 2, son: r.son }); i = r.son; continue;
     }
     // satır başvurusu (1:5) ya da sayı
     if (/[0-9$]/.test(ch) || ch === ondalik) {
@@ -166,6 +178,8 @@ export function belirtec(f, yazim = yazimBul(f)) {
       const m = /^[A-Za-zÇĞİÖŞÜçğıöşü_\\][\wÇĞİÖŞÜçğıöşü.]*/.exec(s.slice(i));
       if (m) {
         const ad = m[0], j = i + ad.length;
+        const m3 = s[j] === ':' ? /^:([A-Za-zÇĞİÖŞÜçğıöşü_][\wÇĞİÖŞÜçğıöşü.]*)!/.exec(s.slice(j)) : null;
+        if (m3) { const k3 = j + m3[0].length, r4 = basvuruOku(s, k3); if (!r4) throw new Error('Sayfa adından sonra başvuru bekleniyor'); out.push({ ...r4.tk, sayfa: ad, sayfa2: m3[1], bas: k3, son: r4.son }); i = r4.son; continue; }
         if (s[j] === '!') { const r2 = basvuruOku(s, j + 1); if (!r2) throw new Error('Sayfa adından sonra başvuru bekleniyor'); out.push({ ...r2.tk, sayfa: ad, bas: j + 1, son: r2.son }); i = r2.son; continue; }
         if (s[j] === '[') { const r3 = koseliOku(s, j); out.push({ t: 'tref', tablo: ad, ...r3.tk, bas: i, son: r3.son }); i = r3.son; continue; }
         let k = j; while (/\s/.test(s[k] || '')) k++;
@@ -257,6 +271,16 @@ export function ayristir(formul, islevler) {
     while (bak() && bak().t === 'op' && bak().v === '%') { al(); n = { t: 'pct', a: n }; }
     return n;
   }
+  function argumanlar() {
+    const args = [];
+    if (bak() && bak().t === ')') { al(); return args; }
+    for (;;) {
+      if (bak() && (bak().t === 'sep' || bak().t === ')')) args.push({ t: 'bos' }); else args.push(ifade());
+      const n = al(); if (!n) throw new Error('Kapanmamış parantez');
+      if (n.t === ')') return args;
+      if (n.t !== 'sep') throw new Error('Bağımsız değişkenler arasında ayırıcı bekleniyor');
+    }
+  }
   function birincil() {
     const t = al();
     if (!t) throw new Error('Formül eksik bitti');
@@ -281,7 +305,9 @@ export function ayristir(formul, islevler) {
         if (n.t !== 'sep') throw new Error('Bağımsız değişkenler arasında ayırıcı bekleniyor');
       }
       derinlik--;
-      return { t: 'fn', ad, yazilan: t.v, args };
+      let dugum = { t: 'fn', ad, yazilan: t.v, args };
+      while (bak() && bak().t === '(') { al(); dugum = { t: 'cagir', f: dugum, args: argumanlar() }; }
+      return dugum;
     }
     if (t.t === ')') throw new Error('Fazla kapanan parantez');
     if (t.t === 'sep') throw new Error('Yersiz ayırıcı');
@@ -353,6 +379,7 @@ export function degerlendir(agac, bag) {
     case 'ref': {
       const sayfa = agac.sayfa ? bag.kitap.sayfaBul(agac.sayfa) : bag.sayfa;
       if (!sayfa) return H.BASV;
+      if (agac.sayfa2) return ucBoyutlu(agac, bag);
       let { r1, r2, c1, c2 } = agac;
       if (agac.tip === 'sutun' || agac.tip === 'satir') { const s = sayfa.kullanilan(); if (agac.tip === 'sutun') { r1 = 1; r2 = Math.max(1, s.r); } else { c1 = 1; c2 = Math.max(1, s.c); } }
       return new Bas(sayfa.ad, r1, c1, r2, c2);
@@ -362,14 +389,29 @@ export function degerlendir(agac, bag) {
       if (bag.degisken && bag.degisken.has(ad)) return bag.degisken.get(ad);
       // Ad Yöneticisi'ndeki ad ya da tablo adı (tablo adı tek başına veri gövdesidir)
       if (bag.kitap.adDegeri) { const v = bag.kitap.adDegeri(ad, bag); if (v !== undefined) return v; }
+      // "Eta" biçimi: işlev adı tek başına bir LAMBDA gibi geçirilir (BYROW(A2:C5;TOPLA))
+      const en = islevAdi(agac.v, bag.kitap.islevler);
+      if (en && !bag.kitap.islevler[en].tembel) return new Lambda(null, null, null, en);
       return H.AD;
+    }
+    case 'cagir': {
+      const f = coz(degerlendir(agac.f, bag), bag);
+      if (!(f instanceof Lambda)) return hataMi(f) ? f : H.DEGER;
+      return lambdaCagir(f, agac.args.map(a => coz(degerlendir(a, bag), bag)), bag);
     }
     case 'tref': return bag.kitap.tabloBasvuru ? bag.kitap.tabloBasvuru(agac, bag) : H.BASV;
     case 'neg': return islemTekli(degerlendir(agac.a, bag), bag, x => -x);
     case 'pct': return islemTekli(degerlendir(agac.a, bag), bag, x => x / 100);
     case 'op': return islemIkili(agac.op, degerlendir(agac.a, bag), degerlendir(agac.b, bag), bag);
     case 'fn': {
-      if (!agac.ad) return H.AD;
+      if (!agac.ad) {
+        // Ad Yöneticisi'nde ya da LET'te tanımlı LAMBDA: =KDVLİ(B2)
+        const b = trBuyuk(agac.yazilan || '');
+        let L = bag.degisken ? bag.degisken.get(b) : undefined;
+        if (L === undefined && bag.kitap.adDegeri) L = bag.kitap.adDegeri(b, bag);
+        if (L instanceof Lambda) return lambdaCagir(L, agac.args.map(a => coz(degerlendir(a, bag), bag)), bag);
+        return H.AD;
+      }
       const f = bag.kitap.islevler[agac.ad];
       if (!f) return H.AD;
       if (f.tembel) return f.fn(agac.args, bag);
@@ -380,6 +422,30 @@ export function degerlendir(agac, bag) {
   return H.DEGER;
 }
 
+// LAMBDA çağrısı: parametreler kapanışa eklenir; parametre sayısı tutmazsa #DEĞER! (Excel gibi)
+export function lambdaCagir(L, args, bag) {
+  if (L.yerlesik) { const f = bag.kitap.islevler[L.yerlesik]; return f.fn(args, bag); }
+  if (args.length !== L.params.length) return H.DEGER;
+  bag.lambdaDerinlik = (bag.lambdaDerinlik || 0) + 1;
+  if (bag.lambdaDerinlik > 256) { bag.lambdaDerinlik--; return H.SAYI; } // çok derin özyineleme: Excel #SAYI!
+  const onceki = bag.degisken, yeni = new Map(L.kapsam || []);
+  L.params.forEach((p, i) => yeni.set(p, args[i]));
+  bag.degisken = yeni;
+  try { return degerlendir(L.govde, bag); } finally { bag.degisken = onceki; bag.lambdaDerinlik--; }
+}
+// 3B başvuru (Ocak:Mart!B2): iki sayfa arasındaki (kitaptaki sırayla) her sayfanın aynı alanı alt alta dizilir.
+// TOPLA, ORTALAMA, MAK gibi işlevler bu diziyi Excel'in 3B başvurusu gibi toplar.
+function ucBoyutlu(agac, bag) {
+  const adlar = [...bag.kitap.sayfalar.keys()], b = x => trBuyuk(x);
+  const i1 = adlar.findIndex(a => b(a) === b(agac.sayfa)), i2 = adlar.findIndex(a => b(a) === b(agac.sayfa2));
+  if (i1 < 0 || i2 < 0) return H.BASV;
+  const out = [];
+  for (let i = Math.min(i1, i2); i <= Math.max(i1, i2); i++) {
+    const v = coz(new Bas(adlar[i], agac.r1, agac.c1, agac.r2, agac.c2), bag);
+    if (v instanceof Dizi) out.push(...v.v); else out.push([v]);
+  }
+  return new Dizi(out);
+}
 // Başvuruyu değere çevir: tek hücre → değer, alan → Dizi
 export function coz(v, bag) {
   if (v instanceof Bas) {

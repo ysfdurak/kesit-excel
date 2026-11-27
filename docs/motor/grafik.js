@@ -20,6 +20,14 @@ export const TURLER = {
   agac: { ad: 'Ağaç haritası', aile: 'parca', ne: 'Çok parçalı bütün; alan büyüklüğü gösterir' },
   huni: { ad: 'Huni', aile: 'akis', ne: 'Aşamalar boyunca azalan sayı (başvuru → işe alım)' },
   radar: { ad: 'Radar', aile: 'karsilastirma', ne: 'Birkaç ölçüt üzerinde profil karşılaştırma; az seri, az ölçüt' },
+  pareto: { ad: 'Pareto', aile: 'karsilastirma', ne: 'Nedenler büyükten küçüğe, üstünde birikimli yüzde çizgisi; sorunun %80\'ini yapan az sayıda nedeni gösterir' },
+  kelebek: { ad: 'Kelebek (tornado)', aile: 'karsilastirma', ne: 'İki grubun aynı ölçütlerde karşılaştırması; biri sola, biri sağa' },
+  halter: { ad: 'Halter (önce–sonra)', aile: 'karsilastirma', ne: 'Her kategoride iki değer arasındaki fark (geçen yıl–bu yıl, hedef–gerçek)' },
+  gunes: { ad: 'Güneş patlaması', aile: 'parca', ne: 'İki düzeyli bütün: iç halka üst kırılım, dış halka alt kırılım' },
+  madde: { ad: 'Madde (hedef–gerçek)', aile: 'hedef', ne: 'Gerçekleşen çubuk, hedef çizgi, arkada kötü–orta–iyi bantları; göstergenin dar alandaki karşılığı' },
+  ibre: { ad: 'İbre (hız göstergesi)', aile: 'hedef', ne: 'Tek bir sayının hedefe göre durumu; çok yer kaplar, bir panoda en çok bir tane' },
+  ilerleme: { ad: 'İlerleme halkası', aile: 'hedef', ne: 'Hedefin yüzde kaçına ulaşıldı; ortada büyük yüzde' },
+  gantt: { ad: 'Gantt', aile: 'zaman', ne: 'Görevlerin başlangıç ve süresi takvim üzerinde (proje planı)' },
 };
 // Doğrulanmış kategorik palet (dataviz referans paleti; sıra sabit, döngü yok). Koyu tema ayrı tonlar.
 export const PALET = { acik: ['#257de0', '#f47230', '#00b894', '#f2a600', '#ee7fac', '#008a17', '#6a4ce2', '#ec4647'], koyu: ['#338ced', '#e76624', '#00a888', '#d28e05', '#e24d8b', '#0aac23', '#9887ef', '#eb6263'] };
@@ -31,7 +39,7 @@ const n = x => Math.round(x * 10) / 10;
 
 /* ---------------------------------------------------------------- veri */
 // Aralıktan seri/kategori: ilk satır metinse başlık, ilk sütun metin/tarihse kategori. Yön otomatik: satırdan çok sütun varsa seriler satırda.
-export function aralikVerisi(degerler, { seriYonu = 'otomatik', bicimler = [] } = {}) {
+export function aralikVerisi(degerler, { seriYonu = 'otomatik', bicimler = [], tarihSeri = false } = {}) {
   const v = degerler.map(r => r.map(x => (x == null || hataMi(x)) ? null : x));
   if (!v.length || !v[0].length) throw new Error('Aralık boş');
   const sayiMi = x => typeof x === 'number';
@@ -41,18 +49,22 @@ export function aralikVerisi(degerler, { seriYonu = 'otomatik', bicimler = [] } 
   const kb = bicimler[0] || '';
   const katEtiket = x => typeof x === 'number' && /gg|aa|yy/.test(kb) ? bicimle(x, /aaaa|aaa/.test(kb) ? kb : 'gg.aa.yyyy') : x == null ? '' : String(x);
   let kategoriler = govde.map((r, i) => ilkSutunKat ? katEtiket(r[0]) : String(i + 1));
-  const sut0 = ilkSutunKat ? 1 : 0;
+  // İki düzeyli kategori: ilk iki sütun da metinse (Kategori, Ürün) → "Kategori › Ürün"; güneş patlaması iç halkayı üst düzeyden kurar
+  const ikiDuzey = ilkSutunKat && v[0].length > 2 && govde.length && govde.every(r => r[1] == null || typeof r[1] === 'string');
+  let ustKategori = null;
+  if (ikiDuzey) { ustKategori = govde.map(r => katEtiket(r[0])); kategoriler = govde.map(r => katEtiket(r[0]) + ' › ' + (r[1] ?? '')); }
+  const sut0 = ilkSutunKat ? (ikiDuzey ? 2 : 1) : 0;
   let seriler = [];
   const tarihSutunu = c => /gg|aa|yy/.test(bicimler[c] || '');
-  for (let c = sut0; c < v[0].length; c++) if (!tarihSutunu(c) || c === 0) seriler.push({ ad: baslikSatiri ? String(v[0][c] ?? 'Seri ' + (c + 1)) : 'Seri ' + (c - sut0 + 1), degerler: govde.map(r => sayiMi(r[c]) ? r[c] : null) });
+  for (let c = sut0; c < v[0].length; c++) if (!tarihSutunu(c) || c === 0 || tarihSeri) seriler.push({ ad: baslikSatiri ? String(v[0][c] ?? 'Seri ' + (c + 1)) : 'Seri ' + (c - sut0 + 1), degerler: govde.map(r => sayiMi(r[c]) ? r[c] : null) });
   seriler = seriler.filter(s => s.degerler.some(x => x != null));
   const yon = seriYonu === 'otomatik' ? (seriler.length > kategoriler.length && kategoriler.length <= 12 ? 'satir' : 'sutun') : seriYonu;
   if (yon === 'satir' && seriler.length) {
     const yeniKat = seriler.map(s => s.ad);
     seriler = kategoriler.map((k, i) => ({ ad: k, degerler: seriler.map(s => s.degerler[i]) }));
-    kategoriler = yeniKat;
+    kategoriler = yeniKat; ustKategori = null;
   }
-  return { kategoriler, seriler, yon };
+  return { kategoriler, seriler, yon, ...(ustKategori ? { ustKategori } : {}), ...(tarihSeri ? { tarihSeri: true } : {}) };
 }
 // Pivot sonucundan (Genel Toplam satır/sütunu hariç)
 export function pivotVerisi(p) {
@@ -131,6 +143,7 @@ function eksenli(veri, s, c, W, H) {
   if (yigin === 'yigin') for (let i = 0; i < K; i++) { let p = 0, ng = 0; for (const sr of seriler) { const v = sr.degerler[i] ?? 0; if (v >= 0) p += v; else ng += v; } deg.push(p, ng); }
   else if (yigin === 'yuzde') deg = [0, 1];
   else seriler.forEach((sr, j) => (ikinci && j > 0 ? ikinciDeg : deg).push(...sr.degerler.filter(v => v != null)));
+  if (s.hedefCizgisi != null && Number.isFinite(+s.hedefCizgisi)) deg.push(+s.hedefCizgisi);
   let mn = Math.min(0, ...deg), mx = Math.max(0, ...deg);
   // Sütun/çubuk/alan sıfırdan başlar (aksi yanıltır); çizgide kullanıcı isterse eksenMin verir
   if ((tur === 'cizgi') && s.eksenMin == null && deg.length) { const dmn = Math.min(...deg); if (dmn > 0 && dmn > (Math.max(...deg) - dmn) * 2) mn = dmn * 0.9; }
@@ -160,6 +173,9 @@ function eksenli(veri, s, c, W, H) {
   const sifir = yd(Math.max(o.min, Math.min(0, o.max)));
   // çubuklar
   const cubukSerileri = tur === 'birlesik' ? [0] : (tur === 'sutun' || tur === 'cubuk') ? seriler.map((_, j) => j) : [];
+  // Vurgu: tek seride en büyük ya da en küçük çubuk renkli, ötekiler soluk (göz ilk oraya gitsin)
+  let vurguI = -1;
+  if (s.vurgu && s.vurgu !== 'yok' && seriler.length === 1) { const d = seriler[0].degerler; d.forEach((v, i) => { if (v == null) return; if (vurguI < 0 || (s.vurgu === 'enBuyuk' ? v > d[vurguI] : v < d[vurguI])) vurguI = i; }); }
   if (cubukSerileri.length) {
     const grup = yigin === 'yok' ? cubukSerileri.length : 1, ic = bant * 0.72, w = Math.max(1, ic / grup - 2);
     for (let i = 0; i < K; i++) {
@@ -176,7 +192,8 @@ function eksenli(veri, s, c, W, H) {
         let d;
         if (yatay) { const x0 = Math.min(p1, p2) + (v >= 0 ? bosluk : 0), ww = Math.abs(p2 - p1) - bosluk; d = ucMu ? cubukYolu(x0, bas, ww, w, v >= 0 ? 'sag' : 'sol') : `M${n(x0)},${n(bas)}h${n(ww)}v${n(w)}h${n(-ww)}Z`; }
         else { const y0 = Math.min(p1, p2), hh = Math.abs(p2 - p1) - bosluk; d = ucMu ? cubukYolu(bas, v >= 0 ? y0 : y0 + bosluk, w, hh, v >= 0 ? 'yukari' : 'asagi') : `M${n(bas)},${n(y0)}h${n(w)}v${n(hh)}h${n(-w)}Z`; }
-        if (d) svg += `<path d="${d}" ${c.dolgu(j)} data-k="${i}" data-s="${j}">${ipucu(etiket)}</path>`;
+        if (d) svg += `<path d="${d}" ${c.dolgu(j)}${vurguI >= 0 && i !== vurguI ? ' fill-opacity="0.28"' : ''} data-k="${i}" data-s="${j}">${ipucu(etiket)}</path>`;
+        if (vurguI === i && !s.veriEtiketi) svg += yatay ? yaz(Math.max(p1, p2) + 4, bas + w / 2 + 4, kisaSayi(v), c.metin() + ' font-weight="700"', 11, 'start') : yaz(bas + w / 2, Math.min(p1, p2) - 5, kisaSayi(v), c.metin() + ' font-weight="700"', 11);
         if (s.veriEtiketi && yigin === 'yok') svg += yatay ? yaz(Math.max(p1, p2) + 4, bas + w / 2 + 4, kisaSayi(v, yuzdeMi), c.metin(), 10.5, 'start') : yaz(bas + w / 2, Math.min(p1, p2) - 4, kisaSayi(v, yuzdeMi), c.metin(), 10.5);
       });
     }
@@ -211,6 +228,12 @@ function eksenli(veri, s, c, W, H) {
       if (pts.length <= 24) for (const p of pts) svg += `<circle cx="${n(p.x)}" cy="${n(p.y)}" r="4" ${c.dolgu(j)} stroke-width="2" ${c.yuzeyAttr}>${ipucu(`${veri.kategoriler[p.i]} · ${seriler[j].ad}: ${trSayi(p.v)}`)}</circle>`;
       if (s.veriEtiketi) { const son = pts[pts.length - 1]; svg += yaz(son.x, son.y - 9, kisaSayi(son.v), c.metin(), 10.5); }
     }
+  }
+  // hedef çizgisi: kesikli, sağ uçta etiket
+  if (s.hedefCizgisi != null && Number.isFinite(+s.hedefCizgisi)) {
+    const t = yd(+s.hedefCizgisi), et = 'Hedef ' + kisaSayi(+s.hedefCizgisi);
+    svg += yatay ? `<line x1="${n(t)}" x2="${n(t)}" y1="${py}" y2="${py + ph}" stroke-width="2" stroke-dasharray="6 4" ${c.metin().replace('fill', 'stroke').replace('g-m"', 'g-hedef"')}/>` + yaz(t, py - 4, et, c.metin(), 11)
+      : `<line x1="${px}" x2="${px + pw}" y1="${n(t)}" y2="${n(t)}" stroke-width="2" stroke-dasharray="6 4" ${c.metin().replace('fill', 'stroke').replace('g-m"', 'g-hedef"')}/>` + yaz(px + pw - 2, t - 6, et, c.metin(), 11, 'end');
   }
   // eksen çizgisi ve başlıklar
   svg += yatay ? `<line x1="${n(sifir)}" x2="${n(sifir)}" y1="${py}" y2="${py + ph}" ${c.metin(true).replace('fill', 'stroke').replace('g-m2', 'g-eks')}/>` : `<line x1="${px}" x2="${px + pw}" y1="${n(sifir)}" y2="${n(sifir)}" ${c.metin(true).replace('fill', 'stroke').replace('g-m2', 'g-eks')}/>`;
@@ -394,6 +417,171 @@ function radar(veri, s, c, W, H) {
   return svg + gosterge(veri.seriler, W, H, c, s.gosterge);
 }
 
+
+/* ---------------------------------------------------------------- pano grafikleri: pareto, kelebek, halter, güneş, madde, ibre, ilerleme, gantt */
+// Ortak: soldan kategori etiketli yatay satırlar
+function satirDuzeni(veri, s, W, H, sagBosluk = 16, solEk = 0) {
+  const ust = s.baslik ? 40 : 14, alt = 28 + gostergeYuksekligi(veri.seriler, W, s.gosterge);
+  const sol = Math.min(170, 14 + Math.max(...veri.kategoriler.map(k => String(k).length)) * 6.4) + solEk;
+  const K = veri.kategoriler.length, bant = (H - ust - alt) / Math.max(1, K);
+  return { ust, alt, sol, K, bant, pw: W - sol - sagBosluk, ph: H - ust - alt };
+}
+function pareto(veri, s, c, W, H) {
+  const sr = veri.seriler[0];
+  const sirali = veri.kategoriler.map((k, i) => ({ k, v: Math.max(0, sr.degerler[i] ?? 0) })).sort((a, b) => b.v - a.v);
+  const top = sirali.reduce((t, x) => t + x.v, 0) || 1; let bir = 0;
+  sirali.forEach(x => { bir += x.v; x.p = bir / top; });
+  const ust = s.baslik ? 40 : 16, alt = 30 + gostergeYuksekligi([{ ad: sr.ad }, { ad: 'Birikimli %' }], W, s.gosterge), px = 56, sag = 52, pw = W - px - sag, ph = H - ust - alt, K = sirali.length, bant = pw / Math.max(1, K);
+  const o = guzelOlcek(0, sirali[0]?.v || 1, Math.max(3, Math.round(ph / 60)));
+  const yd = v => ust + ph - (v - o.min) / (o.max - o.min) * ph, yp = p => ust + ph - p * ph;
+  let svg = '';
+  for (const t of o.cizgiler) svg += `<line x1="${px}" x2="${px + pw}" y1="${n(yd(t))}" y2="${n(yd(t))}" ${c.izgara}/>` + yaz(px - 6, yd(t) + 4, kisaSayi(t), c.metin(true), 11, 'end');
+  for (const p of [0, 0.2, 0.4, 0.6, 0.8, 1]) svg += yaz(px + pw + 6, yp(p) + 4, trSayi(p * 100, 0) + ' %', c.metin(true), 11, 'start');
+  // %80 eşiği
+  svg += `<line x1="${px}" x2="${px + pw}" y1="${n(yp(0.8))}" y2="${n(yp(0.8))}" stroke-dasharray="4 4" ${c.metin(true).replace('fill', 'stroke').replace('g-m2', 'g-eks')}/>`;
+  const esik = sirali.findIndex(x => x.p >= 0.8 - 1e-9);
+  const etiketAtla = Math.max(1, Math.ceil(K * 46 / pw));
+  sirali.forEach((x, i) => {
+    const w = bant * 0.72, bx = px + bant * i + (bant - w) / 2;
+    svg += `<path d="${cubukYolu(bx, yd(x.v), w, yd(0) - yd(x.v))}" ${c.dolgu(0)}${i > esik ? ' fill-opacity="0.35"' : ''}>${ipucu(`${x.k}: ${trSayi(x.v)} · birikimli ${trSayi(x.p * 100, 1)} %`)}</path>`;
+    if (!(i % etiketAtla)) { const t = String(x.k), m = Math.max(3, Math.floor(bant * etiketAtla / 6.5)); svg += yaz(px + bant * (i + 0.5), ust + ph + 16, t.length > m ? t.slice(0, m - 1) + '…' : t, c.metin(true), 11.5); }
+  });
+  const d = sirali.map((x, i) => `${i ? 'L' : 'M'}${n(px + bant * (i + 0.5))},${n(yp(x.p))}`).join('');
+  svg += `<path d="${d}" fill="none" stroke-width="2" ${c.cizgi(1)}/>`;
+  sirali.forEach((x, i) => { svg += `<circle cx="${n(px + bant * (i + 0.5))}" cy="${n(yp(x.p))}" r="4" ${c.dolgu(1)} stroke-width="2" ${c.yuzeyAttr}>${ipucu(`Birikimli: ${trSayi(x.p * 100, 1)} %`)}</circle>`; });
+  svg += `<line x1="${px}" x2="${px + pw}" y1="${n(yd(0))}" y2="${n(yd(0))}" ${c.metin(true).replace('fill', 'stroke').replace('g-m2', 'g-eks')}/>`;
+  return svg + gosterge([{ ad: sr.ad }, { ad: 'Birikimli %' }], W, H, c, s.gosterge);
+}
+function kelebek(veri, s, c, W, H) {
+  const [a, b] = veri.seriler; if (!b) return yaz(W / 2, H / 2, 'Kelebek grafik iki seri ister (sol ve sağ).', c.metin(true), 13);
+  const ust = s.baslik ? 56 : 30, alt = 12, K = veri.kategoriler.length, bant = (H - ust - alt) / Math.max(1, K);
+  const orta = W / 2, etiket = Math.min(130, 16 + Math.max(...veri.kategoriler.map(k => String(k).length)) * 6.4), yarim = (W - etiket) / 2 - 16;
+  const mx = Math.max(...a.degerler.map(v => Math.abs(v ?? 0)), ...b.degerler.map(v => Math.abs(v ?? 0))) || 1;
+  let svg = yaz(orta - etiket / 2 - 4, ust - 10, a.ad, c.metin() + ' font-weight="700"', 12, 'end') + yaz(orta + etiket / 2 + 4, ust - 10, b.ad, c.metin() + ' font-weight="700"', 12, 'start');
+  veri.kategoriler.forEach((k, i) => {
+    const y = ust + bant * i, h = Math.max(2, bant * 0.66), y0 = y + (bant - h) / 2;
+    const va = Math.abs(a.degerler[i] ?? 0), vb = Math.abs(b.degerler[i] ?? 0), wa = va / mx * yarim, wb = vb / mx * yarim;
+    svg += `<path d="${cubukYolu(orta - etiket / 2 - wa, y0, wa, h, 'sol')}" ${c.dolgu(0)}>${ipucu(`${k} · ${a.ad}: ${trSayi(va)}`)}</path>`;
+    svg += `<path d="${cubukYolu(orta + etiket / 2, y0, wb, h, 'sag')}" ${c.dolgu(1)}>${ipucu(`${k} · ${b.ad}: ${trSayi(vb)}`)}</path>`;
+    svg += yaz(orta, y + bant / 2 + 4, String(k).slice(0, 20), c.metin(true), 11.5);
+    if (bant >= 16) { svg += yaz(orta - etiket / 2 - wa - 4, y + bant / 2 + 4, kisaSayi(va), c.metin(), 10.5, 'end') + yaz(orta + etiket / 2 + wb + 4, y + bant / 2 + 4, kisaSayi(vb), c.metin(), 10.5, 'start'); }
+  });
+  return svg;
+}
+function halter(veri, s, c, W, H) {
+  const [a, b] = veri.seriler; if (!b) return yaz(W / 2, H / 2, 'Halter grafik iki seri ister (önce ve sonra).', c.metin(true), 13);
+  const d = satirDuzeni(veri, s, W, H, 24), deg = [...a.degerler, ...b.degerler].filter(v => v != null);
+  const o = guzelOlcek(Math.min(0, ...deg), Math.max(...deg), Math.max(3, Math.round(d.pw / 90)));
+  const xd = v => d.sol + (v - o.min) / (o.max - o.min) * d.pw;
+  let svg = '';
+  for (const t of o.cizgiler) svg += `<line x1="${n(xd(t))}" x2="${n(xd(t))}" y1="${d.ust}" y2="${d.ust + d.ph}" ${c.izgara}/>` + yaz(xd(t), d.ust + d.ph + 16, kisaSayi(t), c.metin(true), 11);
+  veri.kategoriler.forEach((k, i) => {
+    const y = d.ust + d.bant * (i + 0.5), va = a.degerler[i], vb = b.degerler[i];
+    svg += yaz(d.sol - 8, y + 4, String(k).slice(0, 24), c.metin(true), 11.5, 'end');
+    if (va != null && vb != null) svg += `<line x1="${n(xd(va))}" x2="${n(xd(vb))}" y1="${n(y)}" y2="${n(y)}" stroke-width="3" ${c.metin(true).replace('fill', 'stroke').replace('g-m2', 'g-eks')}/>`;
+    if (va != null) svg += `<circle cx="${n(xd(va))}" cy="${n(y)}" r="6" ${c.dolgu(0)} stroke-width="2" ${c.yuzeyAttr}>${ipucu(`${k} · ${a.ad}: ${trSayi(va)}`)}</circle>`;
+    if (vb != null) svg += `<circle cx="${n(xd(vb))}" cy="${n(y)}" r="6" ${c.dolgu(1)} stroke-width="2" ${c.yuzeyAttr}>${ipucu(`${k} · ${b.ad}: ${trSayi(vb)} (fark ${trSayi(vb - (va ?? 0))})`)}</circle>`;
+  });
+  return svg + gosterge([a, b], W, H, c, s.gosterge);
+}
+function yay(cx, cy, r1, r2, a1, a2) {
+  // a: radyan, 0 = saat 12, saat yönünde
+  const p = (r, a) => [cx + r * Math.sin(a), cy - r * Math.cos(a)], buyuk = a2 - a1 > Math.PI ? 1 : 0;
+  const [x1, y1] = p(r2, a1), [x2, y2] = p(r2, a2), [x3, y3] = p(r1, a2), [x4, y4] = p(r1, a1);
+  return `M${n(x1)},${n(y1)}A${r2},${r2} 0 ${buyuk} 1 ${n(x2)},${n(y2)}L${n(x3)},${n(y3)}A${r1},${r1} 0 ${buyuk} 0 ${n(x4)},${n(y4)}Z`;
+}
+function gunes(veri, s, c, W, H) {
+  const sr = veri.seriler[0], ust = s.baslik ? 34 : 8, R = Math.min(W - 180, H - ust - 12) / 2, cx = R + 20, cy = ust + (H - ust) / 2;
+  const ogeler = veri.kategoriler.map((k, i) => ({ k, ustK: veri.ustKategori ? veri.ustKategori[i] : k, alt: veri.ustKategori ? String(k).split(' › ').slice(1).join(' › ') : null, v: Math.max(0, sr.degerler[i] ?? 0) })).filter(o => o.v > 0);
+  const top = ogeler.reduce((t, o) => t + o.v, 0) || 1;
+  const ustler = []; for (const o of ogeler) { let u = ustler.find(x => x.k === o.ustK); if (!u) ustler.push(u = { k: o.ustK, v: 0, cocuk: [] }); u.v += o.v; u.cocuk.push(o); }
+  ustler.sort((a, b) => b.v - a.v);
+  let svg = '', a = 0;
+  const ikiHalka = !!veri.ustKategori, r0 = R * 0.3, r1 = ikiHalka ? R * 0.62 : R;
+  ustler.forEach((u, i) => {
+    const a2 = a + u.v / top * 2 * Math.PI;
+    svg += `<path d="${yay(cx, cy, r0, r1, a, a2 - 0.004)}" ${c.dolgu(i)} stroke-width="2" ${c.yuzeyAttr}>${ipucu(`${u.k}: ${trSayi(u.v)} (${trSayi(u.v / top * 100, 1)} %)`)}</path>`;
+    if (ikiHalka) { let b = a; u.cocuk.sort((x, y) => y.v - x.v).forEach((o, j) => { const b2 = b + o.v / top * 2 * Math.PI; svg += `<path d="${yay(cx, cy, r1 + 2, R, b, b2 - 0.004)}" ${c.dolgu(i)} fill-opacity="${0.75 - (j % 3) * 0.18}" stroke-width="2" ${c.yuzeyAttr}>${ipucu(`${u.k} › ${o.alt}: ${trSayi(o.v)} (${trSayi(o.v / top * 100, 1)} %)`)}</path>`; b = b2; }); }
+    a = a2;
+  });
+  svg += yaz(cx, cy + 5, kisaSayi(top), c.metin() + ' font-weight="700"', 15);
+  // sağda gösterge: üst kırılımlar ve payları
+  ustler.slice(0, 12).forEach((u, i) => { const y = ust + 16 + i * 20; svg += `<rect x="${n(cx + R + 24)}" y="${y - 9}" width="10" height="10" rx="2" ${c.dolgu(i)}/>` + yaz(cx + R + 40, y, `${String(u.k).slice(0, 16)} · ${trSayi(u.v / top * 100, 0)} %`, c.metin(true), 11.5, 'start'); });
+  return svg;
+}
+// Madde grafiği (Stephen Few): seri 1 gerçekleşen, seri 2 hedef, seri 3+ bant üst sınırları (kötü, orta…)
+function madde(veri, s, c, W, H) {
+  const [ger, hed, ...bantlar] = veri.seriler;
+  const d = satirDuzeni({ ...veri, seriler: [] }, s, W, H, 56);
+  const tum = [...veri.seriler.flatMap(x => x.degerler)].filter(v => v != null);
+  const o = guzelOlcek(0, Math.max(...tum, 0) || 1, Math.max(3, Math.round(d.pw / 90)));
+  const xd = v => d.sol + (v - o.min) / (o.max - o.min) * d.pw;
+  let svg = '';
+  for (const t of o.cizgiler) svg += yaz(xd(t), d.ust + d.ph + 16, kisaSayi(t), c.metin(true), 11);
+  veri.kategoriler.forEach((k, i) => {
+    const y = d.ust + d.bant * i, h = Math.min(30, d.bant * 0.7), y0 = y + (d.bant - h) / 2;
+    svg += yaz(d.sol - 8, y + d.bant / 2 + 4, String(k).slice(0, 24), c.metin(true), 11.5, 'end');
+    // bantlar: koyudan açığa (en kötü bant en koyu gri); bant yoksa tek açık iz
+    const sinirlar = bantlar.map(b => b.degerler[i]).filter(v => v != null).sort((p, q) => p - q);
+    const kat = [...sinirlar, o.max]; let onceki = 0;
+    kat.forEach((sn, j) => { const ton = kat.length === 1 ? 0.12 : 0.34 - j * (0.24 / Math.max(1, kat.length - 1)); svg += `<rect x="${n(xd(onceki))}" y="${n(y0)}" width="${n(Math.max(0, xd(sn) - xd(onceki)))}" height="${n(h)}" ${c.metin(true)} fill-opacity="${n(ton * 100) / 100}">${ipucu(j < sinirlar.length ? `Bant ${j + 1}: ${kisaSayi(onceki)}–${kisaSayi(sn)}` : '')}</rect>`; onceki = sn; });
+    const g = ger?.degerler[i];
+    if (g != null) svg += `<path d="${cubukYolu(xd(0), y0 + h * 0.32, xd(g) - xd(0), h * 0.36, 'sag', 3)}" ${c.dolgu(0)}>${ipucu(`${k} · ${ger.ad}: ${trSayi(g)}${hed && hed.degerler[i] != null ? ` · hedefin ${trSayi(g / hed.degerler[i] * 100, 1)} %'i` : ''}`)}</path>`;
+    const hv = hed?.degerler[i];
+    if (hv != null) svg += `<line x1="${n(xd(hv))}" x2="${n(xd(hv))}" y1="${n(y0 + 2)}" y2="${n(y0 + h - 2)}" stroke-width="3" ${c.metin().replace('fill', 'stroke').replace('g-m"', 'g-hedef"')}>${ipucu(`${hed.ad}: ${trSayi(hv)}`)}</line>`;
+    if (g != null && hv) svg += yaz(W - 6, y + d.bant / 2 + 4, trSayi(g / hv * 100, 0) + ' %', c.metin() + ' font-weight="700"', 11.5, 'end');
+  });
+  return svg;
+}
+function ibre(veri, s, c, W, H) {
+  const v = veri.seriler[0]?.degerler[0] ?? 0, hedef = veri.seriler[1]?.degerler[0];
+  const mx = s.eksenMax ?? (hedef != null ? guzelOlcek(0, Math.max(v, hedef) * 1.1).max : guzelOlcek(0, v).max);
+  const ust = s.baslik ? 40 : 14, R = Math.min(W / 2 - 30, H - ust - 72), cx = W / 2, cy = ust + R + 6;
+  const aci = x => -Math.PI / 2 + Math.max(0, Math.min(1, x / mx)) * Math.PI;
+  let svg = `<path d="${yay(cx, cy, R * 0.68, R, -Math.PI / 2, Math.PI / 2)}" ${c.metin(true)} fill-opacity="0.14"/>`;
+  svg += `<path d="${yay(cx, cy, R * 0.68, R, -Math.PI / 2, aci(v))}" ${c.dolgu(0)}>${ipucu(`${veri.kategoriler[0] ?? ''}: ${trSayi(v)}`)}</path>`;
+  if (hedef != null) { const a = aci(hedef); svg += `<line x1="${n(cx + R * 0.62 * Math.sin(a))}" y1="${n(cy - R * 0.62 * Math.cos(a))}" x2="${n(cx + (R + 6) * Math.sin(a))}" y2="${n(cy - (R + 6) * Math.cos(a))}" stroke-width="3" ${c.metin().replace('fill', 'stroke').replace('g-m"', 'g-hedef"')}>${ipucu('Hedef: ' + trSayi(hedef))}</line>`; }
+  const a = aci(v); svg += `<line x1="${cx}" y1="${cy}" x2="${n(cx + R * 0.9 * Math.sin(a))}" y2="${n(cy - R * 0.9 * Math.cos(a))}" stroke-width="3" stroke-linecap="round" ${c.metin().replace('fill', 'stroke').replace('g-m"', 'g-eks"')}/><circle cx="${cx}" cy="${cy}" r="6" ${c.metin()}/>`;
+  svg += yaz(cx, cy + 30, kisaSayi(v), c.metin() + ' font-weight="700"', 22) + yaz(cx - R * 0.84, cy + 16, '0', c.metin(true), 11) + yaz(cx + R * 0.84, cy + 16, kisaSayi(mx), c.metin(true), 11);
+  if (hedef != null) svg += yaz(cx, cy + 48, `Hedef ${kisaSayi(hedef)} · ${trSayi(v / hedef * 100, 0)} %`, c.metin(true), 12);
+  return svg;
+}
+function ilerleme(veri, s, c, W, H) {
+  // En çok 6 halka; dar ekranda 3'lü, genişte 6'ya kadar tek sıra
+  const [ger, hed] = veri.seriler, K = Math.min(6, veri.kategoriler.length), ust = s.baslik ? 36 : 8;
+  const sutun = Math.min(K, W < 520 ? 3 : 6), sira = Math.ceil(K / sutun), hucre = W / sutun, yuk = (H - ust) / sira;
+  const R = Math.max(18, Math.min(hucre / 2 - 12, (yuk - 30) / 2));
+  let svg = '';
+  for (let i = 0; i < K; i++) {
+    const g = ger.degerler[i] ?? 0, h = hed ? hed.degerler[i] : null, oran = h ? g / h : g, cx = hucre * (i % sutun + 0.5), cy = ust + yuk * Math.floor(i / sutun) + R + 4;
+    svg += `<circle cx="${n(cx)}" cy="${n(cy)}" r="${n(R * 0.84)}" fill="none" stroke-width="${n(R * 0.3)}" ${c.metin(true).replace('fill', 'stroke').replace('g-m2', 'g-eks')} stroke-opacity="0.14"/>`;
+    const oo = Math.max(0, Math.min(1, oran));
+    // Tam halkada yayın başı ve sonu aynı noktaya düşer, SVG çizmez: iki yarım yay olarak çizilir
+    const halkaYolu = oo <= 0.5 ? yay(cx, cy, R * 0.69, R * 0.99, 0, oo * 2 * Math.PI) : yay(cx, cy, R * 0.69, R * 0.99, 0, Math.PI) + yay(cx, cy, R * 0.69, R * 0.99, Math.PI - 0.001, oo * 2 * Math.PI);
+    if (oo > 0) svg += `<path d="${halkaYolu}" ${oran >= 1 ? c.sema('artis') : c.dolgu(0)}>${ipucu(`${veri.kategoriler[i]}: ${trSayi(g)}${h ? ' / ' + trSayi(h) : ''}`)}</path>`;
+    svg += yaz(cx, cy + 7, trSayi(oran * 100, 0) + ' %', c.metin() + ' font-weight="700"', Math.max(14, R * 0.36));
+    svg += yaz(cx, cy + R + 18, String(veri.kategoriler[i]).slice(0, 18), c.metin(true), 12);
+  }
+  return svg;
+}
+// Gantt: seri 1 başlangıç (tarih ya da gün), seri 2 süre (gün); yığılmış çubuğun görünmez ilk parçası Excel'deki yöntemin aynısı
+function gantt(veri, s, c, W, H) {
+  const [bas, sure] = veri.seriler; if (!sure) return yaz(W / 2, H / 2, 'Gantt iki seri ister: başlangıç ve süre (gün).', c.metin(true), 13);
+  const d = satirDuzeni({ ...veri, seriler: [] }, s, W, H, 20);
+  const bs = bas.degerler.filter(v => v != null), bitis = bas.degerler.map((v, i) => (v ?? 0) + (sure.degerler[i] ?? 0));
+  const mn = s.eksenMin ?? Math.min(...bs), mx = Math.max(...bitis), tarihMi = mn > 20000;
+  const xd = v => d.sol + (v - mn) / Math.max(1, mx - mn) * d.pw;
+  const adim = Math.max(1, Math.ceil((mx - mn) / Math.max(3, Math.round(d.pw / 70)) / 7) * 7);
+  let svg = '';
+  for (let t = mn; t <= mx + 0.01; t += adim) svg += `<line x1="${n(xd(t))}" x2="${n(xd(t))}" y1="${d.ust}" y2="${d.ust + d.ph}" ${c.izgara}/>` + yaz(xd(t), d.ust + d.ph + 16, tarihMi ? bicimle(t, 'gg.aa') : trSayi(t), c.metin(true), 11);
+  veri.kategoriler.forEach((k, i) => {
+    const b = bas.degerler[i], su = sure.degerler[i]; const y = d.ust + d.bant * i, h = Math.min(22, d.bant * 0.66), y0 = y + (d.bant - h) / 2;
+    svg += yaz(d.sol - 8, y + d.bant / 2 + 4, String(k).slice(0, 26), c.metin(true), 11.5, 'end');
+    if (b != null && su != null) svg += `<path d="${cubukYolu(xd(b), y0, Math.max(2, xd(b + su) - xd(b)), h, 'sag', 3)}" ${c.dolgu(0)}>${ipucu(`${k}: ${tarihMi ? bicimle(b, 'gg.aa.yyyy') : trSayi(b)} başlar, ${trSayi(su)} gün${tarihMi ? ', ' + bicimle(b + su - 1, 'gg.aa.yyyy') + ' biter' : ''}`)}</path>`;
+  });
+  return svg;
+}
+
 /* ---------------------------------------------------------------- giriş noktası */
 // Sınıf kipinde bir öğe hem dolgu hem çizgi sınıfı alabilir (class="g-s0" ... class="g-yz"); XML'de çift öznitelik geçersizdir, birleştirilir.
 function sinifBirlestir(svg) {
@@ -417,6 +605,14 @@ function grafikCizHam(veri, secenek = {}) {
     case 'agac': govde = agac(veri, s, c, W, H); break;
     case 'huni': govde = huni(veri, s, c, W, H); break;
     case 'radar': govde = radar(veri, s, c, W, H); break;
+    case 'pareto': govde = pareto(veri, s, c, W, H); break;
+    case 'kelebek': govde = kelebek(veri, s, c, W, H); break;
+    case 'halter': govde = halter(veri, s, c, W, H); break;
+    case 'gunes': govde = gunes(veri, s, c, W, H); break;
+    case 'madde': govde = madde(veri, s, c, W, H); break;
+    case 'ibre': govde = ibre(veri, s, c, W, H); break;
+    case 'ilerleme': govde = ilerleme(veri, s, c, W, H); break;
+    case 'gantt': govde = gantt(veri, s, c, W, H); break;
     default: govde = eksenli(veri, s, c, W, H);
   }
   const arka = c.bag ? `<rect width="${W}" height="${H}" fill="${YUZEY[c.tema]}"/>` : '';
@@ -441,6 +637,8 @@ export function grafikDenetle(kural, veri, secenek, beklenenVeri) {
   if (kural.ikincilEksenYok && secenek.ikincilEksen) hatalar.push('İkincil eksen iki farklı ölçeği üst üste bindirir ve kesişme noktası anlamsızdır. Aynı birimdeki ölçüleri tek eksende gösterin, farklı birimleri iki ayrı grafikte.');
   if (kural.veriEtiketiYok && secenek.veriEtiketi && veri.kategoriler.length > 8) hatalar.push('Her noktaya sayı yazmak grafiği kalabalıklaştırır; çok noktalı grafikte veri etiketlerini kapatın.');
   if (kural.siraliAzalan) { const d = veri.seriler[0]?.degerler || []; if (d.some((v, i) => i && (v ?? 0) > (d[i - 1] ?? 0) + 1e-9)) hatalar.push('Çubuklar büyükten küçüğe sıralı olmalı; sıralı liste en büyüğü ilk bakışta gösterir (kaynağı ya da pivotu sıralayın).'); }
+  if (kural.vurgu && (secenek.vurgu || 'yok') !== kural.vurgu) hatalar.push(kural.vurguNeden || { enBuyuk: 'En büyük değeri vurgulayın (Vurgu: En büyük); ötekiler soluk kalsın, göz ilk oraya gitsin.', enKucuk: 'En küçük değeri vurgulayın (Vurgu: En küçük).', yok: 'Vurguyu kapatın.' }[kural.vurgu]);
+  if (kural.hedefCizgisi != null && !(secenek.hedefCizgisi != null && Math.abs(+secenek.hedefCizgisi - kural.hedefCizgisi) < 1e-6)) hatalar.push(kural.hedefNeden || `Grafiğe ${trSayi(kural.hedefCizgisi)} değerinde hedef çizgisi ekleyin (Hedef çizgisi kutusu).`);
   if (kural.seriSayisi && veri.seriler.length !== kural.seriSayisi) hatalar.push(`Grafikte ${veri.seriler.length} seri var, ${kural.seriSayisi} bekleniyor. Veri aralığını ya da seri yönünü (satır/sütun) kontrol edin.`);
   if (beklenenVeri) {
     const kisa = v => v.seriler.map(s => s.ad + ':' + s.degerler.map(x => x == null ? '' : Math.round(x * 1e6) / 1e6).join(',')).join('|') + '#' + v.kategoriler.join(',');
