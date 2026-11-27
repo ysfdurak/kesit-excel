@@ -121,24 +121,34 @@ function sayiBicim(x, kod) {
   let k = bolum[0], neg = false;
   if (x < 0 && bolum[1] != null) { k = bolum[1]; x = -x; neg = true; }
   else if (x === 0 && bolum[2] != null) k = bolum[2];
+  k = k.replace(/\[[^\]]*\]/g, ''); // renk ve koşul ([Kırmızı], [>=1000]) metne çevirmede yok sayılır
   // Türkçe kodda virgül ondalık, nokta binlik; İngilizce kodda tersi. "0,00" Türkçe, "0.00" İngilizce.
   const sade = k.replace(/"[^"]*"/g, '');
   const yuzde = sade.includes('%');
   const v = yuzde ? x * 100 : x;
   let ondalikAyirici = ',', binlik = '.';
   const sonNokta = sade.lastIndexOf('.'), sonVirgul = sade.lastIndexOf(',');
-  let ond = 0, binlikVar = false;
+  let ond = 0, binlikVar = false, enAzTam = 1, olcek = 1;
   const m = /([#0.,]+)/.exec(sade);
   if (m) {
     const g = m[1];
-    const trKod = sonVirgul > sonNokta ? /,[0#]+$/.test(g) : !/\.[0#]+$/.test(g) && /,/.test(g) && !/,[0#]{3}/.test(g) ? true : false;
-    const dec = trKod ? ',' : '.';
-    const [tamK, ondK] = g.split(dec);
+    // "#.##0" ve "#.##0," Türkçe binliktir (İngilizcede ondalık sonrası # anlamsız olurdu); "0.000" İngilizce üç ondalık.
+    const enBinlik = /#,#{2}0(?![0#])/.test(g), trBinlik = /#\.#{2}0/.test(g);
+    const eski = sonVirgul > sonNokta ? /,[0#]+$/.test(g) : (!/\.[0#]+$/.test(g) && /,/.test(g) && !/,[0#]{3}/.test(g));
+    const trKod = enBinlik ? false : trBinlik ? true : eski;
+    const dec = trKod ? ',' : '.', bin = trKod ? '.' : ',';
+    // Kalıbın sonundaki her binlik ayırıcı 1000'e böler: #.##0. bin, #.##0.. milyon
+    const olc = (g.match(new RegExp('\\' + bin + '+$')) || [''])[0].length;
+    if (olc) { olcek = 1000 ** olc; }
+    const [tamK, ondK] = g.replace(new RegExp('\\' + bin + '+$'), '').split(dec);
     ond = ondK ? (ondK.match(/[0#]/g) || []).length : 0;
     binlikVar = /[.,]/.test(tamK);
+    enAzTam = (tamK.match(/0/g) || []).length; // "00000" → en az beş hane (176 → 00176); "#,00" → 0,5 için ",50"
   }
-  let s = Math.abs(v).toFixed(ond);
+  let s = Math.abs(v / olcek).toFixed(ond);
   let [a, b] = s.split('.');
+  if (a.length < enAzTam) a = a.padStart(enAzTam, '0');
+  else if (enAzTam === 0 && a === '0') a = '';
   if (binlikVar) a = a.replace(/\B(?=(\d{3})+(?!\d))/g, binlik);
   const sayi = a + (b ? ondalikAyirici + b : '');
   // kod içindeki sayı kalıbını gerçek sayıyla değiştir, tırnaklı metinleri koru

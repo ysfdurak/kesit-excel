@@ -79,7 +79,8 @@ def main():
     kaynaklar = [(adlar[a], tablolar[a]) for a in adlar] + list(modeller().items())
     for ad, t in kaynaklar:
         ws = wb.create_sheet(ad[:31])
-        basliklar = None if t.get("ham") else t.get("basliklar")
+        # Ham sayfanın da başlık satırı olabilir (Hedef, Ürün ham): satır düzeni Kesit ile aynı kalsın diye yazılır, ama Excel Tablosu yapılmaz
+        basliklar = t.get("basliklar")
         bicim = t.get("bicim") or []
         bas = 1
         if basliklar:
@@ -99,7 +100,7 @@ def main():
                     ws.cell(row=i, column=j).number_format = kod
             uz = max([len(str(ws.cell(row=i, column=j).value or "")) for i in range(1, min(ws.max_row, 60) + 1)] + [8])
             ws.column_dimensions[get_column_letter(j)].width = min(40, uz + 3 if not kod else max(uz + 3, 13))
-        if basliklar and t["satirlar"]:
+        if basliklar and t["satirlar"] and not t.get("ham"):
             # Kesit'teki tablo adı: sayfa adı, boşluk yerine alt çizgi (motor/kitap.js → tablo())
             tablo = Table(displayName=re.sub(r"\s+", "_", ad), ref=f"A1:{get_column_letter(len(basliklar))}{len(t['satirlar']) + 1}")
             tablo.tableStyleInfo = TableStyleInfo(name="TableStyleLight9", showRowStripes=True)

@@ -96,7 +96,8 @@ test('hesaplanmış alan, ayrıntı, ÖZETVERİAL', () => {
 });
 test('işlev rehberindeki her örnek motorda hatasız', async () => {
   const { ISLEV_BILGI } = await import('../docs/icerik/islev-bilgi.js');
-  const k = kitapKur({ sayfa: 'Satışlar' }, SAYFALAR); k.hesapla();
+  // Veritabanı işlevlerinin örnekleri ölçüt alanına bakar: N1:N2 (Kategori = Kitap) ve Q1:Q2 (Sipariş No = 176)
+  const k = kitapKur({ sayfa: 'Satışlar', hazirlik: { N1: 'Kategori', N2: 'Kitap', Q1: 'Sipariş No', Q2: '=176' } }, SAYFALAR); k.hesapla();
   for (const b of ISLEV_BILGI) { if (b.en === 'GETPIVOTDATA') continue; const v = k.formulDegerlendir('Satışlar', 2, 20, b.ornek); assert.ok(!(v && v.kod), b.tr + ' ' + b.ornek + ' → ' + (v && v.kod)); }
 });
 

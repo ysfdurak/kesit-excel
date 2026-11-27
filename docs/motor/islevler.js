@@ -86,8 +86,16 @@ tanim('FLOOR.MATH', yay(([x, s, m]) => { const a = N(x), sig = s == null ? 1 : M
 const sirali = x => x.slice().sort((p, q) => p - q);
 tanim('MEDIAN', (a, b) => { const x = sayilar(a, b); if (hataMi(x)) return x; if (!x.length) return H.SAYI; const s = sirali(x), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; });
 tanim('MODE.SNGL', (a, b) => { const x = sayilar(a, b); if (hataMi(x)) return x; const say = new Map(); let en = null, ec = 1; for (const v of x) { const c = (say.get(v) || 0) + 1; say.set(v, c); if (c > ec) { ec = c; en = v; } } return en == null ? H.NA : en; });
-tanim('LARGE', (a, b) => { const x = sayilar([a[0]], b), k = N(deger(a[1], b)); if (hataMi(x)) return x; if (hataMi(k)) return k; const s = sirali(x).reverse(); return k >= 1 && k <= s.length ? s[Math.ceil(k) - 1] : H.SAYI; });
-tanim('SMALL', (a, b) => { const x = sayilar([a[0]], b), k = N(deger(a[1], b)); if (hataMi(x)) return x; if (hataMi(k)) return k; const s = sirali(x); return k >= 1 && k <= s.length ? s[Math.ceil(k) - 1] : H.SAYI; });
+// k dizi olabilir: =BÜYÜK(A1:A9;{1;2;3}) üç sonuç döndürür
+const kinci = ters => (a, b) => {
+  const x = sayilar([a[0]], b); if (hataMi(x)) return x;
+  const s = sirali(x); if (ters) s.reverse();
+  const bir = kv => { const k = N(kv); if (hataMi(k)) return k; return k >= 1 && k <= s.length ? s[Math.ceil(k) - 1] : H.SAYI; };
+  const kd = deger(a[1], b);
+  return kd instanceof Dizi ? new Dizi(kd.v.map(sat => sat.map(bir))) : bir(kd);
+};
+tanim('LARGE', kinci(true));
+tanim('SMALL', kinci(false));
 const rank = (a, b) => { const v = N(deger(a[0], b)), x = sayilar([a[1]], b), azalan = !(a[2] != null && N(deger(a[2], b))); if (hataMi(v)) return v; if (hataMi(x)) return x; if (!x.some(y => y === v)) return H.NA; return 1 + x.filter(y => azalan ? y > v : y < v).length; };
 tanim('RANK.EQ', rank); tanim('RANK', rank);
 function varyans(x) { const m = x.reduce((t, v) => t + v, 0) / x.length; return x.reduce((t, v) => t + (v - m) ** 2, 0) / (x.length - 1); }
@@ -225,6 +233,49 @@ tanim('AVERAGEIF', olcutYay((a, b) => { const m = kosulDizileri([a[0], a[1]], b,
 const cokKosul = tur => olcutYay((a, b) => { const m = kosulDizileri(a, b, 1); if (hataMi(m)) return m; const t = diziyeCevir(a[0], b); if (t.satir !== m.R || t.sutun !== m.C) return H.DEGER; return kosulTopla(t, m, tur); }, ciftIdx(1));
 tanim('SUMIFS', cokKosul('sum')); tanim('AVERAGEIFS', cokKosul('avg')); tanim('MAXIFS', cokKosul('max')); tanim('MINIFS', cokKosul('min'));
 
+/* ---------------------------------------------------------------- veritabanı işlevleri (VSEÇTOPLA ailesi)
+   Veritabanı: başlık satırı + kayıtlar. Alan: başlık adı ya da 1'den başlayan sütun numarası.
+   Ölçüt: Gelişmiş Filtre ile aynı (ilk satır başlıklar; aynı satır VE, alt alta satırlar YA DA; düz metin "ile başlar").
+   Excel'deki formüllü (başlıksız, =C6>1000 gibi) ölçüt desteklenmez. */
+function vtKosul(v) {
+  if (typeof v !== 'string') return olcut(v);
+  if (/^(<>|>=|<=|<|>|=)/.test(v)) return olcut(v);
+  return olcut('=' + v + '*');
+}
+function vtSec(a, b, alanGerekli = true) {
+  const vt = diziyeCevir(a[0], b), ol = diziyeCevir(a[2], b);
+  for (const x of tumHucreler(vt)) if (hataMi(x)) return x;
+  if (vt.satir < 1 || ol.satir < 2) return H.DEGER;
+  const bas = vt.v[0].map(x => trB(x ?? ''));
+  let alan = -1;
+  const ak = a[1] == null ? null : deger(a[1], b);
+  if (hataMi(ak)) return ak;
+  if (ak == null || ak === '') { if (alanGerekli) return H.DEGER; }
+  else if (typeof ak === 'number') { alan = Math.trunc(ak) - 1; if (alan < 0 || alan >= vt.sutun) return H.DEGER; }
+  else { alan = bas.indexOf(trB(ak)); if (alan < 0) return H.DEGER; }
+  const sut = ol.v[0].map(h => (h == null || h === '') ? -1 : bas.indexOf(trB(h)));
+  const gruplar = ol.v.slice(1).map(s => s.map((v, j) => (v == null || v === '' || sut[j] < 0) ? null : { s: sut[j], f: vtKosul(v) }).filter(Boolean));
+  const kayitlar = vt.v.slice(1).filter(s => gruplar.some(g => g.every(k => k.f(s[k.s]))));
+  return { kayitlar, alan, degerler: alan < 0 ? null : kayitlar.map(s => s[alan]) };
+}
+const vtSayilar = x => x.degerler.filter(v => typeof v === 'number');
+function vtIslev(ad, hesap, alanGerekli = true) {
+  tanim(ad, (a, b) => { const x = vtSec(a, b, alanGerekli); if (hataMi(x)) return x; const h = x.degerler && x.degerler.find(hataMi); if (h) return h; return hesap(x); });
+}
+vtIslev('DSUM', x => vtSayilar(x).reduce((t, v) => t + v, 0));
+vtIslev('DAVERAGE', x => { const n = vtSayilar(x); return n.length ? n.reduce((t, v) => t + v, 0) / n.length : H.BOL0; });
+vtIslev('DCOUNT', x => x.degerler ? vtSayilar(x).length : x.kayitlar.length, false);
+vtIslev('DCOUNTA', x => x.degerler ? x.degerler.filter(v => !bos(v)).length : x.kayitlar.length, false);
+vtIslev('DMAX', x => { const n = vtSayilar(x); return n.length ? Math.max(...n) : 0; });
+vtIslev('DMIN', x => { const n = vtSayilar(x); return n.length ? Math.min(...n) : 0; });
+vtIslev('DPRODUCT', x => { const n = vtSayilar(x); return n.length ? n.reduce((t, v) => t * v, 1) : 0; });
+vtIslev('DGET', x => x.degerler.length === 0 ? H.DEGER : x.degerler.length > 1 ? H.SAYI : x.degerler[0]);
+const vtVar = (n, orn) => { const o = n.reduce((t, v) => t + v, 0) / n.length; return n.reduce((t, v) => t + (v - o) ** 2, 0) / (n.length - (orn ? 1 : 0)); };
+vtIslev('DSTDEV', x => { const n = vtSayilar(x); return n.length < 2 ? H.BOL0 : Math.sqrt(vtVar(n, true)); });
+vtIslev('DSTDEVP', x => { const n = vtSayilar(x); return n.length < 1 ? H.BOL0 : Math.sqrt(vtVar(n, false)); });
+vtIslev('DVAR', x => { const n = vtSayilar(x); return n.length < 2 ? H.BOL0 : vtVar(n, true); });
+vtIslev('DVARP', x => { const n = vtSayilar(x); return n.length < 1 ? H.BOL0 : vtVar(n, false); });
+
 /* ---------------------------------------------------------------- arama */
 function esitMi(aranan, v, joker) {
   if (typeof aranan === 'string' && typeof v === 'string') return joker && /[*?]/.test(aranan) ? jokerRe(trK(aranan)).test(trK(v)) : trK(aranan) === trK(v);
@@ -322,6 +373,21 @@ tanim('XMATCH', (a, bag) => {
 tanim('CHOOSE', (args, bag) => { const i = N(deger(degerlendir(args[0], bag), bag)); if (hataMi(i)) return i; const k = Math.trunc(i); if (k < 1 || k >= args.length) return H.DEGER; return degerlendir(args[k], bag); }, { tembel: true });
 tanim('ROW', (args, bag) => { if (!args.length || args[0].t === 'bos') return bag.satir; const v = degerlendir(args[0], bag); if (!(v instanceof Bas)) return H.DEGER; return v.satir === 1 ? v.r1 : new Dizi(Array.from({ length: v.satir }, (_, i) => [v.r1 + i])); }, { tembel: true });
 tanim('COLUMN', (args, bag) => { if (!args.length || args[0].t === 'bos') return bag.sutun; const v = degerlendir(args[0], bag); if (!(v instanceof Bas)) return H.DEGER; return v.sutun === 1 ? v.c1 : new Dizi([Array.from({ length: v.sutun }, (_, i) => v.c1 + i)]); }, { tembel: true });
+// DEVRİK_DÖNÜŞÜM: satırları sütun yapar (taşar). Boş hücre 0 olur (Excel gibi).
+tanim('TRANSPOSE', (a, b) => { const d = diziyeCevir(a[0], b); const out = []; for (let c = 0; c < d.sutun; c++) { const s = []; for (let r = 0; r < d.satir; r++) { const v = d.v[r][c]; s.push(v == null ? 0 : v); } out.push(s); } return new Dizi(out); });
+// ARA (LOOKUP, vektör biçimi): aranan değerden küçük ya da eşit son değer; hata değerlerini atlar.
+// Bu yüzden =ARA(2;1/(koşul);sonuç) "koşula uyan son kaydı" verir (klasik dizi formülü hilesi).
+tanim('LOOKUP', (a, b) => {
+  const aranan = deger(a[0], b); if (hataMi(aranan)) return aranan;
+  const ara = diziyeCevir(a[1], b), sonuc = a[2] != null ? diziyeCevir(a[2], b) : null;
+  const liste = ara.satir === 1 || ara.sutun === 1 ? (ara.satir === 1 ? ara.v[0] : ara.v.map(s => s[0])) : ara.v.map(s => s[0]);
+  let en = -1;
+  for (let i = 0; i < liste.length; i++) { const v = liste[i]; if (v == null || hataMi(v) || typeof v !== typeof aranan) continue; if (karsilastir(v, aranan) <= 0) en = i; else if (typeof v === 'number' && !sonuc) break; }
+  if (en < 0) return H.NA;
+  if (!sonuc) return ara.satir === 1 || ara.sutun === 1 ? liste[en] : ara.v[en][ara.sutun - 1];
+  const sl = sonuc.satir === 1 ? sonuc.v[0] : sonuc.v.map(s => s[0]);
+  return en < sl.length ? sl[en] : H.NA;
+});
 tanim('ROWS', (a, b) => { const v = a[0] instanceof Bas ? a[0] : diziyeCevir(a[0], b); return v.satir; });
 tanim('COLUMNS', (a, b) => { const v = a[0] instanceof Bas ? a[0] : diziyeCevir(a[0], b); return v.sutun; });
 

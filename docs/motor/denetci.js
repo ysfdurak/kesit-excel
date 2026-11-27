@@ -77,8 +77,10 @@ function kitapKur(alistirma, tablolar) {
 }
 export { kitapKur };
 // Hedef: tek hücre "L2" ya da doldurulacak alan "L2:L241" (ilk hücreye yazılan formül aşağı kaydırılır)
-function yerlestir(k, sayfa, hedef, formul) {
-  if (hedef.includes(':')) { const a = alanCoz(hedef); const n = a.r2 - a.r1 + 1; for (let i = 0; i < n; i++) k.yaz(sayfa, { r: a.r1 + i, c: a.c1 }, kaydir(formul, i, 0)); }
+// Aralık hedefinde formül ilk hücreden aşağı doldurulur. ikiYon: sağa da doldurulur (karışık başvuru tabloları);
+// taşan formüllerde kullanılmaz, sağdaki hücreler taşmayı engellerdi.
+function yerlestir(k, sayfa, hedef, formul, ikiYon = false) {
+  if (hedef.includes(':')) { const a = alanCoz(hedef); const n = a.r2 - a.r1 + 1, m = ikiYon ? a.c2 - a.c1 + 1 : 1; for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) k.yaz(sayfa, { r: a.r1 + i, c: a.c1 + j }, kaydir(formul, i, j)); }
   else k.yaz(sayfa, hedef, formul);
 }
 function oku(k, sayfa, hedef, alan) {
@@ -139,7 +141,7 @@ function formulDenetleTek(alistirma, tablolar, ogrenciFormul) {
   for (const y of alistirma.yasak || []) if (bilgi.islevler.includes(y)) return { tamam: false, mesaj: `Bu alıştırmada ${trAd(y)} kullanmadan çözün; amaç başka bir yolu denemek.` };
   const deneme = tabs => {
     const ko = kitapKur(alistirma, tabs), kc = kitapKur(alistirma, tabs);
-    yerlestir(ko, sayfa, hedef, f); yerlestir(kc, sayfa, hedef, alistirma.cozum);
+    yerlestir(ko, sayfa, hedef, f, alistirma.ikiYon); yerlestir(kc, sayfa, hedef, alistirma.cozum, alistirma.ikiYon);
     return { o: oku(ko, sayfa, hedef, alistirma.okunan), c: oku(kc, sayfa, hedef, alistirma.okunan) };
   };
   const g = deneme(tablolar);

@@ -136,9 +136,24 @@ export function yolSayfasi(main, rolId) {
 }
 
 /* ---------------------------------------------------------------- ders listesi */
+// Alıştırmaları gerçek Excel'de çalışmak için .xlsx (tarayıcıda üretilir; modül ilk tıklamada yüklenir)
+async function kitapIndir(dugme, d) {
+  const eski = dugme.textContent; dugme.disabled = true; dugme.textContent = 'Hazırlanıyor…';
+  try {
+    const m = await import('./alistirma-kitabi.js');
+    const bayt = await m.kitapBaytlari(d ? m.dersKitabi(d) : m.tumKitap(DERSLER));
+    const u = URL.createObjectURL(new Blob([bayt], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    const a = h('a', { href: u, download: d ? m.dosyaAdi(d) : 'kesit-excel-alistirma-kitabi.xlsx' }); document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 5000);
+    bildir(d ? 'Ders kitabı indirildi' : 'Alıştırma kitabı indirildi', 'iyi');
+  } catch (e) { console.error(e); bildir('Kitap hazırlanamadı: ' + e.message); }
+  finally { dugme.disabled = false; dugme.textContent = eski; }
+}
+const tumKitapDugmesi = (sinif = 'btn') => h('button.' + sinif.split(' ').join('.'), { type: 'button', on: { click: e => kitapIndir(e.currentTarget) } }, 'Bütün alıştırmalar tek kitapta (.xlsx)');
+
 export function derslerSayfasi(main, odak) {
   const kucuk = t => t.toLocaleLowerCase('tr');
-  // İlk bitmemiş modül açık gelir; diğerleri başlık ve ilerlemeyle katlı durur (telefonda 111 ders tek sayfada 16.000 px'ti)
+  // İlk bitmemiş modül açık gelir; diğerleri başlık ve ilerlemeyle katlı durur (telefonda bütün dersler tek sayfada 16.000 px'i aşıyordu)
   const acik = odak || (MODULLER.find(m => modulDersleri(m.id).some(x => !D.dersBitti(x.id))) || MODULLER[0]).id;
   const kutu = h('input', { type: 'search', placeholder: 'Ders ara: düşeyara, pivot, tarih…', 'aria-label': 'Ders ara' });
   let seviye = '';
@@ -165,7 +180,8 @@ export function derslerSayfasi(main, odak) {
   kutu.addEventListener('input', suz);
   const hepsi = h('button.chip', { type: 'button', on: { click: () => { const ac = moduller.some(d => !d.open); moduller.forEach(d => { d.open = ac; }); hepsi.textContent = ac ? 'Hepsini kapat' : 'Hepsini aç'; } } }, 'Hepsini aç');
   yerlestir(main, baslikBlok('MÜFREDAT', 'Dersler', `${MODULLER.length} modül, ${DERSLER.length} ders. Sırayla gitmen önerilir ama her ders kendi başına çalışır. Modül başlığına dokununca dersleri açılır.`),
-    h('div.filters', {}, kutu, sev, hepsi), sayac, h('div.curriculum-table', {}, moduller));
+    h('div.filters', {}, kutu, sev, hepsi), sayac, h('div.curriculum-table', {}, moduller),
+    h('section.callout.excel-calis', {}, h('h3', {}, 'Bütün alıştırmalar tek Excel kitabında'), h('p', {}, `${DERSLER.reduce((n, d) => n + d.alistirmalar.length, 0)} alıştırma, bütün veri sayfaları (Excel Tablosu) ve çözümler tek dosyada. Her dersin hazırlığı yapılmış ayrı kitabı dersin altında.`), tumKitapDugmesi('btn primary')));
   if (odak) setTimeout(() => document.getElementById('modul-' + odak)?.scrollIntoView({ block: 'start' }), 0);
 }
 
@@ -186,7 +202,7 @@ export function dersSayfasi(main, id) {
   const d = dersBul(id); if (!d) { yerlestir(main, baslikBlok('BULUNAMADI', 'Ders yok', 'Bu adreste bir ders yok.'), link('dersler', 'Derslere dön')); return; }
   D.sonDers(id);
   const m = modulBul(d.modul), ileri = sonraki(id), geri = onceki(id);
-  const bolumler = [['anlatim', 'Anlatım'], ...(d.ornek ? [['ornek', 'Canlı örnek']] : []), ['alistirma', `Alıştırmalar (${d.alistirmalar.length})`], ['hata', 'Sık hata'], ['mulakat', 'Mülakat sorusu']];
+  const bolumler = [['anlatim', 'Anlatım'], ...(d.ornek ? [['ornek', 'Canlı örnek']] : []), ['alistirma', `Alıştırmalar (${d.alistirmalar.length})`], ['excel', 'Excel\'de çalış'], ['hata', 'Sık hata'], ['mulakat', 'Mülakat sorusu']];
   const dersLinkleri = () => modulDersleri(m.id).map(x => h('a', { href: '#ders/' + x.id, sinif: x.id === id ? 'current' : '' }, (D.dersBitti(x.id) ? '✓ ' : '') + x.baslik));
   // Masaüstünde liste açık; telefonda katlanır, ders içeriği ilk ekranda başlar
   const anahat = h('nav.lesson-outline', { 'aria-label': 'Modüldeki dersler' }, h('span.eyebrow', {}, `MODÜL ${m.no}`), h('h3', {}, m.baslik),
@@ -199,6 +215,9 @@ export function dersSayfasi(main, id) {
     h('section.theory.article', { id: 'b-anlatim' }, h('h2', {}, 'Bu derste'), h('ul.objectives', {}, d.hedefler.map(x => h('li', {}, x))), d.anlatim.map(x => h('p', {}, bicimli(x)))),
     d.ornek ? h('section.article', { id: 'b-ornek' }, h('h2', {}, 'Canlı örnek'), ornekCiz(d)) : null,
     h('section', { id: 'b-alistirma' }, h('h2', {}, 'Alıştırmalar'), h('p.muted', {}, alistirmaYonergesi(d)), d.alistirmalar.map((a, i) => alistirmaCiz(d, a, i))),
+    h('section.callout.excel-calis', { id: 'b-excel' }, h('h2', {}, 'Gerçek Excel\'de çalış'),
+      h('p', {}, `Bu dersin ${d.alistirmalar.length} alıştırması hazırlanmış hâliyle bir Excel kitabında: her alıştırmanın kendi sayfası, sarı hedef hücreler, en sonda Türkçe ve İngilizce çözümler ile beklenen sonuç. Formülleri Türkçe Excel yazımıyla yazın.`),
+      h('div.btn-row', {}, h('button.btn.primary', { type: 'button', on: { click: e => kitapIndir(e.currentTarget, d) } }, 'Bu dersin kitabını indir (.xlsx)'), tumKitapDugmesi())),
     h('section.callout.warning', { id: 'b-hata' }, h('h2', {}, 'Sık hata'), h('p', {}, h('b', {}, 'Yanlış: '), h('code', {}, d.sikHata.yanlis)), h('p', {}, h('b', {}, 'Doğru: '), h('code', {}, d.sikHata.dogru)), h('p', {}, bicimli(d.sikHata.neden))),
     h('section.question', { id: 'b-mulakat' }, h('span.eyebrow', {}, 'MÜLAKAT SORUSU'), h('h3', {}, d.mulakat.soru), h('details', {}, h('summary', {}, 'Önce kendin cevapla, sonra açıp karşılaştır'), h('p', {}, bicimli(d.mulakat.cevap)))),
     h('nav.ders-gecis', { 'aria-label': 'Dersler arası geçiş' }, geri ? link('ders/' + geri.id, '← ' + geri.baslik, 'btn') : h('span'), ileri ? link('ders/' + ileri.id, ileri.baslik + ' →', 'btn primary') : link('ilerleme', 'İlerlemeni gör →', 'btn primary')));
@@ -366,6 +385,8 @@ function confirmIki() { if (Date.now() - sifirlaZaman < 4000) return true; sifir
 /* ---------------------------------------------------------------- veri ve hakkında */
 // Ders model sayfaları elle kurulmuştur; Kesit ortak verisinden gelmez (icerik/modeller.js)
 const MODEL_ACIKLAMA = {
+  'Kasa': 'Şube kasa defteri, Ocak 2024: giriş, çıkış ve KDV oranı (yürüyen bakiye ve KDV hesabı; Modül 2).',
+  'Gelir Tablosu': 'Üç yıllık özet gelir tablosu, bin TL (yatay, dikey ve trend analizi; Modül 16).',
   'Kredi': 'Forklift kredisi: tutar, faiz, vade → taksit. Hedef Ara, Veri Tablosu, Senaryo ve ödeme planı (Modül 16).',
   'Yatırım': 'Forklift satın al mı, kirala mı: nakit akışları, iskonto oranı, amortisman (NBD, İVO; Modül 16).',
   'Fiyat': 'Depo hizmeti kâr modeli: başabaş ve kâr hedefi (Hedef Ara; Modül 16).',
@@ -390,7 +411,7 @@ export function veriSayfasi(main) {
   const indir = (ad, t) => { const b = new Blob(['﻿' + csv(t)], { type: 'text/csv;charset=utf-8' }); const u = URL.createObjectURL(b); const a = h('a', { href: u, download: ad.toLocaleLowerCase('tr').replace(/\s+/g, '-') + '.csv' }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 1000); };
   yerlestir(main, baslikBlok('VERİ', 'Kesit verileriyle', 'Dersler Kesit ailesinin ortak veri setlerinden alınmış sayfalarla çalışır: Anadolu Market (Kesit SQL), Pusula İK, Lezzet Kurye ve kirli veri tabloları. Kişiler ve şirketler kurgusaldır. Tarihler Excel seri sayısıdır.'),
     h('section.article.veri-kart', {}, h('h3', {}, 'Bütün sayfalar tek Excel kitabında'), h('p', {}, `${Object.keys(SAYFALAR).length} sayfa: Kesit verileri ve ders model sayfaları. Başlıklı sayfalar Excel Tablosudur, Satışlar[Adet] gibi başvurular gerçek Excel'de de çalışır. Dersleri ve makroları kendi Excel'inizde denemek için.`),
-      h('a.btn.primary', { href: 'indir/kesit-excel-veri.xlsx', download: 'kesit-excel-veri.xlsx' }, 'Veri kitabını indir (.xlsx)')),
+      h('div.btn-row', {}, h('a.btn.primary', { href: 'indir/kesit-excel-veri.xlsx', download: 'kesit-excel-veri.xlsx' }, 'Veri kitabını indir (.xlsx)'), tumKitapDugmesi())),
     Object.entries(SAYFALAR).map(([ad, t]) => h('section.article.veri-kart', {}, h('h3', {}, ad, h('small.muted', {}, ' · ' + (t.kaynak || 'Ders modeli'))), h('p', {}, t.aciklama || MODEL_ACIKLAMA[ad] || ''),
       h('p.small-note', {}, `${t.satirlar.length} satır${t.basliklar ? ' · Sütunlar: ' + t.basliklar.join(', ') : ' · başlık satırı yok (ham)'}`),
       h('button.btn.tiny', { type: 'button', on: { click: () => indir(ad, t) } }, 'CSV indir (; ayırıcılı, Türkçe Excel için)'))));
