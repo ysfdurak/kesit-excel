@@ -9,7 +9,9 @@ import { DERSLER_7 } from './dersler-7.js';
 import { DERSLER_8 } from './dersler-8.js';
 import { DERSLER_9 } from './dersler-9.js';
 import { DERSLER_10 } from './dersler-10.js';
+import { DERSLER_11 } from './dersler-11.js';
 import { EK_ALISTIRMALAR } from './ek-alistirmalar.js';
+import { EK_ALISTIRMALAR_2 } from './ek-alistirmalar-2.js';
 export const MODULLER = [
   { id: 'm1', no: 1, baslik: "Excel'in mantığı", ozet: 'Hücre, tür, formül, $ ve Türkçe/İngilizce yazım.', seviye: 'temel' },
   { id: 'm2', no: 2, baslik: 'Temel hesaplar', ozet: 'Özet işlevleri, yuvarlama, oran ve hata değerleri.', seviye: 'temel' },
@@ -36,7 +38,8 @@ export const MODULLER = [
 ];
 const _sira = d => { const m = /^m(\d+)-d(\d+)$/.exec(d.id); return m ? [MODULLER.findIndex(x => x.id === d.modul), Number(m[2])] : [999, 0]; };
 // Dersler modül sırasına, modül içinde ders numarasına göre (sonradan eklenen dosyalar araya girer)
-const _ham = [...DERSLER_1, ...DERSLER_2, ...DERSLER_3, ...DERSLER_4, ...DERSLER_5, ...DERSLER_6, ...DERSLER_7, ...DERSLER_8, ...DERSLER_9, ...DERSLER_10]
+const _ham = [...DERSLER_1, ...DERSLER_2, ...DERSLER_3, ...DERSLER_4, ...DERSLER_5, ...DERSLER_6, ...DERSLER_7, ...DERSLER_8, ...DERSLER_9, ...DERSLER_10, ...DERSLER_11]
   .sort((a, b) => { const x = _sira(a), y = _sira(b); return x[0] - y[0] || x[1] - y[1]; });
 // Derinleştirme: var olan derslere sonradan eklenen alıştırmalar (ek-alistirmalar.js)
-export const DERSLER = _ham.map(d => EK_ALISTIRMALAR[d.id] ? { ...d, alistirmalar: [...d.alistirmalar, ...EK_ALISTIRMALAR[d.id]] } : d);
+const _ek = id => [...(EK_ALISTIRMALAR[id] || []), ...(EK_ALISTIRMALAR_2[id] || [])];
+export const DERSLER = _ham.map(d => _ek(d.id).length ? { ...d, alistirmalar: [...d.alistirmalar, ..._ek(d.id)] } : d);

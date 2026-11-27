@@ -73,7 +73,7 @@ const KURAL = z.object({ tur: z.enum(Object.keys(KURAL_TURLERI)), alan: z.string
 const pvTam = p => ({ satir: null, sutun: null, degerler: [], filtreler: [], grupla: {}, goster: 'deger', ...p });
 
 const server = new McpServer({ name: 'kesit-excel', version: SURUM }, {
-  instructions: 'Kesit Excel: Türkçe Excel formül motoru (202 işlev, Türkçe ve İngilizce adlar, dinamik diziler, LAMBDA, düzenli ifadeler) ve 152 derslik alıştırma seti (grafik, pano, VBA makro, veri doğrulama, finans, Hedef Ara, Çözücü, LAMBDA, Gelişmiş Filtre ve pano grafikleri dahil). ' +
+  instructions: 'Kesit Excel: Türkçe Excel formül motoru (204 işlev, Türkçe ve İngilizce adlar, dinamik diziler, LAMBDA, düzenli ifadeler) ve 161 derslik alıştırma seti (grafik, pano, VBA makro, veri doğrulama, finans, Hedef Ara, Çözücü, LAMBDA, Gelişmiş Filtre ve pano grafikleri dahil). ' +
     'Formülü Türkçe (=ETOPLA(A:A;"x";B:B)) ya da İngilizce (=SUMIF(A:A,"x",B:B)) yazabilirsiniz. Hazır sayfalar: ' + Object.keys(SAYFALAR).join(', ') + '. ' +
     'Kendi verinizi satırlar dizisi ya da izinli klasördeki CSV ile verin. grafik_ciz SVG metni döndürür, makro_calistir VBA\'yı yalıtılmış kopyada çalıştırır. Sunucu dosya yazmaz ve ağa çıkmaz.',
 });

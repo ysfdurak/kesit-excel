@@ -13,7 +13,7 @@
 | **Kimin için** | Excel'i işte kullanacak herkes; özellikle veri analisti, BI, operasyon/planlama, finans, BT iş analisti ve ofis rolleri. Kesit ailesinin (SQL, Power BI, Python, İstatistik) beşinci üyesi |
 | **Canlı** | https://ysfdurak.github.io/kesit-excel/ (27.11.2026'dan beri; kök adres `docs/`'a yönlendirir) |
 | **Depo** | `ysfdurak/kesit-excel` |
-| **Durum** | 0.7.0 · depo açık, CI yeşil; testler 203, LibreOffice 284/284, güvenlik taraması temiz; gerçek Excel'de (LTSC İngilizce/Türkçe menü ve Türkçe web Excel 365) örneklem yapıldı (§7.x–7.z); 0.7.0 içeriği gerçek Excel'de henüz denenmedi (§5.20) |
+| **Durum** | 0.8.0 · depo açık, CI yeşil; testler 213, LibreOffice 291/291, güvenlik taraması temiz; gerçek Excel'de (LTSC İngilizce/Türkçe menü ve Türkçe web Excel 365) örneklem yapıldı (§7.x–7.z); 0.7.0 ve 0.8.0 içeriği gerçek Excel'de henüz denenmedi (§5.20, §5.21) |
 | **Sunucu** | Yok (GitHub Pages). VPS gerekmiyor; gerekçe §6 |
 
 **Tek cümle:** "Excel formülünü ezberletmek yerine Kesit verisinde yazdırıyor; cevabı gördüğünüz tabloda ve sayıları değiştirilmiş gizli bir kopyada denetleyip hatanın nedenini söylüyor."
@@ -460,6 +460,28 @@ xlsxDosyalari → XML parçaları → zip (CompressionStream 'deflate-raw', yoks
 
 ---
 
+### 5.21 Eğitmen müfredatlarıyla tamamlama (0.8.0)
+
+Kullanıcı Mustafa Bolat, Ömer Bağcı, Faruk Çubukçu ve Udemy'deki Türkçe Excel kurslarının konularına bakılmasını, eksiklerin ve alıştırmaların eklenmesini istedi. Karşılaştırma tablosu §9.y'de. Bu bölüm koddaki karşılığını anlatır.
+
+**Yeni dersler** (`docs/icerik/dersler-11.js`, 9 ders): 1.9 Kopyala, Özel Yapıştır, Bul/Değiştir · 1.10 Hücre biçimlendirme temelleri · 2.9 Kasa defteri ve KDV · 8.9 Açılır listeye bağlı rapor ("Tümü" kalıbı) · 8.10 Klasik dizi formülleri · 12.5 İK göstergeleri · 16.8 Finansal tablo analizi (yatay, dikey, trend) · 21.8 Onay kutuları · 21.9 Yapay zekâyla formül. 5.8'e ÇAPRAZEŞLEŞTİR alıştırmaları eklendi.
+
+**Yeni model sayfaları** (`modeller.js`): `Kasa` (17 hareket, ilk satır "Devir"; devir olmadan bakiye eksiye düşüyordu) ve `Gelir Tablosu` (9 kalem × 2022–2024).
+
+**Motorda ne değişti?**
+- `TRANSPOSE` (DEVRİK_DÖNÜŞÜM; nokta yazımı da kabul edilir) ve vektör biçimli `LOOKUP` (ARA). ARA hataları atlayıp son ≤ eşleşmeyi bulur; `=ARA(2;1/(koşul);sonuç)` kalıbı bu yüzden "koşulu sağlayan son kaydı" verir.
+- `LARGE`/`SMALL` dizi k kabul eder: `=TOPLA(BÜYÜK(aralık;{1;2;3}))` ilk üçün toplamı.
+- Özel biçimde metin grupları: `0 (000) 000 00 00` telefon, `"No: "000` sıra numarası. `bicim.js` → `sayiYaz` içindeki `aradaMetin` dalı rakamları sağdan gruplara dağıtır.
+- Denetçide `ikiYon`: 2B doldurma hedeflerinde (ör. trend analizi G2:I10) formül hem sağa hem aşağı doldurulup her hücre denetlenir; önceki sürüm yalnız ilk sütuna bakıyordu.
+
+**Alıştırma sayısı:** `docs/icerik/ek-alistirmalar-2.js` ileri modüllerde 1–2 alıştırmalı 39 derse alıştırma ekledi (pivot, makro, formül, seçmeli). Artık her derste en az 3 alıştırma var; `DERSLER.filter(d => d.alistirmalar.length < 3)` boş döner. Toplam 161 ders, 577 alıştırma.
+
+**Bu yapı neden böyle?** Ek alıştırmalar ders dosyalarına gömülmedi, kimliğe göre (`'m14-d2': [...]`) ayrı dosyada tutulup `dersler.js`'te birleştiriliyor. Böylece ders metni ile alıştırma çoğaltma işi ayrı commit'lerde incelenebiliyor. Dezavantaj: bir dersin bütün alıştırmalarını görmek için iki dosyaya bakmak gerekir. Kural: yeni derste alıştırmalar dersin içinde yazılır, ek dosya yalnız var olan dersleri büyütmek içindir.
+
+> **Burada bir test daha yapalım:** 8.10'daki klasik dizi formülleri (MAK(EĞER), TOPLA(1/EĞERSAY)) Excel 365'te doğrudan çalışır; Excel 2019 ve öncesinde ve LibreOffice'te Ctrl+Shift+Enter ister. İndirilen kitapta LibreOffice bunları 0 hesapladı. Gerçek Excel'de (LTSC) bir kitap açıp sonucu denetleyin.
+
+> **Şöyle daha iyi olur:** Harita grafiği ve VBA olayları (Worksheet_Change) eğitmen müfredatlarında var ama motorda karşılığı yok; şimdilik eklenmedi. Olaylar için makro atölyesine "hücre değişince çalış" tetikleyicisi eklenebilir.
+
 ## 6. Sunucu ve yayın
 
 - **GitHub Pages**, kökten. `index.html` + `yonlendir.js` → `docs/`. Satır içi betik yok (diğer Kesit depolarındaki satır içi yönlendirmeden farklı; CSP gereği).
@@ -707,6 +729,27 @@ Bakılan müfredatlar: Uludağ Üniversitesi ULUSEM (İleri Excel), ODTÜ Sürek
 
 Ders: Türkçe kurumsal eğitimler "kâğıda ve e-postaya giden Excel"i (yazdırma, parola, PowerPoint) önemser; uluslararası ileri kurslar bunları atlar. İkisi farklı kitleye hitap eder; Kesit artık ikisini de kapsıyor.
 
+### 9.y Türkçe eğitmenler ve Udemy kurslarıyla dördüncü karşılaştırma (0.8.0)
+
+Bakılanlar: Mustafa Bolat (Excel eğitimleri ve Udemy kursları: pano, form denetimleri, VBA, İK panosu, dizi formülleri), Ömer Bağcı (YouTube ve Udemy: Excel 365 yenilikleri, onay kutuları, dinamik açılır liste, kasa/KDV, İK, yapay zekâ), Faruk Çubukçu (kitap bölümleri: temel işlemler, Özel Yapıştır, finansal tablolar), Udemy'deki Türkçe "Sıfırdan İleri Seviye Excel" kursları.
+
+| Eğitmen müfredatında olan konu | 0.7.0 | 0.8.0 |
+|---|---|---|
+| Özel Yapıştır (değer, çarp, devrik), Bul/Değiştir | yok | Ders 1.9 (DEVRİK_DÖNÜŞÜM) |
+| Hücre biçimlendirme (tarih kodları, telefon, yüzde) | dağınık | Ders 1.10 |
+| Kasa defteri, bakiye, KDV dahil/hariç | yok | Ders 2.9 (Kasa sayfası) |
+| Dinamik açılır liste + FİLTRE raporu | kısmen (15.3) | Ders 8.9 ("Tümü" seçeneği) |
+| Klasik dizi formülleri (Ctrl+Shift+Enter dönemi) | yok | Ders 8.10 (ARA(2;1/…), BÜYÜK dizi k) |
+| İK göstergeleri (devir hızı, kıdem, işe alım kaynağı) | yok | Ders 12.5 |
+| Finansal tablo analizi (yatay, dikey, trend) | yok | Ders 16.8 (Gelir Tablosu sayfası) |
+| Excel 365 onay kutuları | yok | Ders 21.8 |
+| Yapay zekâyla formül yazdırma ve denetleme | yok | Ders 21.9 |
+| ÇAPRAZEŞLEŞTİR (XMATCH) | anlatımda | Ders 5.8 alıştırmaları |
+| Harita grafiği, VBA olayları | yok | eklenmedi (motor sınırı, §5.21) |
+| Her konuda bol alıştırma | ileri modüllerde 1–2 | her derste en az 3 |
+
+Ders: eğitmenlerin kursları "iş yerinde ilk hafta"ya (kasa, biçim, Özel Yapıştır, İK listesi) Kesit'ten daha çok yer ayırıyor. Uluslararası kurslarla yapılan önceki karşılaştırmalar bunu göstermemişti; çünkü onlar bu konuları ön bilgi sayıyor.
+
 ## 10. Mülakat soruları
 
 **S: Neden kendi formül motorunu yazdın, hazır kütüphane yok mu?**
@@ -789,6 +832,12 @@ C: Testler her alıştırmanın çözümünün denetçiden geçtiğini sınıyor
 **S: .xlsx dosyasını neden kütüphane kullanmadan yazdınız?**
 C: Site dış kaynak yüklemiyor (CSP `default-src 'self'`) ve gereken alt küme küçük: metin, sayı, formül, birkaç stil, tablo, tanımlı ad. .xlsx bir zip içinde XML; zip başlıkları ve CRC32 yaklaşık 60 satır, sıkıştırmayı tarayıcının CompressionStream'i yapıyor. Böylece 100 KB'lık bir kütüphane yerine 150 satırlık, test edilen bir modül oldu. Sınırı: dinamik dizi formülünü dosyaya yazmıyoruz (meta veri ister), onu yönergeye çeviriyoruz.
 
+**S: Eğitmen kurslarıyla karşılaştırmada neyi eksik buldunuz, neyi bilerek eklemediniz?**
+C: İş yerinde ilk hafta konularını eksik bulduk: Özel Yapıştır, kasa defteri ve KDV, hücre biçimi, İK listesi, finansal tablo oranları, Excel 365 onay kutuları. Bunlar 9 ders olarak eklendi. Harita grafiği ile VBA olaylarını eklemedik, çünkü tarayıcıdaki motor bunları denetleyemiyor. Denetlenemeyen bir alıştırma vermek yerine konuyu sınırlar bölümüne yazdık.
+
+**S: ARA(2;1/(koşul);sonuç) neden "son eşleşmeyi" verir?**
+C: 1/(koşul) dizisi koşul doğruysa 1, yanlışsa #SAYI/0! olur. ARA hataları atlar. 2'yi bulamayınca 2'den küçük olan son değeri seçer, yani son 1'i. Sonuç da o satırdan gelir. Excel 365'te aynı iş ÇAPRAZARA(…;…;…;;;-1) ile daha okunur yapılır.
+
 ## 11. Kendini test et
 
 <details><summary>1. `kaydir('=C2*$D$1', 3, 0)` ne döner?</summary>`=C5*$D$1`: göreli C2 üç satır kayar, mutlak $D$1 kalmaz.</details>
@@ -822,6 +871,8 @@ C: Site dış kaynak yüklemiyor (CSP `default-src 'self'`) ve gereken alt küme
 <details><summary>6. CSP `style-src 'self'` iken kenar çizgisi nasıl renkleniyor?</summary>CSSOM ile (`td.style.boxShadow = …`); CSP satır içi `style` özniteliğini engeller, CSSOM'u engellemez.</details>
 
 ---
+
+- 2B doldurmalı bir alıştırmada (ör. 16.8 trend analizi) yalnız ilk sütunu denetlemek hangi yanlışı kaçırır? <details><summary>Cevap</summary>`$B2` yerine `B2` yazılmasını kaçırır. İlk sütunda iki yazım da aynı sonucu verir, sağa doldurunca ayrılırlar. `ikiYon` bu yüzden eklendi.</details>
 
 ## 12. Elle yapılacak alıştırma ve 5 dakikalık demo
 
@@ -870,3 +921,4 @@ C: Site dış kaynak yüklemiyor (CSP `default-src 'self'`) ve gereken alt küme
 - **2026-11-27 · depo** `ysfdurak/kesit-excel` açıldı, `main` gönderildi, Test iş akışı yeşil. ysfdurak.com PR #88 (yalnız kesit-excel: güvenlik taraması + ölçüm kararı `soz`); PR #84 diğer dört projeye indirildi. Aynı gün kullanıcının GitHub oturumuyla tarayıcıdan: Pages (main, kök) açıldı; `main` dal koruması (PR zorunlu, onay gerekmez, `test` denetimi zorunlu), birleşince dal silme, depo açıklaması ve web sitesi. Canlı örneklem: yönlendirme çalışıyor, CSP var, dış kaynak yok, konsol temiz, veri kitabı 200 (87.774 bayt), son sürüm (ATLANMIŞ) yayında.
 - **2026-11-27 · 0.6.5** Türkçe web Excel'de 365 işlevleri (§7.z): NORMİFADESINA (REGEXTEST), DİZİOLUŞTUR (MAKEARRAY), KIRPARALIĞI (TRIMRANGE) düzeltildi; 27 ad doğrulandı; dizi sabiti ayırıcılarının masaüstü ile web Excel'de tersine olduğu ders metnine yazıldı. Aynı gün: ATLANMIŞ (ISOMITTED) bulundu, GRUPLAÖLÇÜT Toplam satırı doğrulandı, NORMİFADEAYIKLA mod 1 yan yana taşıyacak şekilde düzeltildi (0.6.6; elle vaka ROWS → COLUMNS, LibreOffice 266/266).
 - **2026-11-27 · 0.7.0** İçerik güçlendirme (§5.20): 41 yeni ders (Modül 1–9'a 4'er, yeni Modül 22 Veritabanı işlevleri 5 ders), var olan derslere 78 alıştırma; toplam 152 ders, 492 alıştırma. Motor: VSEÇTOPLA ailesi (12 işlev), METNEÇEVİR sıfır doldurma ve Türkçe binlik düzeltmesi, denetçide iki yönlü doldurma (`ikiYon`). Her dersin altında Excel kitabı ve tek alıştırma kitabı (tarayıcıda üretilir). Veri kitabında başlıklı ham sayfaların kayması düzeltildi. Testler 203, LibreOffice 284/284.
+- **2026-11-27 · 0.8.0** Eğitmen müfredatlarıyla dördüncü karşılaştırma (§9.y, §5.21): 9 yeni ders (1.9, 1.10, 2.9, 8.9, 8.10, 12.5, 16.8, 21.8, 21.9), Kasa ve Gelir Tablosu model sayfaları, 39 derse ek alıştırma (`ek-alistirmalar-2.js`); her derste en az 3 alıştırma; toplam 161 ders, 577 alıştırma. Motor: TRANSPOSE, LOOKUP, BÜYÜK/KÜÇÜK dizi k, metinli özel biçim (telefon), denetçide `ikiYon` (204 işlev). Testler 213, LibreOffice 291/291, güvenlik taraması temiz. Bulunan hatalar: Kasa bakiyesinin devirsiz eksiye düşmesi, 2B doldurmada yalnız ilk sütunun denetlenmesi, ÇAPRAZEŞLEŞTİR alıştırmasında elle yazılan sabitin yakalanmaması (varyantsız yapıldı).

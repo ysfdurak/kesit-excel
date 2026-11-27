@@ -123,3 +123,10 @@ test('METNEÇEVİR sayı kodları: sıfır doldurma, Türkçe binlik, ölçeklem
     [1500, '#,##0', '1.500'], [1234.5, '#,##0.00', '1.234,50'], [3.14159, '0.000', '3,142'], [-1234, '#.##0;[Kırmızı]-#.##0', '-1.234'], [0.5, '#,00', ',50']];
   for (const [x, k, b] of v) assert.equal(bicimle(x, k), b, k);
 });
+
+test('özel biçim: basamak arasına metin (telefon, vergi no)', async () => {
+  const { ozelBicim } = await import('../docs/motor/bicim.js');
+  assert.equal(ozelBicim(5321234567, '0 (000) 000 00 00').metin, '0 (532) 123 45 67');
+  assert.equal(ozelBicim(1234567890, '000 000 00 00').metin, '123 456 78 90');
+  assert.equal(ozelBicim(42, '"No: "000').metin, 'No: 042');
+});

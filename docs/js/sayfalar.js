@@ -385,6 +385,8 @@ function confirmIki() { if (Date.now() - sifirlaZaman < 4000) return true; sifir
 /* ---------------------------------------------------------------- veri ve hakkında */
 // Ders model sayfaları elle kurulmuştur; Kesit ortak verisinden gelmez (icerik/modeller.js)
 const MODEL_ACIKLAMA = {
+  'Kasa': 'Şube kasa defteri, Ocak 2024: giriş, çıkış ve KDV oranı (yürüyen bakiye ve KDV hesabı; Modül 2).',
+  'Gelir Tablosu': 'Üç yıllık özet gelir tablosu, bin TL (yatay, dikey ve trend analizi; Modül 16).',
   'Kredi': 'Forklift kredisi: tutar, faiz, vade → taksit. Hedef Ara, Veri Tablosu, Senaryo ve ödeme planı (Modül 16).',
   'Yatırım': 'Forklift satın al mı, kirala mı: nakit akışları, iskonto oranı, amortisman (NBD, İVO; Modül 16).',
   'Fiyat': 'Depo hizmeti kâr modeli: başabaş ve kâr hedefi (Hedef Ara; Modül 16).',

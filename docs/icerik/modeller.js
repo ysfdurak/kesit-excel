@@ -142,6 +142,22 @@ const AY_BAS = [45292, 45323, 45352, 45383, 45413, 45444, 45474, 45505, 45536, 4
 const SEZON = [-320, -410, -60, 40, 120, 90, 60, 20, 180, 260, 640, 880];
 const TALEP = AY_BAS.map((t, i) => { const sip = Math.round(4300 + 86 * i + SEZON[i % 12] + [37, -52, 18, -11, 44, -29][i % 6]); return [t, sip, Math.round(sip / 148 + [0.4, -0.6, 0.2, 0.9, -0.3, 0][i % 6]), i + 1]; });
 
+// Şube kasa defteri, Ocak 2024 (Yıldız Ev & Yaşam Konak şubesi). Tutarlar KDV dahil; KDV Oranı satırın oranıdır.
+const KASA = [
+  [45292, 'Devir (aralık sonu kasa)', 'Devir', 30000, null, 0], [45293, 'Peşin satış', 'Satış', 18400, null, 0.2], [45293, 'Kira (Ocak)', 'Kira', null, 25000, 0.2], [45294, 'Peşin satış', 'Satış', 12650, null, 0.2],
+  [45296, 'Elektrik faturası', 'Fatura', null, 3840, 0.2], [45297, 'Peşin satış', 'Satış', 21300, null, 0.2], [45299, 'Ambalaj malzemesi', 'Malzeme', null, 2160, 0.2],
+  [45300, 'Kitap satışı', 'Satış', 2750, null, 0.1], [45303, 'Avans (kurye)', 'Personel', null, 5000, 0], [45304, 'Peşin satış', 'Satış', 16900, null, 0.2],
+  [45306, 'Su faturası', 'Fatura', null, 960, 0.1], [45307, 'Kitap satışı', 'Satış', 1980, null, 0.1], [45310, 'Temizlik malzemesi', 'Malzeme', null, 1440, 0.2],
+  [45311, 'Peşin satış', 'Satış', 19750, null, 0.2], [45314, 'İnternet faturası', 'Fatura', null, 1200, 0.2], [45317, 'Bankaya yatan', 'Banka', null, 45000, 0],
+  [45320, 'Peşin satış', 'Satış', 14200, null, 0.2],
+];
+// Özet gelir tablosu (bin TL), 2022–2024. Finansal tablo analizi: yatay, dikey, trend (Modül 16).
+const GELIR = [
+  ['Net satışlar', 41800, 52600, 61900], ['Satışların maliyeti', 27300, 34900, 40100], ['Brüt kâr', 14500, 17700, 21800],
+  ['Faaliyet giderleri', 9200, 11800, 14300], ['Faaliyet kârı', 5300, 5900, 7500], ['Finansman gideri', 1100, 1900, 2600],
+  ['Vergi öncesi kâr', 4200, 4000, 4900], ['Vergi', 840, 1000, 1225], ['Net kâr', 3360, 3000, 3675],
+];
+
 export const MODELLER = {
   'Kredi': { satirlar: KREDI, ham: true },
   'Yatırım': { satirlar: YATIRIM, ham: true },
@@ -159,5 +175,7 @@ export const MODELLER = {
   'Bölgeler': { basliklar: ['Bölge', 'Gerçekleşen', 'Hedef', 'Kötü', 'Orta'], satirlar: BOLGELER },
   'Vardiyalar': { basliklar: ['Ölçüt', 'A vardiyası', 'B vardiyası'], satirlar: VARDIYALAR },
   'Talep': { basliklar: ['Ay', 'Sipariş', 'Personel', 'Ay no'], satirlar: TALEP, bicim: ['aaa yyyy', '#.##0', null, null] },
+  'Kasa': { basliklar: ['Tarih', 'Açıklama', 'Tür', 'Giriş', 'Çıkış', 'KDV Oranı'], satirlar: KASA, bicim: ['gg.aa.yyyy', null, null, '#.##0,00', '#.##0,00', '0%'] },
+  'Gelir Tablosu': { basliklar: ['Kalem', '2022', '2023', '2024'], satirlar: GELIR, bicim: [null, '#.##0', '#.##0', '#.##0'] },
   'Kayıt': { basliklar: ['Sipariş No', 'Tarih', 'Kanal', 'Kategori', 'Adet', 'İndirim', 'Ürün'], satirlar: KAYIT_SATIR, bicim: [null, 'gg.aa.yyyy', null, null, null, '0%', null] },
 };

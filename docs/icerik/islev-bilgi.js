@@ -73,6 +73,8 @@ const H = [
   ['DSTDEVP', 'vt', 'VSEÇSTDSAPMAS(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda popülasyon standart sapması.', '=VSEÇSTDSAPMAS(A1:K241;"Birim Fiyat";N1:N2)'],
   ['DVAR', 'vt', 'VSEÇVAR(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda örnek varyans.', '=VSEÇVAR(A1:K241;"Birim Fiyat";N1:N2)'],
   ['DVARP', 'vt', 'VSEÇVARS(veritabanı; alan; ölçüt)', 'Ölçüte uyan kayıtlarda popülasyon varyansı.', '=VSEÇVARS(A1:K241;"Birim Fiyat";N1:N2)'],
+  ['TRANSPOSE', 'ara', 'DEVRİK_DÖNÜŞÜM(dizi)', 'Satırları sütun, sütunları satır yapar; sonuç taşar ve kaynağa bağlı kalır (Özel Yapıştır > İşlemi Tersine Çevir ise bağlantısız kopyadır).', '=DEVRİK_DÖNÜŞÜM(A1:K1)'],
+  ['LOOKUP', 'ara', 'ARA(aranan; arama_vektörü; [sonuç_vektörü])', 'Sıralı vektörde aranandan küçük ya da eşit son değeri bulur; hata değerlerini atlar. =ARA(2;1/(koşul);sonuç) koşula uyan SON kaydı verir.', '=ARA(2;1/(D2:D241="İstanbul");B2:B241)'],
   ['SUMIFS', 'kosul', 'ÇOKETOPLA(toplam_aralığı; aralık1; ölçüt1; …)', 'Çok ölçütlü toplam. Toplam aralığı en başta.', '=ÇOKETOPLA(H2:H241;F2:F241;"Elektronik";E2:E241;"Web")'],
   ['AVERAGEIFS', 'kosul', 'ÇOKEĞERORTALAMA(ortalama_aralığı; aralık1; ölçüt1; …)', 'Çok ölçütlü ortalama.', '=ÇOKEĞERORTALAMA(I2:I241;D2:D241;"İstanbul")'],
   ['MAXIFS', 'kosul', 'ÇOKEĞERMAK(mak_aralığı; aralık1; ölçüt1; …)', 'Ölçütleri sağlayanların en büyüğü.', '=ÇOKEĞERMAK(I2:I241;F2:F241;"Giyim")'],

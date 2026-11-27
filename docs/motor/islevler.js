@@ -86,8 +86,16 @@ tanim('FLOOR.MATH', yay(([x, s, m]) => { const a = N(x), sig = s == null ? 1 : M
 const sirali = x => x.slice().sort((p, q) => p - q);
 tanim('MEDIAN', (a, b) => { const x = sayilar(a, b); if (hataMi(x)) return x; if (!x.length) return H.SAYI; const s = sirali(x), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; });
 tanim('MODE.SNGL', (a, b) => { const x = sayilar(a, b); if (hataMi(x)) return x; const say = new Map(); let en = null, ec = 1; for (const v of x) { const c = (say.get(v) || 0) + 1; say.set(v, c); if (c > ec) { ec = c; en = v; } } return en == null ? H.NA : en; });
-tanim('LARGE', (a, b) => { const x = sayilar([a[0]], b), k = N(deger(a[1], b)); if (hataMi(x)) return x; if (hataMi(k)) return k; const s = sirali(x).reverse(); return k >= 1 && k <= s.length ? s[Math.ceil(k) - 1] : H.SAYI; });
-tanim('SMALL', (a, b) => { const x = sayilar([a[0]], b), k = N(deger(a[1], b)); if (hataMi(x)) return x; if (hataMi(k)) return k; const s = sirali(x); return k >= 1 && k <= s.length ? s[Math.ceil(k) - 1] : H.SAYI; });
+// k dizi olabilir: =BÜYÜK(A1:A9;{1;2;3}) üç sonuç döndürür
+const kinci = ters => (a, b) => {
+  const x = sayilar([a[0]], b); if (hataMi(x)) return x;
+  const s = sirali(x); if (ters) s.reverse();
+  const bir = kv => { const k = N(kv); if (hataMi(k)) return k; return k >= 1 && k <= s.length ? s[Math.ceil(k) - 1] : H.SAYI; };
+  const kd = deger(a[1], b);
+  return kd instanceof Dizi ? new Dizi(kd.v.map(sat => sat.map(bir))) : bir(kd);
+};
+tanim('LARGE', kinci(true));
+tanim('SMALL', kinci(false));
 const rank = (a, b) => { const v = N(deger(a[0], b)), x = sayilar([a[1]], b), azalan = !(a[2] != null && N(deger(a[2], b))); if (hataMi(v)) return v; if (hataMi(x)) return x; if (!x.some(y => y === v)) return H.NA; return 1 + x.filter(y => azalan ? y > v : y < v).length; };
 tanim('RANK.EQ', rank); tanim('RANK', rank);
 function varyans(x) { const m = x.reduce((t, v) => t + v, 0) / x.length; return x.reduce((t, v) => t + (v - m) ** 2, 0) / (x.length - 1); }
@@ -365,6 +373,21 @@ tanim('XMATCH', (a, bag) => {
 tanim('CHOOSE', (args, bag) => { const i = N(deger(degerlendir(args[0], bag), bag)); if (hataMi(i)) return i; const k = Math.trunc(i); if (k < 1 || k >= args.length) return H.DEGER; return degerlendir(args[k], bag); }, { tembel: true });
 tanim('ROW', (args, bag) => { if (!args.length || args[0].t === 'bos') return bag.satir; const v = degerlendir(args[0], bag); if (!(v instanceof Bas)) return H.DEGER; return v.satir === 1 ? v.r1 : new Dizi(Array.from({ length: v.satir }, (_, i) => [v.r1 + i])); }, { tembel: true });
 tanim('COLUMN', (args, bag) => { if (!args.length || args[0].t === 'bos') return bag.sutun; const v = degerlendir(args[0], bag); if (!(v instanceof Bas)) return H.DEGER; return v.sutun === 1 ? v.c1 : new Dizi([Array.from({ length: v.sutun }, (_, i) => v.c1 + i)]); }, { tembel: true });
+// DEVRİK_DÖNÜŞÜM: satırları sütun yapar (taşar). Boş hücre 0 olur (Excel gibi).
+tanim('TRANSPOSE', (a, b) => { const d = diziyeCevir(a[0], b); const out = []; for (let c = 0; c < d.sutun; c++) { const s = []; for (let r = 0; r < d.satir; r++) { const v = d.v[r][c]; s.push(v == null ? 0 : v); } out.push(s); } return new Dizi(out); });
+// ARA (LOOKUP, vektör biçimi): aranan değerden küçük ya da eşit son değer; hata değerlerini atlar.
+// Bu yüzden =ARA(2;1/(koşul);sonuç) "koşula uyan son kaydı" verir (klasik dizi formülü hilesi).
+tanim('LOOKUP', (a, b) => {
+  const aranan = deger(a[0], b); if (hataMi(aranan)) return aranan;
+  const ara = diziyeCevir(a[1], b), sonuc = a[2] != null ? diziyeCevir(a[2], b) : null;
+  const liste = ara.satir === 1 || ara.sutun === 1 ? (ara.satir === 1 ? ara.v[0] : ara.v.map(s => s[0])) : ara.v.map(s => s[0]);
+  let en = -1;
+  for (let i = 0; i < liste.length; i++) { const v = liste[i]; if (v == null || hataMi(v) || typeof v !== typeof aranan) continue; if (karsilastir(v, aranan) <= 0) en = i; else if (typeof v === 'number' && !sonuc) break; }
+  if (en < 0) return H.NA;
+  if (!sonuc) return ara.satir === 1 || ara.sutun === 1 ? liste[en] : ara.v[en][ara.sutun - 1];
+  const sl = sonuc.satir === 1 ? sonuc.v[0] : sonuc.v.map(s => s[0]);
+  return en < sl.length ? sl[en] : H.NA;
+});
 tanim('ROWS', (a, b) => { const v = a[0] instanceof Bas ? a[0] : diziyeCevir(a[0], b); return v.satir; });
 tanim('COLUMNS', (a, b) => { const v = a[0] instanceof Bas ? a[0] : diziyeCevir(a[0], b); return v.sutun; });
 

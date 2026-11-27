@@ -99,6 +99,19 @@ function sayiYaz(x, t, dil) {
   }
   const yuv = Number(v.toFixed(ondD.length));
   let [ta, oa = ''] = yuv.toFixed(ondD.length).split('.');
+  // Basamakların arasına metin girmiş tamsayı kalıbı: telefon "0 (000) 000 00 00", vergi no "000 000 00 00".
+  // Rakamlar sağdan sola yer tutuculara dağıtılır; artan baştaki rakamlar ilk yer tutucuya yazılır.
+  const aradaMetin = ondIdx < 0 && usIdx < 0 && !binlik && t.slice(ilk, son + 1).some(z => !z.d);
+  if (aradaMetin) {
+    const yer = t.slice(ilk, son + 1);
+    const zor = yer.filter(z => z.d === '0').length;
+    let r = (ta === '0' && zor === 0 ? '' : ta).padStart(zor, '0').split('');
+    const dolu = yer.map(z => (z.d ? '' : (z.m ?? z.a ?? '')));
+    for (let i = yer.length - 1; i >= 0; i--) if (yer[i].d) { const kalan = yer.slice(0, i).some(z => z.d); dolu[i] = kalan ? (r.pop() ?? (yer[i].d === '?' ? ' ' : '')) : r.join(''); if (!kalan) r = []; }
+    let once = ''; for (let i = 0; i < ilk; i++) once += t[i].m ?? (t[i].a ?? '');
+    let sonra = ''; for (let i = son + 1; i < t.length; i++) if (!sonaEk.includes(i)) sonra += t[i].m ?? (t[i].a ?? '');
+    return once + dolu.join('') + sonra;
+  }
   // tamsayı: 0 zorunlu basamak sayısı kadar sıfırla doldur; # boşsa yazma
   const zorunlu = tamD.filter(d => d !== '#').length;
   if (ta === '0' && zorunlu === 0) ta = '';

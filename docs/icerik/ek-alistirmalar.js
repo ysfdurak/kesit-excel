@@ -82,6 +82,10 @@ export const EK_ALISTIRMALAR = {
     { id: `e1`, soru: `M2:M241'e her satırdaki ürünün katalog maliyetini (Ürünler, E) ÇAPRAZARA ile getirin; bulunamazsa 0.`, sayfa: S, hedef: `M2:M241`, cozum: `=ÇAPRAZARA(G2;Ürünler!$B$2:$B$41;Ürünler!$E$2:$E$41;0)`, gerekli: [`XLOOKUP`], ipuclari: [`Bulunamadı bağımsız değişkeni 0.`] },
     { id: `e2`, soru: `Ürünler sayfasında H2'ye adı "Termos 750ml" olan ürünün kategori, fiyat ve maliyetini (C:E) tek ÇAPRAZARA ile taşırın.`, sayfa: `Ürünler`, hedef: `H2`, okunan: `H2:J2`, cozum: `=ÇAPRAZARA("Termos 750ml";B2:B41;C2:E41)`, gerekli: [`XLOOKUP`], ipuclari: [`Sonuç aralığı birden çok sütun olabilir.`] },
   ],
+  'm5-d8': [
+    { id: `e1`, soru: `M2'ye Kitap kategorisinin F sütununda ilk kez kaçıncı satırda (aralık içindeki konum) geçtiğini ÇAPRAZEŞLEŞTİR ile yazın.`, sayfa: S, hedef: `M2`, cozum: `=ÇAPRAZEŞLEŞTİR("Kitap";F2:F241)`, gerekli: [`XMATCH`], varyantsiz: true, ipuclari: [`ÇAPRAZEŞLEŞTİR(aranan; aralık) konum döndürür; varsayılan tam eşleşme.`] },
+    { id: `e2`, soru: `M2'ye İstanbul'un D sütunundaki SON geçtiği konumu ÇAPRAZEŞLEŞTİR ile yazın.`, sayfa: S, hedef: `M2`, cozum: `=ÇAPRAZEŞLEŞTİR("İstanbul";D2:D241;0;-1)`, gerekli: [`XMATCH`], ipuclari: [`Eşleşme modu 0, arama modu -1 (sondan).`] },
+  ],
   'm6-d1': [
     { id: `e1`, soru: `M2:M241'e ürün adının son 3 karakterini yazın.`, sayfa: S, hedef: `M2:M241`, cozum: `=SAĞDAN(G2;3)`, gerekli: [`RIGHT`], ipuclari: [`SAĞDAN(metin; 3).`] },
     { id: `e2`, soru: `N2:N241'e müşteri adının 2. karakterinden başlayan 3 karakteri yazın.`, sayfa: S, hedef: `N2:N241`, cozum: `=PARÇAAL(C2;2;3)`, gerekli: [`MID`], ipuclari: [`PARÇAAL(metin; başlangıç; uzunluk).`] },
