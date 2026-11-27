@@ -1,0 +1,15 @@
+{
+  "name": "kesit-excel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kesit Excel: tarayıcıda çalışan Türkçe Excel eğitimi (formül motoru, dersler, pivot, Power Query) ve yerel MCP sunucusu",
+  "type": "module",
+  "license": "SEE LICENSE IN LICENSE.md",
+  "scripts": {
+    "test": "node --test tests/motor.test.mjs tests/dersler.test.mjs tests/mcp.test.mjs",
+    "test:libreoffice": "python3 tools/lo_karsilastir.py",
+    "veri": "python3 tools/veri_hazirla.py",
+    "sunucu": "python3 -m http.server 8090"
+  },
+  "engines": { "node": ">=20" }
+}

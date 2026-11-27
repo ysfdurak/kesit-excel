@@ -1,0 +1,14 @@
+{
+  "name": "kesit-excel-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kesit Excel formül motoru ve alıştırmaları için yerel stdio MCP sunucusu",
+  "type": "module",
+  "bin": { "kesit-excel-mcp": "server.mjs" },
+  "engines": { "node": ">=20" },
+  "license": "SEE LICENSE IN ../LICENSE.md",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "4.6.7"
+  }
+}

@@ -1,0 +1,56 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14382a">
+<title>Kesit Excel · Türkçe Excel, gerçek veriyle</title>
+<meta name="description" content="Kesit Excel: tarayıcıda çalışan Türkçe Excel eğitimi. 48 ders, 99 denetlenen alıştırma, özet tablo ve Power Query atölyesi. Kurulum ve hesap yok.">
+<link rel="canonical" href="https://ysfdurak.github.io/kesit-excel/">
+<meta property="og:type" content="website"><meta property="og:locale" content="tr_TR"><meta property="og:site_name" content="Kesit">
+<meta property="og:title" content="Kesit Excel: formülü ezberleme, veride dene"><meta property="og:description" content="Türkçe Excel; 48 ders, 99 alıştırma, pivot ve Power Query. Cevaplar gizli bir kopyada da denetlenir.">
+<meta property="og:url" content="https://ysfdurak.github.io/kesit-excel/"><meta property="og:image" content="https://ysfdurak.github.io/kesit-excel/ekran/karsilama.png"><meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="vendor/fonts.css"><link rel="stylesheet" href="css/kesit.css">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+</head><body>
+<a class="skip" href="#main">İçeriğe geç</a>
+<aside id="sidebar">
+ <a class="brand" href="#"><span class="marker" aria-hidden="true"><svg viewBox="0 0 26 26" width="26" height="26"><rect x="0.5" y="0.5" width="25" height="25" rx="7" fill="var(--accent)"/><path d="M0.5 15.5L15.5 0.5H20.5L0.5 20.5Z" fill="var(--bg)"/><path d="M13 12.5L20 19.5M20 12.5L13 19.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></span><b>Kesit<span>Excel</span></b></a>
+ <div class="nav-label">ÖĞRENME ALANIN</div>
+ <nav id="nav" aria-label="Öğrenme">
+  <a href="#" data-page="home">◫ <span>Ana sayfa</span></a>
+  <a href="#yol" data-page="yol">↗ <span>Öğrenme yolu</span></a>
+  <a href="#dersler" data-page="dersler">▤ <span>Dersler</span></a>
+  <a href="#seviye" data-page="seviye">◔ <span>Seviye testi</span></a>
+  <a href="#ilerleme" data-page="ilerleme">◷ <span>İlerlemem</span></a>
+ </nav>
+ <div class="nav-label">UYGULA VE HAZIRLAN</div>
+ <nav id="nav2" aria-label="Uygulama">
+  <a href="#atolye" data-page="atolye">ƒ <span>Formül atölyesi</span></a>
+  <a href="#pivot" data-page="pivot">⊞ <span>Özet tablo</span></a>
+  <a href="#sorgu" data-page="sorgu">⇶ <span>Power Query</span></a>
+  <a href="#islevler" data-page="islevler">⌕ <span>İşlev rehberi</span></a>
+  <a href="#hatalar" data-page="hatalar">⚠ <span>Sık hatalar</span></a>
+  <a href="#mulakat" data-page="mulakat">❝ <span>Mülakat hazırlığı</span></a>
+  <a href="#veri" data-page="veri">⛁ <span>Kesit verileriyle</span></a>
+ </nav>
+ <div class="theme-control"><label for="theme-select">Görünüm</label><select id="theme-select"><option value="light">Açık</option><option value="dark">Koyu</option></select></div>
+ <div class="ecosystem"><div class="nav-label">KESİT EKOSİSTEMİ</div>
+  <a href="https://ysfdurak.github.io/kesit-sql/" target="_blank" rel="noopener">SQL <span>↗</span></a>
+  <a href="https://ysfdurak.github.io/kesit-powerbi/" target="_blank" rel="noopener">Power BI <span>↗</span></a>
+  <a href="https://ysfdurak.github.io/kesit-python/" target="_blank" rel="noopener">Python <span>↗</span></a>
+  <a href="https://ysfdurak.github.io/kesit-istatistik/" target="_blank" rel="noopener">İstatistik <span>↗</span></a>
+ </div>
+ <div class="side-foot"><span class="status-dot"></span> Tarayıcıda çalışır<small>Türkçe · Kurulum yok · 0.1</small></div>
+</aside>
+<div id="shell">
+ <header><button id="menu" type="button" aria-label="Menüyü aç" aria-expanded="false" aria-controls="sidebar">☰</button><div id="crumb">Öğrenme alanı</div><button id="search-shortcut" type="button" class="header-search">⌕ <span>İşlev ara</span> <kbd>/</kbd></button></header>
+ <main id="main" tabindex="-1"></main>
+ <footer><span>kesit <b>·</b> Bilgiyi karara dönüştür.</span><a href="#hakkinda">Nasıl çalışır, lisans</a><a href="#veri">Veri</a><a href="https://github.com/ysfdurak/kesit-excel/issues/new" target="_blank" rel="noopener">Sorun bildir ↗</a><span>İlerleme bu tarayıcıda saklanır.</span></footer>
+</div>
+<nav class="mobile-tabs" aria-label="Mobil gezinme">
+ <a href="#" data-page="home">⌂<span>Ana sayfa</span></a><a href="#dersler" data-page="dersler">▤<span>Dersler</span></a><a href="#atolye" data-page="atolye">ƒ<span>Atölye</span></a><a href="#islevler" data-page="islevler">⌕<span>İşlevler</span></a><button type="button" data-open-menu="true">☰<span>Menü</span></button>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="js/app.js"></script>
+<script src="sw-kaydet.js"></script>
+</body></html>

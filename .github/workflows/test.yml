@@ -1,0 +1,36 @@
+name: Test
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Sözdizimi
+        run: find docs mcp/server.mjs -name '*.js' -o -name '*.mjs' | grep -v node_modules | xargs -n1 node --check
+      - name: MCP bağımlılıkları
+        run: npm ci --prefix mcp --no-audit --no-fund
+      - name: Motor, dersler, MCP
+        run: npm test
+  libreoffice:
+    # Motorun sonuçlarını LibreOffice Calc ile karşılaştırır (146 formül + 31 elle doğrulanmış vaka)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: LibreOffice ve openpyxl
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-calc python3-openpyxl
+      - name: Karşılaştır
+        run: python3 tools/lo_karsilastir.py
