@@ -116,3 +116,10 @@ test('Excel 365 Türkçe adları (Türkçe web Excel, 27.11.2026)', () => {
   assert.equal(cevir('=PERCENTOF(1,4)', 'tr', ISLEVLER), '=PERCENTOF(1;4)', 'Türkçede de İngilizce adla');
   assert.equal(cevir('=WRAPCOLS(A1:A4,2)', 'tr', ISLEVLER), '=SÜTUNSAR(A1:A4;2)', 'SÜTUNKAYDIR değil');
 });
+
+test('METNEÇEVİR sayı kodları: sıfır doldurma, Türkçe binlik, ölçekleme, renk yok sayılır', async () => {
+  const { bicimle } = await import('../docs/motor/tarih.js');
+  const v = [[176, '00000', '00176'], [1234567, '#.##0', '1.234.567'], [1234567, '#.##0.', '1.235'], [2450000, '#.##0,0.." Mn"', '2,5 Mn'],
+    [1500, '#,##0', '1.500'], [1234.5, '#,##0.00', '1.234,50'], [3.14159, '0.000', '3,142'], [-1234, '#.##0;[Kırmızı]-#.##0', '-1.234'], [0.5, '#,00', ',50']];
+  for (const [x, k, b] of v) assert.equal(bicimle(x, k), b, k);
+});
