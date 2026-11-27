@@ -15,7 +15,8 @@ export function h(etiket, ozellik = {}, ...cocuklar) {
   return el;
 }
 function ekle(el, cs) { for (const c of cs.flat(Infinity)) { if (c == null || c === false) continue; el.append(c instanceof Node ? c : document.createTextNode(String(c))); } }
-export const temizle = el => { while (el.firstChild) el.firstChild.remove(); return el; };
+// replaceChildren tek işlemdir: odaklı bir giriş kaldırılırken tetiklenen blur/change yeniden çizim yapsa da döngü bozulmaz
+export const temizle = el => { el.replaceChildren(); return el; };
 // Element.append dizileri düzleştirmez ve null'u "null" metni yazar; bu yardımcı ikisini de düzeltir.
 export const yerlestir = (el, ...xs) => { ekle(el, xs); return el; };
 

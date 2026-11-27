@@ -7,7 +7,7 @@ import { enTur } from './en.js';
 
 const ROTA = {
   '': ['Ana sayfa', S.anaSayfa, 'home'], yol: ['Öğrenme yolu', S.yolSayfasi, 'yol'], dersler: ['Dersler', S.derslerSayfasi, 'dersler'], ders: ['Ders', S.dersSayfasi, 'dersler'],
-  atolye: ['Formül atölyesi', (m, a) => S.atolyeSayfasi(m, a ? decodeURIComponent(a) : null), 'atolye'], pivot: ['Özet tablo', S.pivotSayfasi, 'pivot'], sorgu: ['Power Query', S.sorguSayfasi, 'sorgu'],
+  atolye: ['Formül atölyesi', (m, a) => S.atolyeSayfasi(m, a ? decodeURIComponent(a) : null), 'atolye'], pivot: ['Özet tablo', S.pivotSayfasi, 'pivot'], sorgu: ['Power Query', S.sorguSayfasi, 'sorgu'], gorsel: ['Görselleştirme', S.gorselSayfasi, 'gorsel'], makro: ['Makro (VBA)', S.makroSayfasi, 'makro'],
   islevler: ['İşlev rehberi', S.islevlerSayfasi, 'islevler'], seviye: ['Seviye testi', S.seviyeSayfasi, 'seviye'], hatalar: ['Sık hatalar', S.hatalarSayfasi, 'hatalar'],
   mulakat: ['Mülakat hazırlığı', S.mulakatSayfasi, 'mulakat'], ilerleme: ['İlerlemem', S.ilerlemeSayfasi, 'ilerleme'], veri: ['Kesit verileriyle', S.veriSayfasi, 'veri'], hakkinda: ['Hakkında', S.hakkindaSayfasi, 'hakkinda'],
 };

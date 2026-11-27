@@ -6,12 +6,16 @@ import { ayristir, belirtec, adresCoz, alanCoz, adres, kaydir, hataMi, HATA_TR, 
 import { ISLEVLER } from './islevler.js';
 import { pivot } from './pivot.js';
 import { sorguCalistir, hucreHatali } from './sorgu.js';
+import { makroCalistir } from './vba.js';
+import { grafikDenetle, aralikVerisi, pivotVerisi } from './grafik.js';
+import { kosulluUygula, gorunumOzeti } from './kosullu.js';
+
 
 // Tohumlu rastgele (mulberry32): aynı tohum aynı varyantı verir, testler tekrarlanabilir.
 export function rastgele(tohum) { let a = tohum >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
 // Varyant: sütun türüne göre bozar. Kimlik sütunları (No, Sicil) ve sabit tutulması istenen sütunlar korunur.
-export function varyant(tablo, tohum = 7, { sabit = [] } = {}) {
+export function varyant(tablo, tohum = 7, { sabit = [], uzat = false } = {}) {
   const r = rastgele(tohum), B = tablo.basliklar, n = tablo.satirlar.length;
   const satirlar = tablo.satirlar.map(s => s.slice());
   const sira = [...Array(n).keys()];
@@ -47,8 +51,11 @@ export function varyant(tablo, tohum = 7, { sabit = [] } = {}) {
     }
   });
   // Satır sayısı da değişsin: ~%5 satır düşer (kalanlar yukarı kayar, sabit aralıklar yine geçerli). "Kaç satır?" sorusunun sabit cevabı tutmaz.
-  const kalan = n > 20 ? out.filter(() => r() >= 0.05) : out;
-  return { ...tablo, satirlar: kalan.length ? kalan : out };
+  let kalan = n > 20 ? out.filter(() => r() >= 0.05) : out;
+  if (!kalan.length) kalan = out;
+  // Makrolar için veri uzar: "For r = 2 To 241" gibi sabit son satır, eklenen satırları atlar ve yakalanır
+  if (uzat) { const ek = Math.max(3, Math.ceil(n * 0.1)); for (let i = 0; i < ek; i++) kalan.push(kalan[Math.floor(r() * kalan.length)].slice()); }
+  return { ...tablo, satirlar: kalan };
 }
 
 function kitapKur(alistirma, tablolar) {
@@ -161,4 +168,109 @@ export function sorguDenetle(alistirma, tablolar, adimlar) {
   if (o.hataSayisi) return { tamam: false, mesaj: `Sonuç tabloda ${o.hataSayisi} hatalı hücre (Error) var. Türü değiştirmeden önce değeri temizleyin ya da hatalı satırları kaldırın.` };
   const t = tabloEsit(o.tablo, c.tablo, { sirasiz: alistirma.sirasiz });
   return t.esit ? { tamam: true, mesaj: 'Doğru. Sorgu beklenen tabloyu üretiyor.', m: o.m } : { tamam: false, mesaj: 'Sonuç tablo beklenenden farklı. ' + t.neden, ipucu: alistirma.ipuclari?.[0] };
+}
+
+/* ---------------------------------------------------------------- makro, grafik, koşullu biçim */
+
+// Makro: öğrencinin ve çözümün makrosu aynı kitapta çalışır; okunan alanın değerleri (ve istenirse biçim, MsgBox çıktısı) karşılaştırılır.
+export function makroDenetle(alistirma, tablolar, kod) {
+  const k = String(kod || '');
+  if (!/\bsub\b/i.test(k)) return { tamam: false, mesaj: 'Makro Sub ile başlar: Sub Adı() … End Sub.' };
+  for (const g of alistirma.gerekliVba || []) if (!new RegExp('\\b' + g.replace(' ', '\\s+') + '\\b', 'i').test(k.replace(/'.*$/gm, ''))) return { tamam: false, mesaj: `Bu alıştırmada ${g} kullanın.`, ipucu: alistirma.ipuclari?.[0] };
+  const calis = (tabs, kd) => { const kt = kitapKur(alistirma, tabs); kt.stiller = new Map(); const r = makroCalistir(kd, kt, { sayfa: alistirma.sayfa, girdiler: alistirma.girdiler }); return { kt, r }; };
+  const karsilastir = (tabs) => {
+    const o = calis(tabs, k), c = calis(tabs, alistirma.cozum);
+    if (!o.r.tamam) return { tamam: false, mesaj: `Makro ${o.r.hata.satir ? o.r.hata.satir + '. satırda ' : ''}durdu: ${o.r.hata.mesaj}` };
+    if (!c.r.tamam) throw new Error('Çözüm makrosu çalışmadı: ' + c.r.hata.mesaj);
+    const al = { ...alanCoz(alistirma.okunan) };
+    // Okunan alan veriyle birlikte uzar (gizli kopya görünen tablodan uzun olabilir)
+    const tb = tabs[alistirma.sayfa]; if (tb && tb.basliklar && al.r2 > 2) al.r2 = Math.max(al.r2, tb.satirlar.length + 1);
+    const ov = o.kt.degerler(alistirma.sayfa, al), cv = c.kt.degerler(alistirma.sayfa, al);
+    for (let i = 0; i < ov.length; i++) for (let j = 0; j < ov[i].length; j++) if (!esit(ov[i][j], cv[i][j])) return { tamam: false, fark: true, mesaj: `${adres(al.r1 + i, al.c1 + j)} hücresinde sonucunuz ${goster(ov[i][j]) || '(boş)'}, beklenen ${goster(cv[i][j]) || '(boş)'}.` };
+    if (alistirma.stilKontrol) {
+      for (let r = al.r1; r <= al.r2; r++) for (let c2 = al.c1; c2 <= al.c2; c2++) {
+        const key = alistirma.sayfa + '!' + r + ',' + c2, so = o.kt.stiller.get(key) || {}, sc = c.kt.stiller.get(key) || {};
+        for (const p of alistirma.stilKontrol) if ((so[p] ?? null) !== (sc[p] ?? null) && !(p === 'kalin' && !so[p] && !sc[p])) return { tamam: false, fark: true, mesaj: `${adres(r, c2)} hücresinin biçimi beklenenden farklı (${{ kalin: 'kalın yazı', dolgu: 'dolgu rengi', sayiBicimi: 'sayı biçimi', yaziRenk: 'yazı rengi' }[p]}).` };
+      }
+    }
+    if (alistirma.ciktiKontrol) { const a = o.r.cikti.filter(x => x.tur === 'msgbox').map(x => x.metin), b = c.r.cikti.filter(x => x.tur === 'msgbox').map(x => x.metin); if (a.join('\n') !== b.join('\n')) return { tamam: false, fark: true, mesaj: `MsgBox çıktısı farklı: "${a.join(' / ') || '(yok)'}", beklenen "${b.join(' / ')}".` }; }
+    return { tamam: true, cikti: o.r.cikti };
+  };
+  const g = karsilastir(tablolar);
+  if (!g.tamam) return { ...g, ipucu: alistirma.ipuclari?.[0] };
+  if (!alistirma.varyantsiz) {
+    const tv = Object.fromEntries(Object.entries(tablolar).map(([ad, t]) => [ad, t.basliklar && !t.ham && ad === alistirma.sayfa ? varyant(t, alistirma.tohum ?? 11, { sabit: alistirma.sabitSutunlar || [], uzat: true }) : t]));
+    const v = karsilastir(tv);
+    if (!v.tamam) return { tamam: false, gizli: true, mesaj: 'Görünen veride doğru çalıştı ama satır sayısı ve değerleri farklı gizli bir kopyada tutmadı. Son satırı sabit yazmış olabilirsiniz (241 yerine Cells(Rows.Count, 1).End(xlUp).Row kullanın) ya da sonucu elle yazmış olabilirsiniz. ' + v.mesaj, ipucu: alistirma.ipuclari?.[1] || alistirma.ipuclari?.[0] };
+  }
+  return { tamam: true, mesaj: 'Doğru. Makro hem gördüğünüz tabloda hem de farklı uzunluktaki gizli kopyada doğru sonuç verdi.', cikti: g.cikti };
+}
+
+// Grafik: { veriKaynagi: { alan } ya da { pivot }, secenek } → kurallar + veri karşılaştırması
+export function grafikVerisiAl(tablolar, sayfa, kaynak, hazirlik) {
+  if (kaynak.pivot) return pivotVerisi(pivot(tablolar[sayfa], kaynak.pivot));
+  const kt = kitapKur({ sayfa, hazirlik }, tablolar);
+  const al = alanCoz(kaynak.alan); if (!al) throw new Error('Geçersiz veri aralığı');
+  const t = tablolar[sayfa];
+  return aralikVerisi(kt.degerler(sayfa, al), { seriYonu: kaynak.seriYonu || 'otomatik', bicimler: (t.bicim || []).slice(al.c1 - 1, al.c2) });
+}
+export function grafikAlistirmaDenetle(alistirma, tablolar, cevap) {
+  let veri, beklenen;
+  try { veri = grafikVerisiAl(tablolar, alistirma.sayfa, cevap.kaynak, alistirma.hazirlik); } catch (e) { return { tamam: false, mesaj: e.message }; }
+  if (alistirma.cozum.kaynak) beklenen = grafikVerisiAl(tablolar, alistirma.sayfa, alistirma.cozum.kaynak, alistirma.hazirlik);
+  return grafikDenetle(alistirma.kural || {}, veri, cevap.secenek || {}, beklenen);
+}
+
+// Koşullu biçim: kuralların işaretlediği hücreler görünen ve gizli veride çözümle aynı olmalı
+export function kosulluDenetle(alistirma, tablolar, kurallar) {
+  if (!kurallar || !kurallar.length) return { tamam: false, mesaj: 'Önce bir kural ekleyin.' };
+  const dene = tabs => {
+    const k1 = kitapKur(alistirma, tabs), k2 = kitapKur(alistirma, tabs);
+    let a; try { a = gorunumOzeti(kosulluUygula(k1, alistirma.sayfa, kurallar)); } catch (e) { return { hata: e.message }; }
+    const b = gorunumOzeti(kosulluUygula(k2, alistirma.sayfa, alistirma.cozum));
+    const anah = new Set([...Object.keys(a), ...Object.keys(b)]);
+    for (const x of [...anah].sort((p, q) => { const [r1, c1] = p.split(',').map(Number), [r2, c2] = q.split(',').map(Number); return r1 - r2 || c1 - c2; })) {
+      if ((a[x] || '') !== (b[x] || '')) { const [r, c] = x.split(',').map(Number); return { fark: `${adres(r, c)}: ${b[x] && !a[x] ? 'bu hücre biçimlenmeliydi' : !b[x] && a[x] ? 'bu hücre biçimlenmemeliydi' : 'biçim beklenenden farklı'}` }; }
+    }
+    return {};
+  };
+  const g = dene(tablolar);
+  if (g.hata) return { tamam: false, mesaj: g.hata };
+  if (g.fark) return { tamam: false, mesaj: 'Biçimlenen hücreler beklenenden farklı. İlk fark ' + g.fark + '.', ipucu: alistirma.ipuclari?.[0] };
+  if (!alistirma.varyantsiz) {
+    const tv = Object.fromEntries(Object.entries(tablolar).map(([ad, t]) => [ad, t.basliklar && !t.ham && ad === alistirma.sayfa ? varyant(t, alistirma.tohum ?? 11) : t]));
+    const v = dene(tv);
+    if (v.fark) return { tamam: false, gizli: true, mesaj: 'Görünen veride doğru ama gizli kopyada tutmadı: kural formülündeki $ işaretlerine bakın (sütun sabit, satır serbest olmalı) ya da eşik sabit yazılmış olabilir. ' + v.fark, ipucu: alistirma.ipuclari?.[1] };
+  }
+  return { tamam: true, mesaj: 'Doğru. Kural hem gördüğünüz tabloda hem de gizli kopyada aynı hücreleri biçimlendiriyor.' };
+}
+
+// Pano: KPI değeri (dilimleyici filtreleriyle) ve pano yapısının soruya uygunluğu
+export function panoKpi(tablo, k, filtreler = []) {
+  const B = tablo.basliklar, i = B.indexOf(k.alan); if (i < 0) return null;
+  const fs = filtreler.filter(f => f.degerler && f.degerler.length).map(f => ({ i: B.indexOf(f.alan), d: f.degerler }));
+  const rows = tablo.satirlar.filter(r => fs.every(f => f.d.includes(r[f.i])));
+  const v = rows.map(r => r[i]).filter(x => x != null && x !== '');
+  if (k.ozet === 'say') return v.length;
+  if (k.ozet === 'benzersiz') return new Set(v.map(x => typeof x === 'string' ? x.toLocaleLowerCase('tr') : x)).size;
+  const s = v.filter(x => typeof x === 'number');
+  if (k.ozet === 'ortalama') return s.length ? s.reduce((a, b) => a + b, 0) / s.length : null;
+  return s.reduce((a, b) => a + b, 0);
+}
+// alistirma.kural: { dilimler:[alan], kpi:[{alan, ozet}], grafikler:[{satir, deger?, ozet?, turler?}], enAzGrafik, baslikGerekli }
+export function panoDenetle(alistirma, tablolar, pano) {
+  const k = alistirma.kural || {}, p = pano || {};
+  const dil = (p.dilimler || []).map(d => d.alan), gr = p.grafikler || [], kp = p.kpi || [];
+  if (k.baslikGerekli && !String(p.baslik || '').trim()) return { tamam: false, mesaj: 'Panonun bir başlığı olmalı: kim, ne için bakıyor? (ör. "Satış panosu · 2024")' };
+  for (const a of k.dilimler || []) if (!dil.includes(a)) return { tamam: false, mesaj: `"${a}" dilimleyicisi eksik: yönetici bu alana göre süzmek istiyor.` };
+  for (const x of k.kpi || []) if (!kp.some(y => y.alan === x.alan && (!x.ozet || y.ozet === x.ozet))) return { tamam: false, mesaj: `KPI eksik: ${x.alan} (${x.ozet || 'herhangi bir özet'}).` };
+  if (k.enAzGrafik && gr.length < k.enAzGrafik) return { tamam: false, mesaj: `Panoda en az ${k.enAzGrafik} grafik olmalı; şu an ${gr.length}.` };
+  for (const x of k.grafikler || []) {
+    const g = gr.find(y => y.yapi?.satir === x.satir && (x.deger === undefined || (y.yapi.degerler?.[0]?.alan || null) === x.deger) && (!x.ozet || y.yapi.degerler?.[0]?.ozet === x.ozet));
+    if (!g) return { tamam: false, mesaj: `"${x.satir}" kırılımında ${x.deger ? x.deger + ' değerini gösteren' : 'bir'} grafik eksik.` };
+    if (x.turler && !x.turler.includes(g.tur)) return { tamam: false, mesaj: x.turNeden || `"${x.satir}" grafiği için tür uygun değil.` };
+    if (alistirma.sayfa && tablolar) { try { pivot(tablolar[alistirma.sayfa], g.yapi); } catch (e) { return { tamam: false, mesaj: e.message }; } }
+  }
+  if ((k.enCokGrafik ?? 4) < gr.length) return { tamam: false, mesaj: `Panoda ${gr.length} grafik var; tek bakışta okunması için en çok ${k.enCokGrafik ?? 4}.` };
+  return { tamam: true, mesaj: 'Doğru. Pano soruyu cevaplıyor: dilimleyiciler bütün kartları birlikte süzüyor.' };
 }

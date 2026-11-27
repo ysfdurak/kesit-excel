@@ -32,7 +32,9 @@ Sondaki klasör(ler) **izinli klasörlerdir**: `formul_hesapla` yalnız bunları
 | `formul_cevir` | `formul`, `hedef` (`tr`/`en`) | Çevrilmiş formül (boşluklar korunur) |
 | `islev_bilgisi` | `ad` ya da `ara` / `kategori` | Söz dizimi, açıklama, örnek, işlevin geçtiği dersler |
 | `alistirma_getir` | `ders` (m4-d3), `alistirma` (a1), `cozum_goster`; ya da `rol` | Soru, sayfa ve sütunlar, hedef hücre, ipuçları; rolün ders sırası |
-| `alistirma_denetle` | `ders`, `alistirma` ve `formul` / `pivot` / `adimlar` | `tamam`, açıklama, gizli denemede yakalandı mı, ipucu, (Power Query için) M kodu |
+| `alistirma_denetle` | `ders`, `alistirma` ve alıştırmanın türüne göre `formul` / `pivot` / `adimlar` / `grafik` / `kurallar` / `pano` / `vba` / `secim` | `tamam`, açıklama, gizli denemede yakalandı mı, ipucu, (Power Query için) M kodu |
+| `grafik_ciz` | `sayfa`, `alan` (A1:D5) ya da `pivot`; `secenek` (`tur`, `baslik`, `yigin`, `eksenMin`, `veriEtiketi`, `egilim`…), `tema`, `genislik` | Kategori ve seri adları, renkleri gömülü `svg` metni |
+| `makro_calistir` | `kod` (VBA), isteğe bağlı `sayfa`, `makro`, `oku` (en çok 500 hücre), `girdiler` (InputBox) | `tamam`, hata satırı ve iletisi, MsgBox/Debug.Print çıktısı, yazılan hücre sayısı, okunan değerler |
 
 Hazır sayfalar: Satışlar, Ürünler, Personel, İzinler, Teslimat, Bütçe, Tatiller, Bayi, Müşteri ham, Ürün ham, Hedef. Kendi veriniz `Veri` sayfasına A1'den yazılır; metin değerler Türkçe girişe göre çevrilir ("1.250,50" → 1250,5; "15.03.2025" → tarih).
 
@@ -42,9 +44,12 @@ Hazır sayfalar: Satışlar, Ürünler, Personel, İzinler, Teslimat, Bütçe, T
 - "Bu formülü İngilizce Excel'e çevir: =EĞER(DÜŞEYARA(A2;$F$2:$G$9;2;YANLIŞ)>1,5;"evet";"hayır")" → `formul_cevir`
 - "Finans rolü için ders sırasını ver, sonra 12.4'ün ikinci alıştırmasını getir." → `alistirma_getir`
 - "Şu formülüm doğru mu: =ETOPLA(F2:F241;"Elektronik";H2:H241)" → `alistirma_denetle`
+- "Kategori başına toplam adedi çubuk grafikle çiz." → `grafik_ciz` (pivot: satir Kategori, değer Adet)
+- "Bu makro 300 satırlık veride de çalışır mı?" → `makro_calistir`, sonra `alistirma_denetle` (vba)
 
 ## Güvenlik
 
 - Yalnız okuma: dosya yazma aracı yok, tüm araçlar `readOnlyHint`.
 - İzinli klasör denetimi gerçek yol (`realpath`) üzerinden yapılır; sembolik bağla dışarı çıkılamaz.
+- VBA yorumlayıcısı yalnız bellekteki kopya kitap üzerinde çalışır; dosya, ağ, kabuk, `CreateObject` ve Windows API yoktur. 2 milyon adım ve 300.000 hücre yazma sınırı sonsuz döngüyü durdurur.
 - Formül uzunluğu 4000 karakter, iç içe işlev 64, dizi 200.000 hücre, CSV 5 MB ile sınırlı; motor `eval` kullanmaz.

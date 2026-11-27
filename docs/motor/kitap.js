@@ -120,6 +120,19 @@ export class Kitap {
     for (let r = a.r1; r <= a.r2; r++) { const s = []; for (let c = a.c1; c <= a.c2; c++) s.push(this.hucre(sayfaAd, r, c)); o.push(s); }
     return o;
   }
+  // Bir formülü hücreye yazmadan, verilen konumdaymış gibi hesaplar (koşullu biçim kuralları, doğrulama)
+  formulDegerlendir(sayfaAd, r, c, formul) {
+    const s = this.sayfaBul(sayfaAd); if (!s) return H.BASV;
+    let agac; try { agac = ayristir(formul, ISLEVLER); } catch { return new Hata('#FORMÜL'); }
+    try { const v = coz(degerlendir(agac, { kitap: this, sayfa: s, satir: r, sutun: c, adim: this.adim, bugun: this.bugun, degisken: null }), { kitap: this }); return v instanceof Dizi ? v.v[0][0] : v; }
+    catch (e) { return new Hata(e && e.kod ? e.kod : '#CALC!'); }
+  }
+  // Hazır bir AST'yi hesaplar (VBA WorksheetFunction köprüsü)
+  formulDegerlendirAgac(sayfaAd, agac) {
+    const s = this.sayfaBul(sayfaAd); if (!s) return H.BASV;
+    try { const v = coz(degerlendir(agac, { kitap: this, sayfa: s, satir: 1, sutun: 1, adim: this.adim, bugun: this.bugun, degisken: null }), { kitap: this }); return v; }
+    catch (e) { return new Hata(e && e.kod ? e.kod : '#CALC!'); }
+  }
   tasmaMi(sayfaAd, r, c) { const s = this.sayfaBul(sayfaAd); return !!s && this.tasmaSahibi.has(s.ad + '!' + anahtar(r, c)); }
 }
 

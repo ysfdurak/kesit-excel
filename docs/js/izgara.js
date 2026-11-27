@@ -7,10 +7,17 @@ import { belirtec, adres, alanCoz, adresCoz, sutunHarf, cevir, kaydir, hataMi, y
 import { ISLEVLER } from '../motor/islevler.js';
 import { ISLEV_BILGI, islevBul } from '../icerik/islev-bilgi.js';
 import { HATA_ACIKLAMA } from '../motor/denetci.js';
+import { kosulluUygula, miniGrafik } from '../motor/kosullu.js';
+import { svgDugum } from './grafik-ui.js';
 
 const REF_RENK = 6;
 const EKLENEBILIR_ONCE = /[=(;,+\-*/^&<>:]\s*$/;
 let sayac = 0;
+
+// VBA rengi BGR tamsayı: 255 kırmızı, 65535 sarı → CSS
+export const vbaRenk = n => { const x = Number(n) | 0; return `rgb(${x & 255}, ${(x >> 8) & 255}, ${(x >> 16) & 255})`; };
+// VBA NumberFormat İngilizce koddur (#,##0.00; dd.mm.yyyy) → Kesit'in Türkçe biçimleyicisi
+export const vbaBicim = b => String(b).replace(/,(?=[#0])/g, '§').replace(/\.(?=[0#])/g, ',').replace(/§/g, '.').replace(/d/g, 'g').replace(/m(?![^"]*")/g, 'a').replace(/h/g, 's');
 
 export class Izgara {
   // secenek: { kitap, sayfa, satirSayisi, sutunSayisi, bicimler: [kolonBiçimi], hucreBicim: {adr: biçim}, hedef, okunan, duzenlenebilir: (r,c)=>bool, onYaz(r,c,icerik), onDoldur(formul) }
@@ -159,8 +166,13 @@ export class Izgara {
     this.aciklama.textContent = `${adres(this.hedef.r1, this.hedef.c1)} formülü ${adres(this.hedef.r2, this.hedef.c1)} hücresine kadar kopyalandı. Bir alt hücreyi seçip başvuruların nasıl kaydığına bakın.`;
     if (this.s.onDegis) this.s.onDegis();
   }
+  // Koşullu biçim kuralları ve mini grafikler dışarıdan değiştirilebilir (Koşullu biçim / Mini grafik alıştırmaları)
+  kurallariAyarla(kurallar) { this.s.kurallar = kurallar; this.guncelle(); }
+  miniAyarla(mini) { this.s.mini = mini; this.guncelle(); }
   guncelle() {
     const bic = this.s.bicimler || [], hb = this.s.hucreBicim || {};
+    let gor = null; try { gor = this.s.kurallar && this.s.kurallar.length ? kosulluUygula(this.k, this.sayfa, this.s.kurallar) : null; this.kuralHatasi = null; } catch (e) { this.kuralHatasi = e.message; }
+    const stiller = this.k.stiller;
     for (const [k, td] of this.hucreler) {
       const [r, c] = k.split(',').map(Number);
       const v = this.k.hucre(this.sayfa, r, c), ic = this.k.icerik(this.sayfa, r, c);
@@ -171,6 +183,26 @@ export class Izgara {
       td.classList.toggle('hata', hataMi(v));
       td.classList.toggle('formul', formul);
       td.classList.toggle('tasma', this.k.tasmaMi(this.sayfa, r, c));
+      // Makronun yazdığı biçim (VBA renkleri BGR tamsayıdır: kırmızı = 255)
+      const st = stiller && stiller.get(this.sayfa + '!' + r + ',' + c);
+      td.classList.toggle('kalin', !!(st && st.kalin));
+      td.style.backgroundColor = st && st.dolgu != null && st.dolgu !== 16777215 ? vbaRenk(st.dolgu) : '';
+      td.style.color = st && st.yaziRenk ? vbaRenk(st.yaziRenk) : '';
+      if (st && st.sayiBicimi && typeof v === 'number' && !st.sayiBicimi.match(/^general$/i)) td.textContent = goster(v, vbaBicim(st.sayiBicimi));
+      // Koşullu biçim görünümü
+      const g = gor && gor.get(r + ',' + c);
+      for (const k of ['kb-kirmizi', 'kb-sari', 'kb-yesil', 'kb-kalin']) td.classList.remove(k);
+      td.style.backgroundImage = '';
+      if (g) {
+        if (g.stil) td.classList.add('kb-' + g.stil);
+        if (g.cubuk) { const b0 = g.cubuk.bas * 100, b1 = b0 + g.cubuk.oran * 100, renk = g.cubuk.negatif ? 'var(--kb-neg)' : 'var(--kb-cubuk)'; td.style.backgroundImage = `linear-gradient(90deg, transparent ${b0}%, ${renk} ${b0}%, ${renk} ${b1}%, transparent ${b1}%)`; }
+        if (g.renk) { const t = g.renk.ters ? 1 - g.renk.t : g.renk.t; td.style.backgroundColor = g.renk.uclu ? (t < 0.5 ? `color-mix(in srgb, var(--kb-dus) ${Math.round((0.5 - t) * 190)}%, transparent)` : `color-mix(in srgb, var(--kb-yuk) ${Math.round((t - 0.5) * 190)}%, transparent)`) : `color-mix(in srgb, var(--kb-sira) ${Math.round(8 + t * 80)}%, transparent)`; }
+        if (g.simge) td.prepend(h('span', { sinif: 'simge simge-' + g.simge, 'aria-label': { yukari: 'yüksek', yan: 'orta', asagi: 'düşük' }[g.simge] }, { yukari: '▲', yan: '▶', asagi: '▼' }[g.simge] + ' '));
+      }
+      // Mini grafik
+      td.classList.remove('mini-hucre');
+      const m = this.s.mini && this.s.mini.find(x => x.hucre === adres(r, c));
+      if (m) { const svg = miniGrafik(this.k, this.sayfa, m); temizle(td); if (svg) td.append(svgDugum(svg)); td.classList.add('mini-hucre'); }
     }
   }
   refBoya() {

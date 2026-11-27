@@ -8,4 +8,5 @@ __pycache__/
 *.py[cod]
 *.xlsx
 !tests/fixtures/*.xlsx
+!docs/indir/*.xlsx
 /tmp/

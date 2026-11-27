@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DERSLER, MODULLER } from '../docs/icerik/dersler.js';
 import { SAYFALAR } from '../docs/icerik/sayfalar.js';
-import { formulDenetle, pivotDenetle, sorguDenetle } from '../docs/motor/denetci.js';
+import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, kosulluDenetle, panoDenetle } from '../docs/motor/denetci.js';
 import { Kitap } from '../docs/motor/kitap.js';
 import { ayristir, hataMi } from '../docs/motor/formul.js';
 import { ISLEVLER } from '../docs/motor/islevler.js';
@@ -33,6 +33,30 @@ for (const d of DERSLER) {
       const ad = `${d.id}/${a.id}`;
       if (a.tur === 'pivot') { const r = pivotDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj); continue; }
       if (a.tur === 'sorgu') { const r = sorguDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj); continue; }
+      if (a.tur === 'secmeli') { assert.ok(Number.isInteger(a.dogru) && a.dogru >= 0 && a.dogru < a.secenekler.length, ad + ': doğru seçenek yok'); assert.ok(a.aciklama, ad + ': açıklama yok'); continue; }
+      if (a.tur === 'grafik') {
+        assert.ok(grafikAlistirmaDenetle(a, SAYFALAR, a.cozum).tamam, ad + ': çözüm geçmedi');
+        // Başlangıç ayarı (soru) çözüm değildir: öğrenci hiçbir şey değiştirmeden geçememeli
+        const b = grafikAlistirmaDenetle(a, SAYFALAR, { kaynak: a.kaynak, secenek: a.secenek || {} });
+        assert.equal(b.tamam, false, ad + ': başlangıç ayarı denetimden geçiyor'); continue;
+      }
+      if (a.tur === 'pivotGrafik') {
+        assert.ok(pivotDenetle({ ...a, cozum: a.cozum.yapi }, SAYFALAR, a.cozum.yapi).tamam, ad + ': özet tablo');
+        assert.ok(grafikAlistirmaDenetle({ ...a, cozum: {} }, SAYFALAR, { kaynak: { pivot: a.cozum.yapi }, secenek: a.cozum.secenek }).tamam, ad + ': grafik'); continue;
+      }
+      if (a.tur === 'kosullu') {
+        assert.ok(kosulluDenetle(a, SAYFALAR, a.cozum).tamam, ad + ': çözüm geçmedi');
+        assert.equal(kosulluDenetle(a, SAYFALAR, []).tamam, false, ad); continue;
+      }
+      if (a.tur === 'pano') {
+        assert.ok(panoDenetle(a, SAYFALAR, a.cozum).tamam, ad + ': ' + panoDenetle(a, SAYFALAR, a.cozum).mesaj);
+        assert.equal(panoDenetle(a, SAYFALAR, a.baslangic).tamam, false, ad + ': boş pano geçiyor'); continue;
+      }
+      if (a.tur === 'makro') {
+        const r = makroDenetle(a, SAYFALAR, a.cozum); assert.ok(r.tamam, ad + ': ' + r.mesaj);
+        if (a.yanlis) { const y = makroDenetle(a, SAYFALAR, a.yanlis); assert.equal(y.tamam, false, ad + ': sabit son satırlı makro yakalanmadı'); assert.equal(y.gizli, true, ad + ': görünen tabloda tutmalı, gizli kopyada yakalanmalı'); }
+        assert.equal(makroDenetle(a, SAYFALAR, 'Sub Bos()\nEnd Sub').tamam, false, ad + ': boş makro geçiyor'); continue;
+      }
       ayristir(a.cozum, ISLEVLER);
       // Çözüm ilk satırda boş olmayan bir kaynak hücreye bakmalı (yanlış satır numarası yazılmış alıştırmayı yakalar)
       {

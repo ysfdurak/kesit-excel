@@ -10,13 +10,16 @@ import { z } from 'zod';
 import { Kitap, goster } from '../docs/motor/kitap.js';
 import { cevir, ayristir, belirtec, hataMi, islevAdi, yazimBul, alanCoz, adresCoz, adres, EN_TR, HATA_TR, SINIR } from '../docs/motor/formul.js';
 import { ISLEVLER } from '../docs/motor/islevler.js';
-import { formulDenetle, pivotDenetle, sorguDenetle, HATA_ACIKLAMA } from '../docs/motor/denetci.js';
+import { formulDenetle, pivotDenetle, sorguDenetle, makroDenetle, grafikAlistirmaDenetle, grafikVerisiAl, kosulluDenetle, panoDenetle, HATA_ACIKLAMA } from '../docs/motor/denetci.js';
+import { grafikCiz, TURLER } from '../docs/motor/grafik.js';
+import { makroCalistir } from '../docs/motor/vba.js';
+import { KURAL_TURLERI } from '../docs/motor/kosullu.js';
 import { ISLEV_BILGI, KATEGORILER, islevBul } from '../docs/icerik/islev-bilgi.js';
 import { DERSLER, MODULLER } from '../docs/icerik/dersler.js';
 import { SAYFALAR } from '../docs/icerik/sayfalar.js';
 import { ROLLER } from '../docs/icerik/ekler.js';
 
-const SURUM = '0.1.0';
+const SURUM = '0.2.0';
 const ROOTS = (process.argv.slice(2).filter(a => !a.startsWith('--')).length ? process.argv.slice(2).filter(a => !a.startsWith('--')) : [os.homedir()]).map(r => path.resolve(r));
 const inside = real => ROOTS.some(r => real === r || real.startsWith(r.endsWith(path.sep) ? r : r + path.sep));
 const MAKS_CSV = 5 * 1024 * 1024, MAKS_HUCRE = 200000;
@@ -55,10 +58,21 @@ function kitapKur(ek) {
 }
 const deger = v => v == null ? null : hataMi(v) ? { hata: HATA_TR[v.kod] || v.kod, aciklama: HATA_ACIKLAMA[v.kod] || null } : v;
 
+const PIVOT = z.object({ satir: z.string().nullable().optional(), sutun: z.string().nullable().optional(), degerler: z.array(z.object({ alan: z.string(), ozet: z.enum(['toplam', 'say', 'ortalama', 'en_buyuk', 'en_kucuk']).optional() })).max(4).optional(),
+      filtreler: z.array(z.object({ alan: z.string(), degerler: z.array(z.union([z.string(), z.number()])).max(100) })).max(3).optional(), grupla: z.record(z.string(), z.enum(['ay', 'ceyrek', 'yil'])).optional(),
+      goster: z.enum(['deger', 'genelYuzde', 'satirYuzde', 'sutunYuzde']).optional() });
+const GRAFIK_SECENEK = z.object({ tur: z.enum(Object.keys(TURLER)), baslik: z.string().max(120).optional(), yigin: z.enum(['yok', 'yigin', 'yuzde']).optional(), veriEtiketi: z.boolean().optional(),
+  eksenMin: z.number().nullable().optional(), ikincilEksen: z.boolean().optional(), egilim: z.boolean().optional(), gosterge: z.enum(['alt', 'yok']).optional() });
+const KURAL = z.object({ tur: z.enum(Object.keys(KURAL_TURLERI)), alan: z.string().regex(/^[A-Z]{1,3}\d+(:[A-Z]{1,3}\d+)?$/), op: z.enum(['>', '>=', '<', '<=', '=', '<>', 'arasinda', 'icerir']).optional(),
+  deger: z.union([z.number(), z.string().max(200)]).optional(), deger2: z.number().optional(), n: z.number().int().min(1).max(1000).optional(), alt: z.boolean().optional(), yuzde: z.boolean().optional(),
+  benzersiz: z.boolean().optional(), formul: z.string().max(500).optional(), stil: z.enum(['kirmizi', 'sari', 'yesil', 'kalin']).optional(), uclu: z.boolean().optional(), ters: z.boolean().optional() });
+
+const pvTam = p => ({ satir: null, sutun: null, degerler: [], filtreler: [], grupla: {}, goster: 'deger', ...p });
+
 const server = new McpServer({ name: 'kesit-excel', version: SURUM }, {
-  instructions: 'Kesit Excel: Türkçe Excel formül motoru (131 işlev, Türkçe ve İngilizce adlar, dinamik diziler) ve 48 derslik alıştırma seti. ' +
+  instructions: 'Kesit Excel: Türkçe Excel formül motoru (131 işlev, Türkçe ve İngilizce adlar, dinamik diziler) ve 61 derslik alıştırma seti (grafik, pano ve VBA makro dahil). ' +
     'Formülü Türkçe (=ETOPLA(A:A;"x";B:B)) ya da İngilizce (=SUMIF(A:A,"x",B:B)) yazabilirsiniz. Hazır sayfalar: ' + Object.keys(SAYFALAR).join(', ') + '. ' +
-    'Kendi verinizi satırlar dizisi ya da izinli klasördeki CSV ile verin. Sunucu dosya yazmaz ve ağa çıkmaz.',
+    'Kendi verinizi satırlar dizisi ya da izinli klasördeki CSV ile verin. grafik_ciz SVG metni döndürür, makro_calistir VBA\'yı yalıtılmış kopyada çalıştırır. Sunucu dosya yazmaz ve ağa çıkmaz.',
 });
 
 server.registerTool('formul_hesapla', {
@@ -121,6 +135,40 @@ server.registerTool('islev_bilgisi', {
 });
 
 const dersOzet = d => `${d.id} · Modül ${MODULLER.find(m => m.id === d.modul).no} · ${d.baslik} (${d.sure} dk, ${d.alistirmalar.length} alıştırma)`;
+server.registerTool('grafik_ciz', {
+  title: 'Grafik çiz',
+  description: 'Hazır bir sayfadan (aralık ya da özet tablo) Excel türü bir grafik çizer ve bağımsız SVG metni döndürür (renkler gömülü, renk körlüğüne göre denetlenmiş palet). Türler: ' + Object.entries(TURLER).map(([k, t]) => k + ' (' + t.ad + ')').join(', ') + '.',
+  inputSchema: {
+    sayfa: z.enum(Object.keys(SAYFALAR)), alan: z.string().regex(/^[A-Z]{1,3}\d+:[A-Z]{1,3}\d+$/).optional().describe('Veri aralığı, başlık satırıyla, ör. A1:D5'),
+    pivot: PIVOT.optional().describe('Aralık yerine özet tablo yapısı (ham satırları özetleyip çizer)'), seriYonu: z.enum(['otomatik', 'sutun', 'satir']).optional(),
+    secenek: GRAFIK_SECENEK, tema: z.enum(['acik', 'koyu']).optional(), genislik: z.number().int().min(320).max(1600).optional(), yukseklik: z.number().int().min(200).max(1000).optional(),
+  },
+  annotations: { readOnlyHint: true, openWorldHint: false },
+}, async ({ sayfa, alan, pivot, seriYonu, secenek, tema, genislik, yukseklik }) => {
+  if (!alan && !pivot) return hata('alan ya da pivot verin.');
+  try {
+    const v = grafikVerisiAl(SAYFALAR, sayfa, pivot ? { pivot: pvTam(pivot) } : { alan, seriYonu });
+    const svg = grafikCiz(v, { ...secenek, bagimsiz: true, tema: tema || 'acik', genislik: genislik || 800, yukseklik: yukseklik || 450 });
+    return text(JSON.stringify({ kategoriler: v.kategoriler.length, seriler: v.seriler.map(s => s.ad), svg }, null, 1));
+  } catch (e) { return hata(e.message); }
+});
+
+server.registerTool('makro_calistir', {
+  title: 'VBA makrosu çalıştır',
+  description: 'VBA kodunu Kesit\'in yorumlayıcısıyla hazır sayfaların yalıtılmış bir kopyasında çalıştırır (Range, Cells, End(xlUp), If, For, Select Case, With, Function, WorksheetFunction, MsgBox, biçim). Dosya, ağ ve Windows erişimi yoktur; adım ve hücre sınırı vardır. Çıktı: MsgBox/Debug.Print satırları, hata satırı ve istenen aralığın değerleri.',
+  inputSchema: {
+    kod: z.string().max(20000), sayfa: z.enum(Object.keys(SAYFALAR)).optional().describe('Etkin sayfa (varsayılan Satışlar)'), makro: z.string().max(80).optional().describe('Çalışacak Sub; yoksa ilk Sub'),
+    oku: z.string().regex(/^[A-Z]{1,3}\d+(:[A-Z]{1,3}\d+)?$/).optional().describe('Sonucu dönecek aralık, ör. L1:L10 (en çok 500 hücre)'), girdiler: z.array(z.string().max(200)).max(20).optional().describe('InputBox cevapları sırayla'),
+  },
+  annotations: { readOnlyHint: true, openWorldHint: false },
+}, async ({ kod, sayfa, makro, oku, girdiler }) => {
+  const s = sayfa || 'Satışlar', k = kitapKur(); k.stiller = new Map();
+  const r = makroCalistir(kod, k, { sayfa: s, alt: makro, girdiler });
+  let degerler;
+  if (oku) { const a = alanCoz(oku.includes(':') ? oku : oku + ':' + oku); if ((a.r2 - a.r1 + 1) * (a.c2 - a.c1 + 1) > 500) return hata('oku en çok 500 hücre'); degerler = k.degerler(s, a).map(row => row.map(deger)); }
+  return text(JSON.stringify({ tamam: r.tamam, hata: r.tamam ? null : r.hata, cikti: (r.cikti || []).slice(0, 200), yazilanHucre: r.yazilan ?? null, adim: r.adim ?? null, degerler }, null, 1));
+});
+
 server.registerTool('alistirma_getir', {
   title: 'Alıştırma getir',
   description: 'Kesit Excel derslerinden alıştırma getirir: soru, kullanılan sayfa ve sütunlar, hedef hücre ve ipuçları. Çözüm yalnız cozum_goster: true ile döner. Ders verilmezse ders listesi (ya da rolün sırası) döner.',
@@ -138,8 +186,8 @@ server.registerTool('alistirma_getir', {
   const t = SAYFALAR[a.sayfa];
   return text(JSON.stringify({ ders: dersOzet(d), ozet: d.ozet, alistirma: a.id, tur: a.tur || 'formul', soru: a.soru, sayfa: a.sayfa,
     sutunlar: t.basliklar ? t.basliklar.map((b, i) => `${String.fromCharCode(65 + i)} ${b}`) : 'başlık satırı yok (ham sayfa, A1\'den başlar)', satir: t.satirlar.length,
-    hedef: a.hedef || null, hazirlik: a.hazirlik || null, gerekli: a.gerekli ? a.gerekli.map(g => EN_TR[g] || g) : null, ipuclari: a.ipuclari || [],
-    cozum: cozum_goster ? a.cozum : '(cozum_goster: true ile görünür)', denetim: 'alistirma_denetle ile denetleyin; cevap gizli bir varyant tabloda da denenir.' }, null, 1));
+    hedef: a.hedef || null, secenekler: a.secenekler || undefined, okunan: a.okunan || undefined, baslangic: a.kaynak || a.baslangicKod || undefined, hazirlik: a.hazirlik || null, gerekli: a.gerekli ? a.gerekli.map(g => EN_TR[g] || g) : null, ipuclari: a.ipuclari || [],
+    cozum: cozum_goster ? (a.tur === 'secmeli' ? a.dogru : a.cozum) : '(cozum_goster: true ile görünür)', denetim: 'alistirma_denetle ile denetleyin; cevap gizli bir varyant tabloda da denenir.' }, null, 1));
 });
 
 server.registerTool('alistirma_denetle', {
@@ -148,18 +196,28 @@ server.registerTool('alistirma_denetle', {
   inputSchema: {
     ders: z.string().regex(/^m\d{1,2}-d\d$/), alistirma: z.string().regex(/^a\d$/),
     formul: z.string().max(SINIR.uzunluk).optional().describe('Formül alıştırması için; alan hedeflerinde ilk hücrenin formülü'),
-    pivot: z.object({ satir: z.string().nullable().optional(), sutun: z.string().nullable().optional(), degerler: z.array(z.object({ alan: z.string(), ozet: z.enum(['toplam', 'say', 'ortalama', 'en_buyuk', 'en_kucuk']).optional() })).max(4).optional(),
-      filtreler: z.array(z.object({ alan: z.string(), degerler: z.array(z.union([z.string(), z.number()])).max(100) })).max(3).optional(), grupla: z.record(z.string(), z.enum(['ay', 'ceyrek', 'yil'])).optional(),
-      goster: z.enum(['deger', 'genelYuzde', 'satirYuzde', 'sutunYuzde']).optional() }).optional().describe('Özet tablo alıştırması için yapı'),
+    pivot: PIVOT.optional().describe('Özet tablo ya da pivot grafik alıştırması için yapı'),
+    grafik: GRAFIK_SECENEK.extend({ alan: z.string().regex(/^[A-Z]{1,3}\d+:[A-Z]{1,3}\d+$/).optional(), seriYonu: z.enum(['otomatik', 'sutun', 'satir']).optional() }).optional().describe('Grafik alıştırması: tür ve ayarlar; veri aralığı alan ile (ör. A1:D5). Pivot grafikte pivot ile birlikte verilir'),
+    kurallar: z.array(KURAL).max(10).optional().describe('Koşullu biçim alıştırması için kural listesi'),
+    pano: z.object({ baslik: z.string().max(120).optional(), dilimler: z.array(z.object({ alan: z.string() })).max(4).optional(), kpi: z.array(z.object({ alan: z.string(), ozet: z.enum(['toplam', 'ortalama', 'say', 'benzersiz']) })).max(4).optional(),
+      grafikler: z.array(z.object({ tur: z.string(), yapi: PIVOT })).max(6).optional() }).optional().describe('Pano alıştırması'),
+    vba: z.string().max(20000).optional().describe('Makro alıştırması için VBA kodu'),
+    secim: z.number().int().min(0).max(9).optional().describe('Çoktan seçmeli soru için seçenek sırası (0\'dan)'),
     adimlar: z.array(z.object({ tip: z.string() }).passthrough()).max(40).optional().describe('Power Query alıştırması için adımlar, ör. [{ "tip": "ustSatirKaldir", "n": 1 }, { "tip": "basligiYukselt" }]'),
   },
   annotations: { readOnlyHint: true, openWorldHint: false },
-}, async ({ ders, alistirma, formul, pivot, adimlar }) => {
+}, async ({ ders, alistirma, formul, pivot, adimlar, grafik, kurallar, pano, vba, secim }) => {
   const d = DERSLER.find(x => x.id === ders); const a = d && d.alistirmalar.find(x => x.id === alistirma);
   if (!a) return hata(`${ders}/${alistirma} bulunamadı.`);
   let r;
   if (a.tur === 'pivot') { if (!pivot) return hata('Bu bir özet tablo alıştırması: pivot parametresi gerekli.'); r = pivotDenetle(a, SAYFALAR, pivot); }
   else if (a.tur === 'sorgu') { if (!adimlar) return hata('Bu bir Power Query alıştırması: adimlar parametresi gerekli.'); r = sorguDenetle(a, SAYFALAR, adimlar); }
+  else if (a.tur === 'grafik') { if (!grafik) return hata('Bu bir grafik alıştırması: grafik parametresi gerekli (tur, alan, baslik…).'); const { alan, seriYonu, ...secenek } = grafik; r = grafikAlistirmaDenetle(a, SAYFALAR, { kaynak: a.kaynakSabit ? a.kaynak : { alan: alan || a.kaynak?.alan, seriYonu }, secenek }); }
+  else if (a.tur === 'pivotGrafik') { if (!pivot || !grafik) return hata('Pivot grafik alıştırması: pivot ve grafik parametreleri gerekli.'); r = pivotDenetle({ ...a, cozum: a.cozum.yapi }, SAYFALAR, pvTam(pivot)); if (r.tamam) r = grafikAlistirmaDenetle({ ...a, cozum: {} }, SAYFALAR, { kaynak: { pivot: pvTam(pivot) }, secenek: grafik }); }
+  else if (a.tur === 'kosullu') { if (!kurallar) return hata('Koşullu biçim alıştırması: kurallar parametresi gerekli.'); r = kosulluDenetle(a, SAYFALAR, kurallar); }
+  else if (a.tur === 'pano') { if (!pano) return hata('Pano alıştırması: pano parametresi gerekli.'); r = panoDenetle(a, SAYFALAR, { ...pano, grafikler: (pano.grafikler || []).map(g => ({ ...g, yapi: pvTam(g.yapi) })) }); }
+  else if (a.tur === 'makro') { if (!vba) return hata('Makro alıştırması: vba parametresi gerekli.'); r = makroDenetle(a, SAYFALAR, vba); }
+  else if (a.tur === 'secmeli') { if (secim == null) return hata('Çoktan seçmeli soru: secim parametresi gerekli. Seçenekler: ' + a.secenekler.map((x, i) => i + ') ' + x).join(' | ')); r = secim === a.dogru ? { tamam: true, mesaj: 'Doğru. ' + a.aciklama } : { tamam: false, mesaj: a.yanlisAciklama?.[secim] || 'Bu seçenek değil.' }; }
   else { if (!formul) return hata('Bu bir formül alıştırması: formul parametresi gerekli.'); r = formulDenetle(a, SAYFALAR, formul); }
   return text(JSON.stringify({ tamam: r.tamam, mesaj: r.mesaj, gizliDenemedeYakalandi: !!r.gizli, ipucu: r.tamam ? null : r.ipucu || null, notlar: r.notlar || [], m: r.m || undefined }, null, 1));
 });

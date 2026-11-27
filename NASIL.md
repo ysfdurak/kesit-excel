@@ -11,15 +11,18 @@ Ayrıntılı ve eğitim amaçlı belge: [docs/PROJE_REHBERI.md](docs/PROJE_REHBE
 ## Klasörler
 | Yol | Ne |
 |---|---|
-| `docs/motor/` | Formül motoru (`formul.js` ayrıştırıcı ve değerlendirici, `islevler.js` 131 işlev, `kitap.js` çalışma kitabı ve taşma, `tarih.js`), `pivot.js`, `sorgu.js` (Power Query adımları + M), `denetci.js` (gizli varyant) |
-| `docs/icerik/` | `dersler-1/2/3.js` (48 ders), `ekler.js` (roller, seviye testi, mülakat), `islev-bilgi.js`, `veri.js` (**üretilir**), `sayfalar.js` |
-| `docs/js/` | Arayüz: `izgara.js` (formül çubuğu), `pivot-ui.js`, `sorgu-ui.js`, `sayfalar.js` (görünümler), `app.js` (yönlendirme), `durum.js` (ilerleme) |
+| `docs/motor/` | Formül motoru (`formul.js` ayrıştırıcı ve değerlendirici, `islevler.js` 131 işlev, `kitap.js` çalışma kitabı ve taşma, `tarih.js`), `pivot.js`, `sorgu.js` (Power Query adımları + M), `denetci.js` (gizli varyant), `grafik.js` (15 grafik türü, SVG, grafik denetimi), `kosullu.js` (koşullu biçim ve mini grafik), `vba.js` (VBA yorumlayıcısı, R1C1, .bas) |
+| `docs/icerik/` | `dersler-1/2/3/4.js` (61 ders; 4: görselleştirme ve makro), `ekler.js` (roller, seviye testi, mülakat), `islev-bilgi.js`, `veri.js` (**üretilir**), `sayfalar.js` |
+| `docs/js/` | Arayüz: `izgara.js` (formül çubuğu), `pivot-ui.js` (dilimleyici ve pivot grafik), `sorgu-ui.js`, `grafik-ui.js` (grafik alanı, ipucu, SVG/PNG), `kosullu-ui.js`, `pano-ui.js`, `makro-ui.js` (düzenleyici, kaydedici, .bas), `sayfalar.js` (görünümler), `app.js` (yönlendirme), `durum.js` (ilerleme) |
 | `mcp/` | Yerel MCP sunucusu |
 | `tests/` | `node --test` testleri ve `vakalar.json` (LibreOffice karşılaştırma vakaları) |
-| `tools/` | `veri_hazirla.py` (Kesit verisinden sayfalar), `lo_karsilastir.py` + `motor_hesapla.mjs` (LibreOffice karşılaştırması) |
+| `tools/` | `veri_hazirla.py` (Kesit verisinden sayfalar), `lo_karsilastir.py` + `motor_hesapla.mjs` (LibreOffice karşılaştırması), `kitap_olustur.py` (gerçek Excel için `docs/indir/kesit-excel-veri.xlsx`) |
 
 ## Sık yapılan işler
 - **Yeni ders:** `docs/icerik/dersler-N.js`'e bir nesne ekle (id `mX-dY`), `npm test`. Test çözümün denetçiden geçtiğini, örneğin hata vermediğini ve sabit cevabın gizli denemede yakalandığını kontrol eder. Yakalanmıyorsa soruyu, cevabı veriye bağlı olacak şekilde değiştir ya da (gerçekten sabit bir sonuçsa) `varyantsiz: true` yaz.
 - **Yeni işlev:** `docs/motor/islevler.js`'e `tanim('EN_AD', fn)`, `formul.js`'deki `TR_EN` tablosuna Türkçe adı, `docs/icerik/islev-bilgi.js`'e bilgi satırı, `tests/vakalar.json`'a vaka; `python3 tools/lo_karsilastir.py`.
 - **Veriyi yenilemek:** `git clone https://github.com/ysfdurak/kesit-python /tmp/kp` ve `python3 tools/veri_hazirla.py /tmp/kp/data`. Seçim sabit tohumla yapılır; satırlar değişirse ders testleri hangi alıştırmanın etkilendiğini söyler.
 - **Önbellek sürümü:** dosya eklenince ya da çıkarılınca `docs/sw.js` içinde `CORE` listesini ve `CACHE` adını güncelle.
+- **Yeni grafik/koşullu biçim/makro alıştırması:** `tur: 'grafik' | 'pivotGrafik' | 'kosullu' | 'pano' | 'makro' | 'secmeli'`. Grafikte `cozum: { kaynak, secenek }` ve `kural` (izinli türler, yığın, sıfırdan başlama…); başlangıç ayarı (`kaynak`, `secenek`) çözüm olmamalı, test bunu yakalar. Makroda `cozum` VBA kodu, `okunan` aralık, gerekirse `stilKontrol`, `ciktiKontrol`; sabit son satırlı bir `yanlis` sürüm ekleyin, test gizli kopyada yakalandığını doğrular.
+- **Veri kitabı:** sayfalar değişince `python3 tools/kitap_olustur.py` (`.xlsx` yeniden üretilir).
+
