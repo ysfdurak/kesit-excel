@@ -62,10 +62,12 @@ const deger = v => v == null ? null : hataMi(v) ? { hata: HATA_TR[v.kod] || v.ko
 
 const PIVOT = z.object({ satir: z.string().nullable().optional(), sutun: z.string().nullable().optional(), degerler: z.array(z.object({ alan: z.string(), ozet: z.enum(['toplam', 'say', 'ortalama', 'en_buyuk', 'en_kucuk']).optional() })).max(4).optional(),
       filtreler: z.array(z.object({ alan: z.string(), degerler: z.array(z.union([z.string(), z.number()])).max(100) })).max(3).optional(), grupla: z.record(z.string(), z.enum(['ay', 'ceyrek', 'yil'])).optional(),
-      goster: z.enum(['deger', 'genelYuzde', 'satirYuzde', 'sutunYuzde']).optional() });
+      goster: z.enum(['deger', 'genelYuzde', 'satirYuzde', 'sutunYuzde', 'fark', 'farkYuzde', 'birikimli', 'birikimliYuzde', 'sira']).optional().describe('Değer gösterimi; fark, farkYuzde, birikimli, birikimliYuzde ve sira satır alanı boyunca hesaplanır'),
+      sirala: z.object({ gore: z.literal('deger'), yon: z.enum(['azalan', 'artan']) }).optional().describe('Satır öğelerini değere göre sırala'),
+      ilk: z.object({ n: z.number().int().min(1).max(50), yon: z.enum(['ust', 'alt']).optional() }).optional().describe('Değer filtresi: ilk/son N satır öğesi; Genel Toplam yalnız görünenleri toplar') });
 const GRAFIK_SECENEK = z.object({ tur: z.enum(Object.keys(TURLER)), baslik: z.string().max(120).optional(), yigin: z.enum(['yok', 'yigin', 'yuzde']).optional(), veriEtiketi: z.boolean().optional(),
   eksenMin: z.number().nullable().optional(), eksenMax: z.number().nullable().optional(), ikincilEksen: z.boolean().optional(), egilim: z.boolean().optional(), gosterge: z.enum(['alt', 'yok']).optional(),
-  vurgu: z.enum(['yok', 'enBuyuk', 'enKucuk']).optional().describe('Sütun/çubukta en büyük ya da en küçük değeri renkli, ötekileri soluk göster'), hedefCizgisi: z.number().optional().describe('Kesikli hedef çizgisi değeri') });
+  vurgu: z.enum(['yok', 'enBuyuk', 'enKucuk', 'ikiUc']).optional().describe('Sütun/çubuk/çizgide en büyük, en küçük ya da ikisini birden işaretle'), esik: z.number().optional().describe('Renk eşiği: tek seride eşiğin üstü yeşil, altı kırmızı'), hedefCizgisi: z.number().optional().describe('Kesikli hedef çizgisi değeri') });
 const KURAL = z.object({ tur: z.enum(Object.keys(KURAL_TURLERI)), alan: z.string().regex(/^[A-Z]{1,3}\d+(:[A-Z]{1,3}\d+)?$/), op: z.enum(['>', '>=', '<', '<=', '=', '<>', 'arasinda', 'icerir']).optional(),
   deger: z.union([z.number(), z.string().max(200)]).optional(), deger2: z.number().optional(), n: z.number().int().min(1).max(1000).optional(), alt: z.boolean().optional(), yuzde: z.boolean().optional(),
   benzersiz: z.boolean().optional(), formul: z.string().max(500).optional(), stil: z.enum(['kirmizi', 'sari', 'yesil', 'kalin']).optional(), uclu: z.boolean().optional(), ters: z.boolean().optional() });
@@ -73,7 +75,7 @@ const KURAL = z.object({ tur: z.enum(Object.keys(KURAL_TURLERI)), alan: z.string
 const pvTam = p => ({ satir: null, sutun: null, degerler: [], filtreler: [], grupla: {}, goster: 'deger', ...p });
 
 const server = new McpServer({ name: 'kesit-excel', version: SURUM }, {
-  instructions: 'Kesit Excel: Türkçe Excel formül motoru (204 işlev, Türkçe ve İngilizce adlar, dinamik diziler, LAMBDA, düzenli ifadeler) ve 161 derslik alıştırma seti (grafik, pano, VBA makro, veri doğrulama, finans, Hedef Ara, Çözücü, LAMBDA, Gelişmiş Filtre ve pano grafikleri dahil). ' +
+  instructions: 'Kesit Excel: Türkçe Excel formül motoru (204 işlev, Türkçe ve İngilizce adlar, dinamik diziler, LAMBDA, düzenli ifadeler) ve 167 derslik alıştırma seti (grafik, pano, VBA makro, veri doğrulama, finans, Hedef Ara, Çözücü, LAMBDA, Gelişmiş Filtre ve pano grafikleri dahil). ' +
     'Formülü Türkçe (=ETOPLA(A:A;"x";B:B)) ya da İngilizce (=SUMIF(A:A,"x",B:B)) yazabilirsiniz. Hazır sayfalar: ' + Object.keys(SAYFALAR).join(', ') + '. ' +
     'Kendi verinizi satırlar dizisi ya da izinli klasördeki CSV ile verin. grafik_ciz SVG metni döndürür, makro_calistir VBA\'yı yalıtılmış kopyada çalıştırır. Sunucu dosya yazmaz ve ağa çıkmaz.',
 });

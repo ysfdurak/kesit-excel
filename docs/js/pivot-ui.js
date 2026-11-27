@@ -3,6 +3,7 @@
 import { h, temizle, yerlestir } from './yardim.js';
 import { pivot, esdegerFormul, OZETLER, GOSTER, ayrinti, hesaplanmisAlanDerle } from '../motor/pivot.js';
 import { goster } from '../motor/kitap.js';
+const GOSTER_NOT = { fark: 'Fark gösteriminde bu formülün sonucundan bir önceki satırın sonucu çıkarılır.', farkYuzde: '% Farkı: (bu satır − önceki satır) / önceki satır.', birikimli: 'Değişen toplam: ilk satırdan bu satıra kadar bu formüllerin toplamı.', birikimliYuzde: '% Değişen toplam: değişen toplam / sütunun genel toplamı.', sira: 'Sıra: bu formülün sonucu sütunda kaçıncı büyük (SIRALA mantığı).' };
 import { grafikCiz, pivotVerisi, TURLER } from '../motor/grafik.js';
 import { trSayi } from '../motor/tarih.js';
 import { svgDugum, ipucuBagla, genislikBul } from './grafik-ui.js';
@@ -36,6 +37,8 @@ export class PivotAlani {
       this.secim('Değerler', d.alan, [...B, ...y.hesaplananlar.map(x => [x.ad, x.ad + ' (hesaplanmış)'])], v => { d.alan = v; if (v && this.t.satirlar.some(r => typeof r[this.t.basliklar.indexOf(v)] === 'string')) d.ozet = 'say'; this.yenile(); }),
       this.secim('Özet', d.ozet, Object.entries(OZETLER).map(([k, o]) => [k, o.tr]), v => { d.ozet = v || 'toplam'; this.yenile(); }, null),
       this.secim('Göster', y.goster, Object.entries(GOSTER).map(([k, g]) => [k, g]), v => { y.goster = v || 'deger'; this.yenile(); }, null),
+      this.secim('Sırala', y.sirala ? 'deger-' + (y.sirala.yon || 'azalan') : '', [['deger-azalan', 'Değere göre: büyükten küçüğe'], ['deger-artan', 'Değere göre: küçükten büyüğe']], v => { if (v) y.sirala = { gore: 'deger', yon: v.split('-')[1] }; else delete y.sirala; this.yenile(); }, 'Etikete göre (A→Z)'),
+      this.secim('Değer filtresi', y.ilk ? (y.ilk.yon || 'ust') + y.ilk.n : '', [['ust3', 'İlk 3'], ['ust5', 'İlk 5'], ['ust10', 'İlk 10'], ['alt3', 'Son 3'], ['alt5', 'Son 5']], v => { if (v) y.ilk = { n: Number(v.replace(/\D/g, '')), yon: v.startsWith('alt') ? 'alt' : 'ust' }; else delete y.ilk; this.yenile(); }, 'Yok'),
       this.secim('Filtre / dilimleyici ekle', '', B.filter(([b]) => !y.filtreler.some(f => f.alan === b) && !this.tarihMi(b)), v => { if (v) { y.filtreler.push({ alan: v, degerler: [] }); this.yenile(); } }, 'Alan seçin…'));
     // Dilimleyiciler: her alan için düğme satırı; hiçbiri seçili değilse tümü
     const dilimler = y.filtreler.map((f, fi) => h('div.dilimleyici', { role: 'group', 'aria-label': f.alan + ' dilimleyicisi' },
@@ -88,7 +91,7 @@ export class PivotAlani {
     const tablo = h('table.veri.pivot-tablo', {}, h('thead', {}, h('tr', {}, p.basliklar.map(b => h('th', { scope: 'col' }, b)))),
       h('tbody', {}, p.satirlar.map((r, i) => h('tr', { sinif: i === p.satirlar.length - 1 ? 'toplam' : '' }, h('th', { scope: 'row' }, r[0]), r.slice(1).map((v, j) => h('td.sayi', { tabindex: '0', veri: { i, j }, on: { click: () => this.esdeger(i, j), dblclick: () => this.ayrintiGoster(i, j), keydown: e => { if (e.key === 'Enter') this.esdeger(i, j); } } }, this.degerYaz(v, p.yuzde)))))));
     const aktif = this.yapi.filtreler.filter(f => f.degerler.length);
-    this.sonuc.append(h('div.tablo-kaydir', {}, tablo), h('p.small-note.muted', {}, `${p.satirlar.length - 1} satır · ${aktif.length ? 'Filtre: ' + aktif.map(f => f.alan + ' = ' + f.degerler.join(', ')).join('; ') : 'filtre yok'}`));
+    this.sonuc.append(h('div.tablo-kaydir', {}, tablo), h('p.small-note.muted', {}, `${p.satirlar.length - 1} satır · ${aktif.length ? 'Filtre: ' + aktif.map(f => f.alan + ' = ' + f.degerler.join(', ')).join('; ') : 'filtre yok'}${this.yapi.ilk ? ` · Değer filtresi: ${this.yapi.ilk.yon === 'alt' ? 'Son' : 'İlk'} ${this.yapi.ilk.n} (Genel Toplam yalnız görünenler)` : ''}`));
     if (this.grafikAcik) this.grafikCiz(p);
   }
   grafikCiz(p) {
@@ -109,6 +112,6 @@ export class PivotAlani {
     const td = this.sonuc.querySelector(`td[data-i="${i}"][data-j="${j}"]`); if (td) td.classList.add('secili');
     const e = esdegerFormul(this.p, i, j, this.s.sayfaAd, this.t);
     this.secilen = { i, j };
-    yerlestir(temizle(this.formul), h('button.btn.tiny', { type: 'button', on: { click: () => this.ayrintiGoster(i, j) } }, 'Ayrıntıyı göster (çift tık)'), ' ', h('b', {}, 'Bu hücre şu formülle aynı:'), h('code.blok', {}, e.formul), e.not ? h('p.small-note', {}, e.not) : null, this.p.yuzde ? h('p.small-note', {}, 'Yüzde gösteriminde formülün sonucu ilgili toplama bölünür.') : null);
+    yerlestir(temizle(this.formul), h('button.btn.tiny', { type: 'button', on: { click: () => this.ayrintiGoster(i, j) } }, 'Ayrıntıyı göster (çift tık)'), ' ', h('b', {}, 'Bu hücre şu formülle aynı:'), h('code.blok', {}, e.formul), e.not ? h('p.small-note', {}, e.not) : null, GOSTER_NOT[this.yapi.goster] ? h('p.small-note', {}, GOSTER_NOT[this.yapi.goster]) : this.p.yuzde ? h('p.small-note', {}, 'Yüzde gösteriminde formülün sonucu ilgili toplama bölünür.') : null);
   }
 }

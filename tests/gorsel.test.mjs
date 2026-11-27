@@ -69,3 +69,34 @@ test('kaydedici R1C1 ve .bas kod sayfası', () => {
   const { bayt, bozuk } = basDosyasi('Sub Ş()\n    MsgBox "ığüşöç"\nEnd Sub\n');
   assert.equal(bozuk, 0); assert.ok(bayt.includes(0xFD) && bayt.includes(0xF0) && bayt.includes(0xDE));
 });
+
+test('pivot gösterimleri: fark, % fark, değişen toplam, sıra; sıralama ve İlk N (Genel Toplam görünenleri toplar)', () => {
+  const t = SAYFALAR['Satışlar'], ay = { satir: 'Tarih', grupla: { Tarih: 'ay' }, degerler: [{ alan: 'Adet', ozet: 'toplam' }] };
+  const deger = pivot(t, ay).satirlar.slice(0, -1).map(r => r[1]);
+  const fark = pivot(t, { ...ay, goster: 'fark' }).satirlar;
+  assert.equal(fark[0][1], null, 'ilk ayın öncesi yok');
+  assert.equal(fark[1][1], deger[1] - deger[0]);
+  assert.equal(fark.at(-1)[1], null, 'Genel Toplam boş');
+  assert.ok(Math.abs(pivot(t, { ...ay, goster: 'farkYuzde' }).satirlar[2][1] - (deger[2] / deger[1] - 1)) < 1e-12);
+  const bir = pivot(t, { ...ay, goster: 'birikimli' }).satirlar;
+  assert.equal(bir[deger.length - 1][1], deger.reduce((a, b) => a + b, 0), 'son ay = toplam');
+  const sira = pivot(t, { satir: 'Kategori', degerler: [{ alan: 'Adet', ozet: 'toplam' }], goster: 'sira' }).satirlar.slice(0, -1).map(r => r[1]);
+  assert.deepEqual([...sira].sort((a, b) => a - b), [1, 2, 3, 4, 5, 6, 7]);
+  const ilk = pivot(t, { satir: 'Ürün', degerler: [{ alan: 'Adet', ozet: 'toplam' }], sirala: { gore: 'deger', yon: 'azalan' }, ilk: { n: 5 } });
+  const vs = ilk.satirlar.slice(0, -1).map(r => r[1]);
+  assert.ok(vs.length >= 5 && vs.every((v, i) => !i || v <= vs[i - 1]), 'azalan sıralı, en az 5');
+  assert.equal(ilk.satirlar.at(-1)[1], vs.reduce((a, b) => a + b, 0), 'Genel Toplam yalnız görünenler');
+  assert.throws(() => pivot(t, { degerler: [{ alan: 'Adet' }], goster: 'fark' }), /satır alanı/);
+});
+
+test('grafik: iki uç vurgu, renk eşiği ve waffle', () => {
+  const v = { kategoriler: ['a', 'b', 'c', 'd'], seriler: [{ ad: 'X', degerler: [5, 20, 10, 2] }] };
+  const iki = grafikCiz(v, { tur: 'sutun', vurgu: 'ikiUc', bagimsiz: true });
+  assert.equal((iki.match(/fill-opacity="0.28"/g) || []).length, 2, 'iki uç dışındaki iki çubuk soluk');
+  const es = grafikCiz(v, { tur: 'sutun', esik: 10, bagimsiz: true });
+  assert.equal((es.match(/fill="#008a17"/g) || []).length, 2, 'eşik ve üstü yeşil');
+  assert.equal((es.match(/fill="#ec4647"/g) || []).length, 2, 'eşiğin altı kırmızı');
+  const w = grafikCiz({ kategoriler: ['Oran'], seriler: [{ ad: 'O', degerler: [0.37] }] }, { tur: 'waffle', bagimsiz: true });
+  assert.equal((w.match(/<rect x=/g) || []).length, 100);
+  assert.equal((w.match(/fill-opacity="0.16"/g) || []).length, 63, '37 dolu, 63 boş kare');
+});
